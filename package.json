@@ -7,6 +7,8 @@
     "doc": "docs"
   },
   "scripts": {
+    "start": "tsx src/server.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "test": "jest",
     "test:watch": "jest --watch",
