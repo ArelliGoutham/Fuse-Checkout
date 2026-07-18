@@ -22,11 +22,48 @@ These practices are mandatory for all code in this repository. Follow them on ev
 
 ## Validation
 
+### Zod for Validation
+
+**Use Zod everywhere for validation** — both API input and internal data boundaries.
+
+- **API endpoints**: Define a Zod schema for every request body, query params, and response. Use Fastify's Zod integration or manual `schema.parse()` in the preHandler.
+  ```typescript
+  const ValidateOfferSchema = z.object({
+    code: z.string().min(1).max(50),
+    cart: z.object({
+      amount: z.number().positive(),
+      items: z.array(z.object({
+        sku_id: z.string(),
+        category: z.string().optional(),
+        brand: z.string().optional(),
+        price: z.number().positive(),
+        qty: z.number().int().positive(),
+      })),
+    }),
+    customer: z.object({
+      email: z.string().email().optional(),
+      phone: z.string().optional(),
+      external_id: z.string().optional(),
+    }).optional(),
+  });
+
+  // In route handler:
+  const parsed = ValidateOfferSchema.parse(request.body); // throws ZodError on invalid
+  ```
+- **Internal boundaries**: When data crosses a module boundary (e.g., rule engine receives context), validate with Zod at the boundary. Internal helpers can trust validated data.
+- **Infer types from Zod schemas** — never define a type and a schema separately. Use `z.infer<typeof Schema>` to derive the TypeScript type:
+  ```typescript
+  const OfferSchema = z.object({ ... });
+  type Offer = z.infer<typeof OfferSchema>;  // single source of truth
+  ```
+- **Error formatting**: Catch `ZodError` and return `400 VALIDATION_ERROR` with `error.details` containing `zodError.flatten()` for field-level messages.
+- **Reusable schemas**: Shared schemas (Cart, Customer, Discount) live in `src/modules/<module>/schemas.ts` and are imported by route handlers and other modules.
+
 ### Input Validation — Always
-- Every API endpoint MUST validate its input using a JSON schema (Fastify schema validation or Zod).
+- Every API endpoint MUST validate its input using Zod schemas.
 - Never trust incoming data — validate type, format, range, and presence before processing.
 - Validation errors return `400 VALIDATION_ERROR` with a clear message indicating which field failed.
-- Internal function boundaries: validate arguments at public API boundaries. Internal helpers can trust their callers if the call site validated.
+- Internal function boundaries: validate arguments at public API boundaries using Zod. Internal helpers can trust their callers if the call site validated.
 
 ### Output Validation
 - API responses follow the documented response shape. Use TypeScript types/interfaces to enforce.
@@ -81,7 +118,83 @@ These practices are mandatory for all code in this repository. Follow them on ev
 
 ---
 
-## Testing
+## Test-Driven Development (TDD)
+
+### TDD Is Mandatory
+- **Red-Green-Refactor**: Write a failing test first, write the minimum code to pass it, then refactor.
+- Never write implementation before a test exists for that behavior.
+- This applies to all logic: rule evaluators, combo resolver, API endpoints, utilities, services.
+
+### TDD Workflow
+1. **Write the test** — describe the behavior you want. Run it. It fails (red).
+2. **Write minimal code** — just enough to pass the test. Run it. It passes (green).
+3. **Refactor** — improve the code without changing behavior. Run tests again. Still green.
+4. **Repeat** — add the next behavior test, fail, pass, refactor.
+
+### TDD for Rule Evaluators (Example)
+```typescript
+// 1. Write test first — rule/min-cart-value.test.ts
+describe('minCartValue rule', () => {
+  it('returns true when cart amount equals min_amount (boundary)', () => {
+    const rule = { min_amount: 500 };
+    const context = { cart: { amount: 500, items: [] } };
+    expect(minCartValue(rule, context)).toBe(true);
+  });
+
+  it('returns false when cart amount is below min_amount', () => {
+    const rule = { min_amount: 500 };
+    const context = { cart: { amount: 499, items: [] } };
+    expect(minCartValue(rule, context)).toBe(false);
+  });
+
+  it('returns true when cart amount exceeds min_amount', () => {
+    const rule = { min_amount: 500 };
+    const context = { cart: { amount: 501, items: [] } };
+    expect(minCartValue(rule, context)).toBe(true);
+  });
+});
+
+// 2. Write minimal implementation — rule/min-cart-value.ts
+/**
+ * Checks if the cart total meets the minimum amount threshold.
+ * @param rule - Config with min_amount
+ * @param context - Evaluation context containing cart data
+ * @returns true if cart.amount >= rule.min_amount
+ */
+export function minCartValue(rule: { min_amount: number }, context: EvaluationContext): boolean {
+  return context.cart.amount >= rule.min_amount;
+}
+
+// 3. Refactor — extract shared types, no behavior change
+```
+
+### TDD for API Endpoints
+1. Write a test that calls the endpoint with valid input → expect 200 with correct shape.
+2. Implement the route handler to pass.
+3. Write a test for invalid input → expect 400 VALIDATION_ERROR.
+4. Add Zod validation to pass.
+4. Write a test for auth failure → expect 401.
+5. Add auth middleware.
+6. Write a test for tenant isolation → expect 404 for cross-merchant ID.
+7. Add merchant_id scoping.
+
+### Test Data
+- Use **factories** for test data, not hardcoded objects repeated across tests:
+  ```typescript
+  // test/factories/offer.factory.ts
+  export function createOffer(overrides: Partial<Offer> = {}): Offer {
+    return {
+      merchant_id: 'merch_test',
+      code: 'TEST50',
+      type: 'coupon',
+      discount: { type: 'flat', value: 50, max_discount: null },
+      ...
+      ...overrides,
+    };
+  }
+  ```
+- Factories ensure tests don't break when schema evolves — change the factory, not every test.
+- Mock external dependencies (MongoDB, Redis) at the module boundary using `jest.mock()`. Prefer integration tests with a real MongoDB connection when feasible (use `mongodb-memory-server` for local tests).
 
 ### What to Test
 - **Rule evaluators** (pure functions): every rule type gets test cases for pass, fail, and edge cases (boundary values, empty input, null handling).
@@ -188,9 +301,10 @@ src/
 
 ## Review Checklist (Before Committing)
 
+- [ ] **Tests written first (TDD)** — failing test → implementation → green
+- [ ] **Zod schemas** for all API inputs and module boundaries
 - [ ] No `any` types — all types are explicit
 - [ ] All exported functions have TSDoc comments
-- [ ] Input validation on every API endpoint
 - [ ] Tests written and passing for new logic
 - [ ] No duplicated code — DRY
 - [ ] Queries scoped by `merchant_id`
@@ -198,12 +312,15 @@ src/
 - [ ] Lint passes (`npm run lint`)
 - [ ] Type check passes (`npm run typecheck`)
 - [ ] No secrets hardcoded — use environment variables
+- [ ] Types inferred from Zod schemas (`z.infer<typeof Schema>`) — no dual definitions
 
 ---
 
 ## Don'ts
 
+- **Don't** write implementation before a test (TDD — red first, always)
 - **Don't** use `any` — use `unknown` and narrow
+- **Don't** define types and Zod schemas separately — use `z.infer<typeof Schema>`
 - **Don't** skip validation because "it's an internal call"
 - **Don't** write a function without tests for its core logic
 - **Don't** duplicate a rule, utility, or transformation — extract it
@@ -212,3 +329,4 @@ src/
 - **Don't** leave `console.log` in committed code — use a logger
 - **Don't** hardcode config values — use environment variables
 - **Don't** add dependencies without checking if a stdlib or existing dep can do it
+- **Don't** use JSON schema (Fastify built-in) when Zod is the standard for this project
