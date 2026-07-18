@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OfferForge — Offer Engine for E-Commerce</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config={theme:{extend:{colors:{bg:'#0C0E14',surface:'#151821','surface-2':'#1C1F2B','surface-3':'#232738',border:'#252836','border-light':'#2F3347',accent:'#F59E0B','accent-hover':'#D97706','accent-muted':'rgba(245,158,11,0.12)',success:'#34D399','success-muted':'rgba(52,211,153,0.12)',danger:'#F87171','danger-muted':'rgba(248,113,113,0.12)',info:'#60A5FA','info-muted':'rgba(96,165,250,0.12)',fg:'#F1F5F9','fg-soft':'#94A3B8','fg-muted':'#64748B'},fontFamily:{display:['"Space Grotesk"','sans-serif']}}}}
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Space Grotesk',sans-serif}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#252836;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#2F3347}
+.nav-item{color:#94A3B8}.nav-item:hover{color:#F1F5F9;background:#1C1F2B}
+.nav-item.active{color:#F59E0B;background:rgba(245,158,11,0.1)}
+.page{animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.offer-type-card{background:#1C1F2B;border:2px solid #252836;border-radius:16px;padding:20px;cursor:pointer;transition:all .2s ease;position:relative}
+.offer-type-card:hover{border-color:#2F3347;transform:translateY(-2px)}
+.offer-type-card.selected{border-color:var(--tc,#F59E0B);box-shadow:0 0 24px rgba(var(--tr,245,158,11),0.12)}
+.offer-type-card.selected .type-icon{background:rgba(var(--tr,245,158,11),0.15)}
+.offer-type-card.selected .type-icon i{color:var(--tc,#F59E0B)}
+.offer-type-card.selected::after{content:'\f00c';font-family:'Font Awesome 6 Free';font-weight:900;position:absolute;top:12px;right:14px;font-size:11px;color:var(--tc,#F59E0B);background:rgba(var(--tr,245,158,11),0.15);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.chip{padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid #252836;background:#151821;color:#94A3B8;cursor:pointer;transition:all .15s ease;user-select:none;display:inline-flex;align-items:center;gap:6px}
+.chip:hover{border-color:#2F3347;color:#F1F5F9}
+.chip.active{border-color:#F59E0B;background:rgba(245,158,11,0.1);color:#F59E0B}
+.toggle{width:44px;height:24px;background:#252836;border-radius:12px;position:relative;cursor:pointer;transition:background .2s ease;flex-shrink:0}
+.toggle.active{background:#F59E0B}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;background:white;border-radius:50%;top:3px;left:3px;transition:transform .2s ease}
+.toggle.active::after{transform:translateX(20px)}
+.progress-bar{height:4px;background:#252836;border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width .5s ease}
+.toast{animation:toastIn .3s ease,toastOut .3s ease 2.7s forwards;border-radius:12px;padding:14px 20px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:10px;min-width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateY(-10px)}}
+.pulse-dot{width:8px;height:8px;border-radius:50%;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.form-input{background:#151821;border:1px solid #252836;border-radius:10px;padding:10px 14px;color:#F1F5F9;font-size:14px;width:100%;transition:border-color .2s ease;font-family:'Space Grotesk',sans-serif}
+.form-input:focus{outline:none;border-color:rgba(245,158,11,0.5)}
+.form-input::placeholder{color:#64748B}
+input[type="range"]{-webkit-appearance:none;width:100%;height:6px;background:#252836;border-radius:3px;outline:none}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;background:#F59E0B;border-radius:50%;cursor:pointer;box-shadow:0 2px 8px rgba(245,158,11,0.3)}
+.matrix-cell{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px}
+.matrix-cell.compatible{background:rgba(52,211,153,0.1);color:#34D399}
+.matrix-cell.conflicting{background:rgba(248,113,113,0.1);color:#F87171}
+.matrix-cell.self{background:#252836;color:#64748B}
+.payment-card{border:2px solid #252836;border-radius:12px;padding:14px;cursor:pointer;transition:all .15s ease;text-align:center}
+.payment-card:hover{border-color:#2F3347}
+.payment-card.selected{border-color:#F59E0B;background:rgba(245,158,11,0.06)}
+.metric-card{position:relative;overflow:hidden}
+.metric-card::before{content:'';position:absolute;top:-50%;right:-30%;width:180px;height:180px;border-radius:50%;opacity:.06}
+.metric-card.amber::before{background:#F59E0B}
+.metric-card.green::before{background:#34D399}
+.metric-card.blue::before{background:#60A5FA}
+.metric-card.rose::before{background:#FB7185}
+.checkout-offer{border:1px solid #252836;border-radius:12px;padding:14px 16px;transition:all .15s ease;cursor:pointer}
+.checkout-offer:hover{border-color:#2F3347}
+.checkout-offer.enabled{border-color:#34D399;background:rgba(52,211,153,0.04)}
+.section-reveal{animation:secReveal .4s ease}
+@keyframes secReveal{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.priority-card{background:#1C1F2B;border:1px solid #252836;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px;transition:all .2s ease}
+.priority-card:hover{border-color:#2F3347}
+.algo-card{border:2px solid #252836;border-radius:14px;padding:18px;cursor:pointer;transition:all .2s ease}
+.algo-card:hover{border-color:#2F3347}
+.algo-card.selected{border-color:#F59E0B;background:rgba(245,158,11,0.04)}
+@media(prefers-reduced-motion:reduce){.page,.toast,.section-reveal,.offer-type-card,.pulse-dot{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body class="bg-bg text-fg font-display min-h-screen">
+
+<!-- Toast Container -->
+<div id="toastContainer" class="fixed top-6 right-6 z-[100] flex flex-col gap-3"></div>
+
+<!-- Sidebar -->
+<aside class="fixed left-0 top-0 bottom-0 w-[256px] bg-surface border-r border-border z-50 flex flex-col">
+  <div class="px-5 py-5 border-b border-border">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-accent flex items-center justify-center"><i class="fa-solid fa-bolt text-bg text-sm"></i></div>
+      <span class="text-lg font-bold tracking-tight">OfferForge</span>
+    </div>
+  </div>
+  <nav class="flex-1 px-3 py-4 space-y-1" id="sideNav">
+    <button onclick="navigateTo('dashboard')" data-nav="dashboard" class="nav-item active w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all"><i class="fa-solid fa-gauge-high w-5 text-center"></i>Dashboard</button>
+    <button onclick="navigateTo('create')" data-nav="create" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all"><i class="fa-solid fa-circle-plus w-5 text-center"></i>Create Offer</button>
+    <button onclick="navigateTo('rules')" data-nav="rules" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all"><i class="fa-solid fa-layer-group w-5 text-center"></i>Offer Rules</button>
+    <button onclick="navigateTo('preview')" data-nav="preview" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all"><i class="fa-solid fa-eye w-5 text-center"></i>Checkout Preview</button>
+  </nav>
+  <div class="px-3 py-4 border-t border-border space-y-1">
+    <button class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-fg-soft hover:text-fg hover:bg-surface-2"><i class="fa-solid fa-gear w-5 text-center"></i>Settings</button>
+    <button class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-fg-soft hover:text-fg hover:bg-surface-2"><i class="fa-solid fa-circle-question w-5 text-center"></i>Help & Docs</button>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="ml-[256px] min-h-screen">
+  <header class="sticky top-0 z-40 bg-bg/80 backdrop-blur-xl border-b border-border px-8 py-4 flex items-center justify-between">
+    <div><h1 id="pageTitle" class="text-xl font-bold">Dashboard</h1><p id="pageSubtitle" class="text-sm text-fg-muted mt-0.5">Overview of your offer performance</p></div>
+    <div class="flex items-center gap-4">
+      <div class="relative hidden lg:block"><input type="text" placeholder="Search offers..." class="form-input pl-10 w-56 text-sm !py-2"><i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-muted text-xs"></i></div>
+      <button class="relative w-9 h-9 rounded-lg bg-surface border border-border flex items-center justify-center hover:border-border-light transition-colors"><i class="fa-solid fa-bell text-fg-soft text-sm"></i><span class="absolute -top-1 -right-1 w-4 h-4 bg-accent rounded-full text-[10px] font-bold text-bg flex items-center justify-center">3</span></button>
+      <div class="w-9 h-9 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center"><span class="text-sm font-bold text-accent">M</span></div>
+    </div>
+  </header>
+
+  <div class="p-8">
+
+    <!-- ============ DASHBOARD ============ -->
+    <div id="page-dashboard" class="page">
+      <div class="grid grid-cols-4 gap-5 mb-8" id="metricsRow"></div>
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-lg font-semibold">Active Offers</h2>
+        <button onclick="navigateTo('create')" class="bg-accent hover:bg-accent-hover text-bg font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2"><i class="fa-solid fa-plus text-xs"></i>Create New</button>
+      </div>
+      <div class="grid grid-cols-2 gap-4" id="dashboardOffers"></div>
+    </div>
+
+    <!-- ============ CREATE OFFER ============ -->
+    <div id="page-create" class="page hidden">
+      <div class="flex gap-8">
+        <div class="flex-1 min-w-0">
+          <!-- Step 1: Type -->
+          <section class="mb-8">
+            <h2 class="text-base font-semibold mb-1">Choose Offer Type</h2>
+            <p class="text-sm text-fg-muted mb-4">Select the type of promotion you want to create</p>
+            <div class="grid grid-cols-3 gap-4" id="typeGrid"></div>
+          </section>
+          <!-- Step 2+: Config sections (hidden initially) -->
+          <div id="createConfigSections" class="hidden space-y-8">
+            <!-- Basic Details -->
+            <section class="section-reveal bg-surface rounded-2xl border border-border p-6">
+              <h2 class="text-base font-semibold mb-4 flex items-center gap-2"><i class="fa-solid fa-pen text-accent text-xs"></i>Basic Details</h2>
+              <div class="grid grid-cols-2 gap-4 mb-4">
+                <div><label class="text-xs text-fg-soft font-medium mb-1.5 block">Offer Name</label><input type="text" id="offerName" class="form-input" placeholder="e.g. Summer Sale 2025" oninput="updatePreview()"></div>
+                <div><label class="text-xs text-fg-soft font-medium mb-1.5 block">Coupon Code</label>
+                  <div class="flex gap-2"><input type="text" id="offerCode" class="form-input flex-1 uppercase" placeholder="Auto-generated" oninput="updatePreview()"><button onclick="generateCode()" class="px-4 rounded-xl bg-surface-2 border border-border text-fg-soft hover:text-fg hover:border-border-light transition-colors text-sm font-medium whitespace-nowrap"><i class="fa-solid fa-rotate mr-1.5"></i>Generate</button></div>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-4 mb-4">
+                <div><label class="text-xs text-fg-soft font-medium mb-1.5 block">Start Date</label><input type="date" id="offerStart" class="form-input" oninput="updatePreview()"></div>
+                <div><label class="text-xs text-fg-soft font-medium mb-1.5 block">End Date</label><input type="date" id="offerEnd" class="form-input" oninput="updatePreview()"></div>
+              </div>
+              <div class="flex items-center justify-between py-2">
+                <div><span class="text-sm font-medium">Auto-Apply</span><p class="text-xs text-fg-muted mt-0.5">Apply automatically without requiring a coupon code</p></div>
+                <div id="toggleAutoApply" class="toggle" onclick="this.classList.toggle('active');updatePreview()"></div>
+              </div>
+            </section>
+
+            <!-- Discount Config -->
+            <section class="section-reveal bg-surface rounded-2xl border border-border p-6" id="discountSection">
+              <h2 class="text-base font-semibold mb-4 flex items-center gap-2"><i class="fa-solid fa-sliders text-accent text-xs"></i>Discount Configuration</h2>
+              <div id="discountFields"></div>
+            </section>
+
+            <!-- Conditions -->
+            <section class="section-reveal bg-surface rounded-2xl border border-border p-6">
+              <h2 class="text-base font-semibold mb-4 flex items-center gap-2"><i class="fa-solid fa-filter text-accent text-xs"></i>Conditions</h2>
+              <div class="mb-5">
+                <label class="text-xs text-fg-soft font-medium mb-2 block">Applicable Categories</label>
+                <div class="flex flex-wrap gap-2" id="categoryChips"></div>
+              </div>
+              <div class="mb-5">
+                <label class="text-xs text-fg-soft font-medium mb-2 block">Customer Segments</label>
+                <div class="flex flex-wrap gap-2" id="segmentChips"></div>
+              </div>
+              <div>
+                <label class="text-xs text-fg-soft font-medium mb-2 block">Payment Methods</label>
+                <div class="flex flex-wrap gap-2" id="paymentChips"></div>
+              </div>
+            </section>
+
+            <!-- Limits -->
+            <section class="section-reveal bg-surface rounded-2xl border border-border p-6">
+              <h2 class="text-base font-semibold mb-4 flex items-center gap-2"><i class="fa-solid fa-shield-halved text-accent text-xs"></i>Rules & Limits</h2>
+              <div class="grid grid-cols-2 gap-4 mb-5">
+                <div><label class="text-xs text-fg-soft font-medium mb-1.5 block">Max Total Uses</label><input type="number" id="maxUses" class="form-input" placeholder="Unlimited" min="0"></div>
+                <div><label class="text-xs text-fg-soft font-medium mb-1.5 block">Max Uses Per Customer</label><input type="number" id="maxUsesPerUser" class="form-input" placeholder="Unlimited" min="0"></div>
+              </div>
+              <div class="flex items-center justify-between py-2 border-t border-border">
+                <div><span class="text-sm font-medium">Stackable with Other Offers</span><p class="text-xs text-fg-muted mt-0.5">Allow this offer to combine with compatible offers</p></div>
+                <div id="toggleStackable" class="toggle" onclick="this.classList.toggle('active')"></div>
+              </div>
+            </section>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-4 pt-2">
+              <button onclick="createOffer()" class="bg-accent hover:bg-accent-hover text-bg font-semibold text-sm px-8 py-3 rounded-xl transition-colors">Create Offer</button>
+              <button onclick="resetCreateForm()" class="bg-surface-2 border border-border text-fg-soft hover:text-fg hover:border-border-light font-medium text-sm px-6 py-3 rounded-xl transition-colors">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="w-[320px] shrink-0">
+          <div class="sticky top-24">
+            <div class="bg-surface-2 rounded-2xl border border-border p-5">
+              <h3 class="font-semibold text-sm mb-4 flex items-center gap-2"><i class="fa-solid fa-eye text-accent text-xs"></i>Customer Preview</h3>
+              <div class="bg-surface rounded-xl p-4 space-y-3 text-sm">
+                <div class="text-xs text-fg-muted font-medium uppercase tracking-wider mb-2">Order Summary</div>
+                <div class="flex justify-between"><span class="text-fg-soft">Premium T-Shirt x2</span><span>₹2,598</span></div>
+                <div class="flex justify-between"><span class="text-fg-soft">Leather Belt x1</span><span>₹799</span></div>
+                <div class="border-t border-border pt-3 flex justify-between font-medium"><span>Subtotal</span><span>₹3,397</span></div>
+                <div id="previewDiscountLine" class="flex justify-between text-success font-medium hidden"><span id="previewDiscountLabel"></span><span id="previewDiscountValue"></span></div>
+                <div id="previewFreeShipLine" class="flex justify-between text-success font-medium hidden"><span>Free Shipping</span><span>-₹99</span></div>
+                <div class="border-t border-border pt-3 flex justify-between font-bold text-base"><span>Total</span><span id="previewTotal">₹3,397</span></div>
+                <div id="previewSavingsBadge" class="bg-success-muted rounded-lg px-3 py-2 text-xs text-success text-center font-medium hidden"><i class="fa-solid fa-arrow-trend-down mr-1"></i><span id="previewSavingsText"></span></div>
+              </div>
+            </div>
+            <div class="mt-4 bg-surface-2 rounded-2xl border border-border p-4">
+              <div class="text-xs text-fg-muted font-medium mb-2">Offer Summary</div>
+              <div id="previewSummaryText" class="text-sm text-fg-soft leading-relaxed">Select an offer type and configure it to see a live preview of how it will appear to customers at checkout.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ OFFER RULES ============ -->
+    <div id="page-rules" class="page hidden">
+      <div class="grid grid-cols-2 gap-8">
+        <div>
+          <h2 class="text-base font-semibold mb-1">Offer Priority</h2>
+          <p class="text-sm text-fg-muted mb-4">When offers conflict, higher priority offers are applied first</p>
+          <div class="space-y-3" id="priorityList"></div>
+          <div class="mt-6 p-4 rounded-xl bg-info-muted text-info text-xs leading-relaxed"><i class="fa-solid fa-circle-info mr-1.5"></i>Non-stackable offers with higher priority will override lower-priority ones. Use the arrows to adjust order.</div>
+        </div>
+        <div class="space-y-8">
+          <div>
+            <h2 class="text-base font-semibold mb-1">Stacking Compatibility</h2>
+            <p class="text-sm text-fg-muted mb-4">Which offers can be combined at checkout</p>
+            <div class="bg-surface rounded-2xl border border-border p-4 overflow-x-auto" id="stackingMatrix"></div>
+          </div>
+          <div>
+            <h2 class="text-base font-semibold mb-1">Best Discount Algorithm</h2>
+            <p class="text-sm text-fg-muted mb-4">How the engine selects the best combination for the customer</p>
+            <div class="space-y-3" id="algoCards"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CHECKOUT PREVIEW ============ -->
+    <div id="page-preview" class="page hidden">
+      <!-- Segment Selector -->
+      <div class="flex items-center gap-3 mb-6">
+        <span class="text-sm font-medium text-fg-soft">Simulate as:</span>
+        <div class="flex gap-2" id="segmentSelector"></div>
+      </div>
+      <div class="flex gap-8">
+        <div class="flex-1 min-w-0 space-y-6">
+          <!-- Cart Items -->
+          <div class="bg-surface rounded-2xl border border-border p-5">
+            <h3 class="text-base font-semibold mb-4">Cart Items</h3>
+            <div class="space-y-4" id="previewCartItems"></div>
+            <div class="mt-4 pt-4 border-t border-border flex justify-between font-semibold"><span>Subtotal</span><span id="cartSubtotal">₹0</span></div>
+          </div>
+          <!-- Available Offers -->
+          <div class="bg-surface rounded-2xl border border-border p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-semibold">Available Offers</h3>
+              <div class="flex items-center gap-2 text-xs text-fg-muted"><i class="fa-solid fa-circle-info"></i>Toggle to apply/remove</div>
+            </div>
+            <div class="space-y-3" id="previewOfferList"></div>
+            <!-- Coupon Input -->
+            <div class="mt-4 pt-4 border-t border-border">
+              <label class="text-xs text-fg-soft font-medium mb-2 block">Have a coupon code?</label>
+              <div class="flex gap-2">
+                <input type="text" id="couponInput" class="form-input flex-1 uppercase" placeholder="Enter code">
+                <button onclick="applyCouponCode()" class="px-5 rounded-xl bg-accent hover:bg-accent-hover text-bg font-semibold text-sm transition-colors">Apply</button>
+              </div>
+              <div id="couponMsg" class="text-xs mt-2 hidden"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Order Summary + Payment -->
+        <div class="w-[380px] shrink-0">
+          <div class="sticky top-24 space-y-5">
+            <div class="bg-surface rounded-2xl border border-border p-5">
+              <h3 class="text-base font-semibold mb-4">Order Summary</h3>
+              <div class="space-y-3 text-sm" id="orderSummaryLines"></div>
+              <div class="border-t border-border mt-3 pt-3 flex justify-between font-bold text-lg"><span>Total</span><span id="orderTotal">₹0</span></div>
+              <div id="orderSavingsBadge" class="mt-3 bg-success-muted rounded-lg px-3 py-2.5 text-xs text-success text-center font-medium hidden"><i class="fa-solid fa-arrow-trend-down mr-1"></i><span id="orderSavingsText"></span></div>
+              <button class="w-full mt-4 bg-accent hover:bg-accent-hover text-bg font-semibold text-sm py-3.5 rounded-xl transition-colors">Proceed to Pay</button>
+            </div>
+            <div class="bg-surface rounded-2xl border border-border p-5">
+              <h3 class="text-sm font-semibold mb-3">Payment Method</h3>
+              <div class="grid grid-cols-2 gap-3" id="paymentModes"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+// ==================== DATA ====================
+const OFFER_TYPES = [
+  { id:'percentage', label:'Percentage Off', desc:'Discount based on % of cart or item value', icon:'fa-percent', color:'#F59E0B', rgb:'245,158,11' },
+  { id:'flat', label:'Flat Amount Off', desc:'Fixed rupee discount on the order', icon:'fa-indian-rupee-sign', color:'#34D399', rgb:'52,211,153' },
+  { id:'bogo', label:'Buy X Get Y', desc:'Free items when buying a certain quantity', icon:'fa-gift', color:'#FB7185', rgb:'251,113,133' },
+  { id:'free_shipping', label:'Free Shipping', desc:'Waive delivery charges for the order', icon:'fa-truck-fast', color:'#60A5FA', rgb:'96,165,250' },
+  { id:'bundle', label:'Bundle Price', desc:'Special price when items are bought together', icon:'fa-box', color:'#A78BFA', rgb:'167,139,250' },
+  { id:'tiered', label:'Tiered Discount', desc:'Different discounts at different cart values', icon:'fa-stairs', color:'#22D3EE', rgb:'34,211,238' },
+];
+
+const CATEGORIES = ['All','Clothing','Electronics','Footwear','Accessories','Home & Living','Beauty'];
+const SEGMENTS = ['All Customers','New','Returning','VIP'];
+const PAYMENT_METHODS = ['All','UPI','Cards','Net Banking','Wallets','COD'];
+const PAYMENT_MODES = [
+  { id:'upi', label:'UPI', icon:'fa-mobile-screen', sub:'GPay, PhonePe, Paytm' },
+  { id:'card', label:'Card', icon:'fa-credit-card', sub:'Visa, Mastercard, RuPay' },
+  { id:'netbanking', label:'Net Banking', icon:'fa-building-columns', sub:'All major banks' },
+  { id:'wallet', label:'Wallets', icon:'fa-wallet', sub:'Amazon Pay, MobiKwik' },
+  { id:'cod', label:'Cash on Delivery', icon:'fa-money-bill', sub:'Pay at doorstep' },
+];
+
+let offers = [
+  { id:1, name:'Summer Splash', type:'percentage', value:20, code:'SUMMER20', status:'active', minCart:500, maxDiscount:1000, usageCount:1247, usageLimit:5000, savingsGiven:84500, startDate:'2025-06-01', endDate:'2025-07-31', autoApply:true, stackable:false, segments:['All Customers'], categories:['Clothing','Accessories'], paymentMethods:['All'] },
+  { id:2, name:'Free Shipping Weekend', type:'free_shipping', value:0, code:null, status:'active', minCart:0, maxDiscount:0, usageCount:3891, usageLimit:null, savingsGiven:194550, startDate:'2025-06-20', endDate:'2025-06-22', autoApply:true, stackable:true, segments:['All Customers'], categories:['All'], paymentMethods:['All'] },
+  { id:3, name:'Buy 2 Get 1 Free', type:'bogo', value:0, code:'B2G1', status:'active', minCart:0, maxDiscount:0, buyQty:2, getQty:1, usageCount:456, usageLimit:2000, savingsGiven:68400, startDate:'2025-06-15', endDate:'2025-07-15', autoApply:false, stackable:false, segments:['All Customers'], categories:['Clothing','Footwear'], paymentMethods:['All'] },
+  { id:4, name:'First Order Flat 200', type:'flat', value:200, code:'WELCOME200', status:'active', minCart:999, maxDiscount:200, usageCount:2891, usageLimit:null, savingsGiven:578200, startDate:'2025-01-01', endDate:'2025-12-31', autoApply:false, stackable:true, segments:['New'], categories:['All'], paymentMethods:['All'] },
+  { id:5, name:'Flash Friday 30% Off', type:'percentage', value:30, code:'FLASH30', status:'scheduled', minCart:1000, maxDiscount:2000, usageCount:0, usageLimit:500, savingsGiven:0, startDate:'2025-06-28', endDate:'2025-06-28', autoApply:false, stackable:false, segments:['All Customers'], categories:['Electronics'], paymentMethods:['All'] },
+];
+
+const cartItems = [
+  { id:1, name:'Premium Cotton T-Shirt', price:1299, qty:2, category:'Clothing', image:'https://picsum.photos/seed/tshirt22/80/80.jpg' },
+  { id:2, name:'Leather Belt — Classic', price:799, qty:1, category:'Accessories', image:'https://picsum.photos/seed/belt44/80/80.jpg' },
+  { id:3, name:'Running Shoes Pro', price:3499, qty:1, category:'Footwear', image:'https://picsum.photos/seed/shoes77/80/80.jpg' },
+];
+
+// ==================== STATE ====================
+let selectedType = null;
+let selectedCategories = ['All'];
+let selectedSegments = ['All Customers'];
+let selectedPaymentMethods = ['All'];
+let previewSegment = 'All Customers';
+let enabledOffers = new Set([1, 4]);
+let appliedCoupon = null;
+let selectedPayment = 'upi';
+let bestAlgorithm = 'max_savings';
+let nextId = 6;
+
+// ==================== NAVIGATION ====================
+const pageTitles = { dashboard:['Dashboard','Overview of your offer performance'], create:['Create Offer','Design a new promotional offer'], rules:['Offer Rules','Configure stacking, priority & conflict resolution'], preview:['Checkout Preview','Simulate the customer checkout experience'] };
+
+function navigateTo(page) {
+  document.querySelectorAll('.page').forEach(p => { p.classList.add('hidden'); p.classList.remove('active'); });
+  const el = document.getElementById('page-'+page);
+  if (el) { el.classList.remove('hidden'); el.classList.add('active'); }
+  document.querySelectorAll('#sideNav .nav-item').forEach(n => n.classList.toggle('active', n.dataset.nav===page));
+  const [t,s] = pageTitles[page]||['',''];
+  document.getElementById('pageTitle').textContent = t;
+  document.getElementById('pageSubtitle').textContent = s;
+  if (page==='dashboard') renderDashboard();
+  if (page==='rules') renderRules();
+  if (page==='preview') renderPreview();
+}
+
+// ==================== TOAST ====================
+function showToast(msg, type='success') {
+  const c = document.getElementById('toastContainer');
+  const colors = { success:'bg-success-muted text-success border border-success/20', error:'bg-danger-muted text-danger border border-danger/20', info:'bg-info-muted text-info border border-info/20' };
+  const icons = { success:'fa-circle-check', error:'fa-circle-xmark', info:'fa-circle-info' };
+  const t = document.createElement('div');
+  t.className = `toast ${colors[type]||colors.info}`;
+  t.innerHTML = `<i class="fa-solid ${icons[type]||icons.info}"></i>${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const metrics = [
+    { label:'Active Offers', value: offers.filter(o=>o.status==='active').length, change:'+12%', up:true, icon:'fa-tag', cls:'amber', color:'accent' },
+    { label:'Total Savings Given', value:'₹'+formatNum(offers.reduce((s,o)=>s+o.savingsGiven,0)), change:'+34%', up:true, icon:'fa-money-bill-trend-up', cls:'green', color:'success' },
+    { label:'Avg. Conversion Lift', value:'23%', change:'+5.2%', up:true, icon:'fa-arrow-trend-up', cls:'blue', color:'info' },
+    { label:'Revenue Impact', value:'₹18.7L', change:'+18%', up:true, icon:'fa-chart-line', cls:'rose', color:'danger' },
+  ];
+  document.getElementById('metricsRow').innerHTML = metrics.map(m => `
+    <div class="metric-card ${m.cls} bg-surface rounded-2xl border border-border p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="w-10 h-10 rounded-xl bg-${m.color}-muted flex items-center justify-center"><i class="fa-solid ${m.icon} text-${m.color} text-sm"></i></div>
+        <div class="flex items-center gap-1.5 text-xs font-medium ${m.up?'text-success':'text-danger'}"><i class="fa-solid fa-arrow-${m.up?'up':'down'} text-[10px]"></i>${m.change}</div>
+      </div>
+      <div class="text-2xl font-bold">${m.value}</div>
+      <div class="text-sm text-fg-muted mt-1">${m.label}</div>
+    </div>`).join('');
+
+  document.getElementById('dashboardOffers').innerHTML = offers.slice(0,6).map(o => {
+    const typeInfo = OFFER_TYPES.find(t=>t.id===o.type) || OFFER_TYPES[0];
+    const pct = o.usageLimit ? Math.min(100, (o.usageCount/o.usageLimit*100)) : 0;
+    const isActive = o.status === 'active';
+    return `
+    <div class="bg-surface rounded-2xl border border-border p-5 hover:border-border-light transition-colors">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:${typeInfo.color}18"><i class="fa-solid ${typeInfo.icon} text-sm" style="color:${typeInfo.color}"></i></div>
+          <div><h3 class="font-semibold text-sm">${o.name}</h3><span class="text-xs text-fg-muted">${o.code||'Auto-applied'}</span></div>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="pulse-dot ${isActive?'bg-success':'bg-fg-muted'}"></div>
+          <span class="text-xs ${isActive?'text-success':'text-fg-muted'} font-medium">${o.status==='scheduled'?'Scheduled':'Active'}</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 text-xs text-fg-muted mb-3">
+        <span><i class="fa-regular fa-calendar mr-1.5"></i>${formatDate(o.startDate)} — ${formatDate(o.endDate)}</span>
+        <span>${o.type==='percentage'?o.value+'% off':o.type==='flat'?'₹'+o.value+' off':o.type==='bogo'?'Buy '+o.buyQty+' Get '+o.getQty:o.type==='free_shipping'?'No shipping fee':o.type==='bundle'?'Bundle deal':'Tiered'}</span>
+      </div>
+      ${o.usageLimit ? `<div class="mb-2"><div class="flex justify-between text-xs mb-1.5"><span class="text-fg-soft">Usage</span><span class="text-fg-soft">${formatNum(o.usageCount)} / ${formatNum(o.usageLimit)}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${typeInfo.color}"></div></div></div>` : `<div class="text-xs text-fg-muted mb-2">${formatNum(o.usageCount)} times used (unlimited)</div>`}
+      <div class="flex items-center justify-between pt-3 border-t border-border">
+        <span class="text-xs text-fg-muted">Saved ₹${formatNum(o.savingsGiven)}</span>
+        <div class="flex items-center gap-3">
+          <button class="text-fg-muted hover:text-fg text-xs" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+          <button class="text-fg-muted hover:text-fg text-xs" title="Duplicate" onclick="duplicateOffer(${o.id})"><i class="fa-solid fa-copy"></i></button>
+          <div class="toggle ${isActive?'active':''}" onclick="toggleOfferStatus(${o.id},this)"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleOfferStatus(id, el) {
+  const o = offers.find(x=>x.id===id);
+  if (!o) return;
+  o.status = o.status==='active' ? 'paused' : 'active';
+  el.classList.toggle('active');
+  showToast(o.status==='active' ? `"${o.name}" activated` : `"${o.name}" paused`, o.status==='active'?'success':'info');
+  setTimeout(renderDashboard, 400);
+}
+
+function duplicateOffer(id) {
+  const o = offers.find(x=>x.id===id);
+  if (!o) return;
+  const dup = {...o, id:nextId++, name:o.name+' (Copy)', code:o.code?o.code+'COPY':null, usageCount:0, savingsGiven:0, status:'draft'};
+  offers.push(dup);
+  showToast(`Duplicated "${o.name}"`, 'success');
+  renderDashboard();
+}
+
+// ==================== CREATE OFFER ====================
+function initCreatePage() {
+  // Type grid
+  document.getElementById('typeGrid').innerHTML = OFFER_TYPES.map(t => `
+    <div class="offer-type-card" style="--tc:${t.color};--tr:${t.rgb}" data-type="${t.id}" onclick="selectType('${t.id}')">
+      <div class="type-icon w-12 h-12 rounded-xl bg-surface-3 flex items-center justify-center mb-3 transition-colors"><i class="fa-solid ${t.icon} text-fg-soft text-lg transition-colors"></i></div>
+      <h3 class="font-semibold text-sm">${t.label}</h3>
+      <p class="text-xs text-fg-muted mt-1 leading-relaxed">${t.desc}</p>
+    </div>`).join('');
+
+  // Chips
+  document.getElementById('categoryChips').innerHTML = CATEGORIES.map(c => `<div class="chip ${c==='All'?'active':''}" onclick="toggleChip(this,'category','${c}')">${c}</div>`).join('');
+  document.getElementById('segmentChips').innerHTML = SEGMENTS.map(s => `<div class="chip ${s==='All Customers'?'active':''}" onclick="toggleChip(this,'segment','${s}')">${s}</div>`).join('');
+  document.getElementById('paymentChips').innerHTML = PAYMENT_METHODS.map(p => `<div class="chip ${p==='All'?'active':''}" onclick="toggleChip(this,'payment','${p}')">${p}</div>`).join('');
+}
+
+function selectType(type) {
+  selectedType = type;
+  document.querySelectorAll('.offer-type-card').forEach(c => c.classList.toggle('selected', c.dataset.type===type));
+  document.getElementById('createConfigSections').classList.remove('hidden');
+  renderDiscountFields();
+  updatePreview();
+  // Scroll to config
+  document.getElementById('createConfigSections').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function renderDiscountFields() {
+  const el = document.getElementById('discountFields');
+  if (!selectedType) { el.innerHTML=''; return; }
+  let html = '';
+  switch(selectedType) {
+    case 'percentage':
+      html = `
+        <div class="mb-5">
+          <div class="flex justify-between mb-2"><label class="text-xs text-fg-soft font-medium">Discount Percentage</label><span id="percentVal" class="text-sm font-bold text-accent">10%</span></div>
+          <input type="range" id="discountPercent" min="1" max="80" value="10" oninput="document.getElementById('percentVal').textContent=this.value+'%';updatePreview()">
+          <div class="flex justify-between text-[10px] text-fg-muted mt-1"><span>1%</span><span>80%</span></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="text-xs text-fg-soft font-medium mb-1.5 block">Max Discount Cap (₹)</label><input type="number" id="maxDiscount" class="form-input" placeholder="e.g. 1000" value="1000" oninput="updatePreview()"></div>
+          <div><label class="text-xs text-fg-soft font-medium mb-1.5 block">Min Cart Value (₹)</label><input type="number" id="minCart" class="form-input" placeholder="e.g. 500" value="0" oninput="updatePreview()"></div>
+        </div>`;
+      break;
+    case 'flat':
+      html = `
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="text-xs text-fg-soft font-medium mb-1.5 block">Discount Amount (₹)</label><input type="number" id="flatAmount" class="form-input" placeholder="e.g. 200" value="200" oninput="updatePreview()"></div>
+          <div><label class="text-xs text-fg-soft font-medium mb-1.5 block">Min Cart Value (₹)</label><input type="number" id="minCart" class="form-input" placeholder="e.g. 999" value="999" oninput="updatePreview()"></div>
+        </div>`;
+      break;
+    case 'bogo':
+      html = `
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="text-xs text-fg-soft font-medium mb-1.5 block">Buy Quantity</label><input type="number" id="buyQty" class="form-input" value="2" min="1" oninput="updatePreview()"></div>
+          <div><label class="text-xs text-fg-soft font-medium mb-1.5 block">Get Quantity (Free)</label><input type="number" id="getQty" class="form-input" value="1" min="1" oninput="updatePreview()"></div>
+        </div>
+        <div class="mt-4"><label class="text-xs text-fg-soft font-medium mb-1.5 block">Free Item Is</label>
+          <select class="form-input" id="bogoType"><option value="same">Same item (lowest priced free)</option><option value="any">Any item from applicable categories</option></select>
+        </div>`;
+      break;
+    case 'free_shipping':
+      html = `<div class="text-sm text-fg-soft py-2"><i class="fa-solid fa-circle-info text-info mr-2"></i>Shipping charges will be waived for qualifying orders. No additional discount configuration needed.</div>`;
+      break;
+    case 'bundle':
+      html = `
+        <div class="mb-4"><label class="text-xs text-fg-soft font-medium mb-1.5 block">Bundle Items (comma-separated prices)</label><input type="text" id="bundleItems" class="form-input" placeholder="e.g. 1299, 799, 499" oninput="updatePreview()"></div>
+        <div><label class="text-xs text-fg-soft font-medium mb-1.5 block">Bundle Price (₹)</label><input type="number" id="bundlePrice" class="form-input" placeholder="e.g. 1999" oninput="updatePreview()"></div>`;
+      break;
+    case 'tiered':
+      html = `
+        <div class="space-y-3" id="tierRows">
+          <div class="flex items-center gap-3"><span class="text-xs text-fg-muted w-20">Spend ₹500+</span><input type="number" class="form-input w-24" value="5" placeholder="%" oninput="updatePreview()"><span class="text-xs text-fg-soft">% off</span></div>
+          <div class="flex items-center gap-3"><span class="text-xs text-fg-muted w-20">Spend ₹1000+</span><input type="number" class="form-input w-24" value="10" placeholder="%" oninput="updatePreview()"><span class="text-xs text-fg-soft">% off</span></div>
+          <div class="flex items-center gap-3"><span class="text-xs text-fg-muted w-20">Spend ₹2000+</span><input type="number" class="form-input w-24" value="15" placeholder="%" oninput="updatePreview()"><span class="text-xs text-fg-soft">% off</span></div>
+        </div>`;
+      break;
+  }
+  el.innerHTML = html;
+}
+
+function toggleChip(el, group, value) {
+  const arr = group==='category'?selectedCategories:group==='segment'?selectedSegments:selectedPaymentMethods;
+  if (value==='All'||value==='All Customers') {
+    // "All" toggles: if clicking All, deselect others; if clicking others, deselect All
+    if (el.classList.contains('active')) {
+      el.classList.remove('active');
+      arr.splice(0, arr.length);
+    } else {
+      el.classList.add('active');
+      arr.splice(0, arr.length, value);
+      // deactivate siblings
+      el.parentElement.querySelectorAll('.chip').forEach(c => { if (c !== el) c.classList.remove('active'); });
+    }
+  } else {
+    // Deactivate "All"
+    const allChip = el.parentElement.querySelector('.chip');
+    if (allChip) allChip.classList.remove('active');
+    const idx = arr.indexOf(value);
+    if (idx > -1) { arr.splice(idx, 1); el.classList.remove('active'); }
+    else { arr.push(value); el.classList.add('active'); }
+    if (arr.length === 0) { allChip.classList.add('active'); arr.push(value==='All Customers'?'All Customers':'All'); }
+  }
+  updatePreview();
+}
+
+function generateCode() {
+  const prefixes = ['SAVE','DEAL','OFFER','GRAB','MEGA','BEST','YOHO','FLAT'];
+  const prefix = prefixes[Math.floor(Math.random()*prefixes.length)];
+  let suffix = '';
+  if (selectedType==='percentage') { const v = document.getElementById('discountPercent'); suffix = v?v.value:'10'; }
+  else if (selectedType==='flat') { const v = document.getElementById('flatAmount'); suffix = v?v.value:'50'; }
+  else suffix = Math.floor(Math.random()*50+10);
+  document.getElementById('offerCode').value = prefix + suffix;
+  updatePreview();
+}
+
+function updatePreview() {
+  const subtotal = 3397;
+  let discount = 0, label = '', isFreeShip = false;
+  if (selectedType === 'percentage') {
+    const pct = parseInt(document.getElementById('discountPercent')?.value||10);
+    const cap = parseInt(document.getElementById('maxDiscount')?.value||0);
+    const minC = parseInt(document.getElementById('minCart')?.value||0);
+    if (subtotal >= minC) {
+      discount = Math.min(subtotal * pct / 100, cap || Infinity);
+      label = pct + '% OFF';
+    }
+  } else if (selectedType === 'flat') {
+    const amt = parseInt(document.getElementById('flatAmount')?.value||0);
+    const minC = parseInt(document.getElementById('minCart')?.value||0);
+    if (subtotal >= minC) { discount = amt; label = 'Flat ₹' + amt + ' OFF'; }
+  } else if (selectedType === 'free_shipping') {
+    isFreeShip = true;
+  } else if (selectedType === 'bogo') {
+    // Simplified: assume cheapest item free
+    discount = 799; label = 'Buy 2 Get 1 Free';
+  } else if (selectedType === 'bundle') {
+    const items = document.getElementById('bundleItems')?.value;
+    const bp = parseInt(document.getElementById('bundlePrice')?.value||0);
+    if (items && bp) {
+      const original = items.split(',').reduce((s,v)=>s+parseInt(v.trim()||0),0);
+      discount = Math.max(0, original - bp);
+      label = 'Bundle Price';
+    }
+  } else if (selectedType === 'tiered') {
+    const rows = document.querySelectorAll('#tierRows .flex');
+    let bestPct = 0;
+    rows.forEach(r => { const match = r.querySelector('span').textContent.match(/₹(\d+)/); if (match && subtotal >= parseInt(match[1])) { const v = parseInt(r.querySelector('input').value||0); if (v > bestPct) bestPct = v; }});
+    if (bestPct > 0) { discount = subtotal * bestPct / 100; label = bestPct + '% OFF (Tiered)'; }
+  }
+
+  const code = document.getElementById('offerCode')?.value?.toUpperCase();
+  const name = document.getElementById('offerName')?.value;
+  const autoApply = document.getElementById('toggleAutoApply')?.classList.contains('active');
+  const total = Math.max(0, subtotal - discount) + (isFreeShip ? 0 : 99);
+
+  // Update preview card
+  const dl = document.getElementById('previewDiscountLine');
+  const fsl = document.getElementById('previewFreeShipLine');
+  if (discount > 0) { dl.classList.remove('hidden'); document.getElementById('previewDiscountLabel').textContent = label + (code && !autoApply ? ' ('+code+')' : autoApply ? ' (Auto-applied)' : ''); document.getElementById('previewDiscountValue').textContent = '-₹'+Math.round(discount); }
+  else dl.classList.add('hidden');
+  if (isFreeShip) fsl.classList.remove('hidden'); else fsl.classList.add('hidden');
+  document.getElementById('previewTotal').textContent = '₹'+Math.round(total);
+  const badge = document.getElementById('previewSavingsBadge');
+  const totalSavings = discount + (isFreeShip ? 99 : 0);
+  if (totalSavings > 0) { badge.classList.remove('hidden'); document.getElementById('previewSavingsText').textContent = 'You save ₹'+Math.round(totalSavings)+' on this order!'; }
+  else badge.classList.add('hidden');
+
+  // Summary text
+  const st = document.getElementById('previewSummaryText');
+  if (!selectedType) { st.textContent = 'Select an offer type and configure it to see a live preview of how it will appear to customers at checkout.'; return; }
+  const ti = OFFER_TYPES.find(t=>t.id===selectedType);
+  let parts = [ti.label];
+  if (name) parts.unshift('"'+name+'"');
+  if (discount > 0) parts.push('saves ₹'+Math.round(discount));
+  if (isFreeShip) parts.push('free shipping');
+  if (selectedCategories.length && !selectedCategories.includes('All')) parts.push('on '+selectedCategories.join(', '));
+  if (selectedSegments.length && !selectedSegments.includes('All Customers')) parts.push('for '+selectedSegments.join(', '));
+  st.textContent = parts.join(' · ') + '.';
+}
+
+function createOffer() {
+  const name = document.getElementById('offerName')?.value?.trim();
+  if (!selectedType) return showToast('Please select an offer type', 'error');
+  if (!name) return showToast('Please enter an offer name', 'error');
+  const start = document.getElementById('offerStart')?.value;
+  const end = document.getElementById('offerEnd')?.value;
+  if (!start || !end) return showToast('Please set valid start and end dates', 'error');
+
+  const newOffer = {
+    id: nextId++, name, type: selectedType,
+    value: selectedType==='percentage' ? parseInt(document.getElementById('discountPercent')?.value||10) : selectedType==='flat' ? parseInt(document.getElementById('flatAmount')?.value||0) : 0,
+    code: document.getElementById('offerCode')?.value?.toUpperCase() || null,
+    status: 'active',
+    minCart: parseInt(document.getElementById('minCart')?.value||0),
+    maxDiscount: parseInt(document.getElementById('maxDiscount')?.value||0),
+    usageCount: 0, usageLimit: parseInt(document.getElementById('maxUses')?.value) || null,
+    savingsGiven: 0, startDate: start, endDate: end,
+    autoApply: document.getElementById('toggleAutoApply').classList.contains('active'),
+    stackable: document.getElementById('toggleStackable').classList.contains('active'),
+    segments: [...selectedSegments], categories: [...selectedCategories], paymentMethods: [...selectedPaymentMethods],
+  };
+  if (selectedType==='bogo') { newOffer.buyQty = parseInt(document.getElementById('buyQty')?.value||2); newOffer.getQty = parseInt(document.getElementById('getQty')?.value||1); }
+  offers.push(newOffer);
+  showToast(`Offer "${name}" created successfully!`, 'success');
+  resetCreateForm();
+}
+
+function resetCreateForm() {
+  selectedType = null;
+  document.querySelectorAll('.offer-type-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('createConfigSections').classList.add('hidden');
+  ['offerName','offerCode','offerStart','offerEnd','maxUses','maxUsesPerUser'].forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
+  document.getElementById('toggleAutoApply')?.classList.remove('active');
+  document.getElementById('toggleStackable')?.classList.remove('active');
+  selectedCategories = ['All']; selectedSegments = ['All Customers']; selectedPaymentMethods = ['All'];
+  document.querySelectorAll('#categoryChips .chip').forEach((c,i)=>c.classList.toggle('active',i===0));
+  document.querySelectorAll('#segmentChips .chip').forEach((c,i)=>c.classList.toggle('active',i===0));
+  document.querySelectorAll('#paymentChips .chip').forEach((c,i)=>c.classList.toggle('active',i===0));
+  updatePreview();
+}
+
+// ==================== OFFER RULES ====================
+function renderRules() {
+  // Priority list
+  const sorted = [...offers].sort((a,b) => {
+    const pa = a.stackable ? 100 : offers.indexOf(a);
+    const pb = b.stackable ? 100 : offers.indexOf(b);
+    return pa - pb;
+  });
+  document.getElementById('priorityList').innerHTML = sorted.map((o,i) => {
+    const ti = OFFER_TYPES.find(t=>t.id===o.type)||OFFER_TYPES[0];
+    return `
+    <div class="priority-card">
+      <div class="w-8 h-8 rounded-lg bg-surface-3 flex items-center justify-center text-xs font-bold text-fg-muted">${i+1}</div>
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:${ti.color}18"><i class="fa-solid ${ti.icon} text-xs" style="color:${ti.color}"></i></div>
+      <div class="flex-1 min-w-0"><div class="text-sm font-medium truncate">${o.name}</div><div class="text-xs text-fg-muted">${o.stackable?'Stackable':'Exclusive'}</div></div>
+      <div class="flex flex-col gap-1">
+        <button onclick="movePriority(${o.id},-1)" class="w-7 h-7 rounded-md bg-surface-3 flex items-center justify-center text-fg-muted hover:text-fg transition-colors text-xs"><i class="fa-solid fa-chevron-up"></i></button>
+        <button onclick="movePriority(${o.id},1)" class="w-7 h-7 rounded-md bg-surface-3 flex items-center justify-center text-fg-muted hover:text-fg transition-colors text-xs"><i class="fa-solid fa-chevron-down"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Stacking matrix
+  const active = offers.filter(o=>o.status==='active'||o.status==='scheduled');
+  let matrixHTML = '<table class="text-xs"><tr><th class="p-2"></th>' + active.map(o => `<th class="p-2 text-fg-soft font-medium text-left max-w-[80px] truncate" title="${o.name}">${o.name.split(' ').slice(0,2).join(' ')}</th>`).join('') + '</tr>';
+  active.forEach(a => {
+    matrixHTML += `<tr><td class="p-2 text-fg-soft font-medium text-right max-w-[80px] truncate" title="${a.name}">${a.name.split(' ').slice(0,2).join(' ')}</td>`;
+    active.forEach(b => {
+      const cls = a.id===b.id ? 'self' : (!a.stackable||!b.stackable) ? 'conflicting' : 'compatible';
+      const icon = cls==='self'?'—':cls==='compatible'?'<i class="fa-solid fa-check"></i>':'<i class="fa-solid fa-xmark"></i>';
+      matrixHTML += `<td class="p-1"><div class="matrix-cell ${cls}">${icon}</div></td>`;
+    });
+    matrixHTML += '</tr>';
+  });
+  matrixHTML += '</table>';
+  document.getElementById('stackingMatrix').innerHTML = matrixHTML;
+
+  // Algorithm cards
+  const algos = [
+    { id:'max_savings', title:'Maximum Savings', desc:'Always selects the offer combination that saves the customer the most money', icon:'fa-trophy' },
+    { id:'priority', title:'Merchant Priority', desc:'Follows the priority order you set. Higher priority offers are applied first', icon:'fa-list-ol' },
+    { id:'first_match', title:'First Match', desc:'Applies the first qualifying offer found. Fastest resolution, simplest logic', icon:'fa-bolt' },
+  ];
+  document.getElementById('algoCards').innerHTML = algos.map(a => `
+    <div class="algo-card ${bestAlgorithm===a.id?'selected':''}" onclick="selectAlgo('${a.id}')">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-9 h-9 rounded-lg ${bestAlgorithm===a.id?'bg-accent-muted':'bg-surface-3'} flex items-center justify-center"><i class="fa-solid ${a.icon} text-sm ${bestAlgorithm===a.id?'text-accent':'text-fg-muted'}"></i></div>
+        <span class="font-semibold text-sm">${a.title}</span>
+        ${bestAlgorithm===a.id?'<i class="fa-solid fa-circle-check text-accent text-sm ml-auto"></i>':''}
+      </div>
+      <p class="text-xs text-fg-muted leading-relaxed pl-12">${a.desc}</p>
+    </div>`).join('');
+}
+
+function movePriority(id, dir) {
+  const idx = offers.findIndex(o=>o.id===id);
+  if (idx<0) return;
+  const newIdx = idx+dir;
+  if (newIdx<0||newIdx>=offers.length) return;
+  [offers[idx], offers[newIdx]] = [offers[newIdx], offers[idx]];
+  renderRules();
+}
+
+function selectAlgo(id) {
+  bestAlgorithm = id;
+  renderRules();
+  showToast('Algorithm updated to ' + id.replace('_',' '), 'info');
+}
+
+// ==================== CHECKOUT PREVIEW ====================
+function renderPreview() {
+  // Segment selector
+  document.getElementById('segmentSelector').innerHTML = SEGMENTS.map(s => `<div class="chip ${previewSegment===s?'active':''}" onclick="previewSegment='${s}';renderPreview()">${s}</div>`).join('');
+
+  // Cart items
+  document.getElementById('previewCartItems').innerHTML = cartItems.map(item => `
+    <div class="flex items-center gap-4">
+      <img src="${item.image}" alt="${item.name}" class="w-16 h-16 rounded-xl object-cover bg-surface-2">
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-medium truncate">${item.name}</div>
+        <div class="text-xs text-fg-muted mt-0.5">${item.category} · ₹${formatNum(item.price)} each</div>
+        <div class="flex items-center gap-3 mt-2">
+          <button onclick="changeQty(${item.id},-1)" class="w-7 h-7 rounded-lg bg-surface-2 border border-border flex items-center justify-center text-fg-soft hover:text-fg transition-colors text-xs"><i class="fa-solid fa-minus"></i></button>
+          <span class="text-sm font-medium w-6 text-center">${item.qty}</span>
+          <button onclick="changeQty(${item.id},1)" class="w-7 h-7 rounded-lg bg-surface-2 border border-border flex items-center justify-center text-fg-soft hover:text-fg transition-colors text-xs"><i class="fa-solid fa-plus"></i></button>
+        </div>
+      </div>
+      <div class="text-sm font-semibold">₹${formatNum(item.price*item.qty)}</div>
+    </div>`).join('');
+
+  const subtotal = cartItems.reduce((s,i)=>s+i.price*i.qty, 0);
+  document.getElementById('cartSubtotal').textContent = '₹'+formatNum(subtotal);
+
+  // Available offers
+  const applicable = offers.filter(o => {
+    if (o.status !== 'active') return false;
+    if (o.segments.length && !o.segments.includes('All Customers') && !o.segments.includes(previewSegment)) return false;
+    if (o.minCart && subtotal < o.minCart) return false;
+    if (o.categories.length && !o.categories.includes('All')) {
+      const cartCats = [...new Set(cartItems.map(i=>i.category))];
+      if (!o.categories.some(c => cartCats.includes(c))) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('previewOfferList').innerHTML = applicable.length ? applicable.map(o => {
+    const ti = OFFER_TYPES.find(t=>t.id===o.type)||OFFER_TYPES[0];
+    const enabled = enabledOffers.has(o.id) || (appliedCoupon && appliedCoupon.id === o.id);
+    const disc = calcOfferDiscount(o, subtotal);
+    return `
+    <div class="checkout-offer ${enabled?'enabled':''}" onclick="toggleCheckoutOffer(${o.id})">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background:${ti.color}18"><i class="fa-solid ${ti.icon} text-xs" style="color:${ti.color}"></i></div>
+          <div>
+            <div class="text-sm font-medium">${o.name}</div>
+            <div class="text-xs text-fg-muted">${o.code?'Code: '+o.code:'Auto-applied'}${o.minCart?' · Min ₹'+formatNum(o.minCart):''}</div>
+          </div>
+        </div>
+        <div class="text-right">
+          ${disc > 0 ? `<div class="text-sm font-semibold text-success">-₹${formatNum(Math.round(disc))}</div>` : o.type==='free_shipping' ? `<div class="text-sm font-semibold text-success">Free Ship</div>` : `<div class="text-xs text-fg-muted">N/A</div>`}
+          <div class="mt-1"><div class="toggle ${enabled?'active':''}" style="width:36px;height:20px" onclick="event.stopPropagation();toggleCheckoutOffer(${o.id})"></div></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('') : '<div class="text-sm text-fg-muted text-center py-6"><i class="fa-solid fa-tag mr-2"></i>No offers available for this cart</div>';
+
+  // Calculate totals
+  calculateOrderTotal(subtotal);
+
+  // Payment modes
+  document.getElementById('paymentModes').innerHTML = PAYMENT_MODES.map(p => `
+    <div class="payment-card ${selectedPayment===p.id?'selected':''}" onclick="selectedPayment='${p.id}';renderPreview()">
+      <i class="fa-solid ${p.icon} text-lg ${selectedPayment===p.id?'text-accent':'text-fg-muted'} mb-1.5"></i>
+      <div class="text-xs font-medium">${p.label}</div>
+      <div class="text-[10px] text-fg-muted mt-0.5">${p.sub}</div>
+    </div>`).join('');
+}
+
+function changeQty(id, delta) {
+  const item = cartItems.find(i=>i.id===id);
+  if (!item) return;
+  item.qty = Math.max(1, Math.min(10, item.qty + delta));
+  renderPreview();
+}
+
+function toggleCheckoutOffer(id) {
+  if (enabledOffers.has(id)) enabledOffers.delete(id);
+  else {
+    // Check stackability
+    const o = offers.find(x=>x.id===id);
+    if (o && !o.stackable) {
+      // Remove other non-stackable offers
+      offers.filter(x => !x.stackable && x.id !== id && enabledOffers.has(x.id)).forEach(x => enabledOffers.delete(x.id));
+    }
+    enabledOffers.add(id);
+  }
+  renderPreview();
+}
+
+function applyCouponCode() {
+  const code = document.getElementById('couponInput').value.trim().toUpperCase();
+  const msg = document.getElementById('couponMsg');
+  if (!code) { msg.textContent='Please enter a coupon code'; msg.className='text-xs mt-2 text-danger'; msg.classList.remove('hidden'); return; }
+  const o = offers.find(x => x.code === code && x.status === 'active');
+  if (!o) { msg.textContent='Invalid coupon code. Please try again.'; msg.className='text-xs mt-2 text-danger'; msg.classList.remove('hidden'); appliedCoupon=null; renderPreview(); return; }
+  appliedCoupon = o;
+  enabledOffers.add(o.id);
+  msg.innerHTML='<i class="fa-solid fa-circle-check mr-1"></i>Coupon applied successfully!'; msg.className='text-xs mt-2 text-success'; msg.classList.remove('hidden');
+  document.getElementById('couponInput').value = '';
+  showToast(`Coupon "${code}" applied!`, 'success');
+  renderPreview();
+}
+
+function calcOfferDiscount(o, subtotal) {
+  if (o.type === 'percentage') {
+    const disc = subtotal * o.value / 100;
+    return o.maxDiscount ? Math.min(disc, o.maxDiscount) : disc;
+  }
+  if (o.type === 'flat') return Math.min(o.value, subtotal);
+  if (o.type === 'bogo') {
+    // Simplified: cheapest item is free
+    const prices = cartItems.flatMap(i => Array(i.qty).fill(i.price)).sort((a,b)=>a-b);
+    let free = 0;
+    const sets = Math.floor(prices.length / (o.buyQty + o.getQty));
+    for (let i = 0; i < sets; i++) free += prices[i]; // cheapest in each set
+    return free;
+  }
+  return 0;
+}
+
+function calculateOrderTotal(subtotal) {
+  const shipping = 99;
+  let totalDiscount = 0;
+  let freeShipping = false;
+  let discountLines = [];
+
+  enabledOffers.forEach(id => {
+    const o = offers.find(x=>x.id===id);
+    if (!o) return;
+    if (o.type === 'free_shipping') { freeShipping = true; return; }
+    const disc = calcOfferDiscount(o, subtotal);
+    if (disc > 0) {
+      totalDiscount += disc;
+      const ti = OFFER_TYPES.find(t=>t.id===o.type)||OFFER_TYPES[0];
+      let label = o.name;
+      if (o.type==='percentage') label = o.value+'% OFF';
+      else if (o.type==='flat') label = 'Flat ₹'+o.value+' OFF';
+      else if (o.type==='bogo') label = 'Buy '+o.buyQty+' Get '+o.getQty;
+      if (o.code) label += ' ('+o.code+')';
+      discountLines.push({ label, amount: Math.round(disc) });
+    }
+  });
+
+  const finalShipping = freeShipping ? 0 : shipping;
+  const total = Math.max(0, subtotal - totalDiscount + finalShipping);
+  const totalSavings = totalDiscount + (freeShipping ? shipping : 0);
+
+  // Summary lines
+  let linesHTML = `<div class="flex justify-between text-fg-soft"><span>Subtotal</span><span>₹${formatNum(subtotal)}</span></div>`;
+  discountLines.forEach(d => { linesHTML += `<div class="flex justify-between text-success font-medium"><span>${d.label}</span><span>-₹${formatNum(d.amount)}</span></div>`; });
+  if (freeShipping) linesHTML += `<div class="flex justify-between text-success font-medium"><span>Free Shipping</span><span>-₹${shipping}</span></div>`;
+  linesHTML += `<div class="flex justify-between text-fg-soft"><span>Shipping</span><span>${freeShipping?'<span class="line-through text-fg-muted mr-1">₹'+shipping+'</span>Free':'₹'+shipping}</span></div>`;
+  document.getElementById('orderSummaryLines').innerHTML = linesHTML;
+  document.getElementById('orderTotal').textContent = '₹'+formatNum(Math.round(total));
+
+  const badge = document.getElementById('orderSavingsBadge');
+  if (totalSavings > 0) { badge.classList.remove('hidden'); document.getElementById('orderSavingsText').textContent = 'You save ₹'+formatNum(Math.round(totalSavings))+' on this order!'; }
+  else badge.classList.add('hidden');
+}
+
+// ==================== UTILS ====================
+function formatNum(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function formatDate(d) { if (!d) return '—'; const dt = new Date(d); return dt.toLocaleDateString('en-IN', { month:'short', day:'numeric' }); }
+
+// ==================== INIT ====================
+initCreatePage();
+renderDashboard();
+</script>
+</body>
+</html>
