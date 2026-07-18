@@ -398,6 +398,56 @@ src/
 
 ---
 
+## Local Development Setup
+
+### MongoDB via Docker
+- `docker-compose.yml` defines a MongoDB 7 container with auth enabled.
+- Start: `npm run docker:up` (or `docker compose up -d`)
+- Stop: `npm run docker:down` (or `docker compose down`)
+- Connection string: `mongodb://offerforge:offerforge@localhost:27017/offerforge?authSource=admin`
+- Data persists in a named Docker volume (`offerforge-mongo-data`).
+
+### Testing with In-Memory MongoDB
+- `mongodb-memory-server` is installed as a dev dependency.
+- Test helpers in `src/test/setup-db.ts`:
+  - `startTestDatabase()` — spins up an in-memory MongoDB, returns a `Db` instance. Call in `beforeAll()`.
+  - `stopTestDatabase()` — stops the in-memory server. Call in `afterAll()`.
+  - `getTestDatabase()` — returns the current `Db` instance.
+  - `clearTestDatabase()` — clears all collections. Call between tests for isolation.
+- No Docker needed for tests — `mongodb-memory-server` downloads and runs a real MongoDB binary automatically.
+- Example usage in integration tests:
+
+```typescript
+import { startTestDatabase, stopTestDatabase, clearTestDatabase, getTestDatabase } from '@/test/setup-db';
+
+describe('OfferRepository integration', () => {
+  let db: Db;
+
+  beforeAll(async () => {
+    db = await startTestDatabase();
+  });
+
+  afterAll(async () => {
+    await stopTestDatabase();
+  });
+
+  beforeEach(async () => {
+    await clearTestDatabase();
+  });
+
+  it('saves and retrieves an offer', async () => {
+    const repo = new MongoOfferRepository(db);
+    // ... test
+  });
+});
+```
+
+### Environment Variables
+- `.env.example` contains all required env vars. Copy to `.env` for local dev.
+- Never commit `.env` — it's in `.gitignore`.
+
+---
+
 ## Database (MongoDB)
 
 ### Query Patterns
