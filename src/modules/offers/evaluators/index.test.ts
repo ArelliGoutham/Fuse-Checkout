@@ -39,7 +39,7 @@ const mockContext: EvaluationContext = {
 };
 
 const mockEvaluator: OfferEvaluator = {
-  evaluate: (_offer, _context): EvaluationResult => ({
+  evaluate: (): EvaluationResult => ({
     eligible: true,
     matched_rules: [],
     failed_rule: null,
