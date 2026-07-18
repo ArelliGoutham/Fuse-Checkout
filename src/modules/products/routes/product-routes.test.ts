@@ -88,6 +88,7 @@ describe('Product Routes', () => {
   describe('GET /api/products', () => {
     it('lists products with 200 status', async () => {
       const product = createTestProduct();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (testDb.collection('products') as unknown as Collection).insertOne(product as any);
 
       const response = await server.inject({
@@ -106,6 +107,7 @@ describe('Product Routes', () => {
     it('filters products by category', async () => {
       const product1 = createTestProduct({ _id: 'prod-1', sku_id: 'SKU001', category: 'electronics' });
       const product2 = createTestProduct({ _id: 'prod-2', sku_id: 'SKU002', category: 'clothing' });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (testDb.collection('products') as unknown as Collection).insertMany([product1 as any, product2 as any]);
 
       const response = await server.inject({
@@ -124,6 +126,7 @@ describe('Product Routes', () => {
   describe('DELETE /api/products/:sku_id', () => {
     it('deletes a product with 200 status', async () => {
       const product = createTestProduct({ sku_id: 'SKU001' });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (testDb.collection('products') as unknown as Collection).insertOne(product as any);
 
       const response = await server.inject({

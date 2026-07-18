@@ -1,13 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import type { Product } from '../schemas/product';
-import type { Db } from '../../../config/database';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    db?: Db;
-  }
-}
 
 const CreateProductSchema = z.object({
   sku_id: z.string().min(1),

@@ -1,11 +1,4 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type { Db } from '../../config/database';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    db?: Db;
-  }
-}
 
 /**
  * Registers analytics routes for a Fastify instance.

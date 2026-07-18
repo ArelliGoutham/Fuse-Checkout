@@ -103,6 +103,7 @@ describe('Analytics Routes', () => {
       const body = JSON.parse(response.body);
       expect(Array.isArray(body.offers)).toBe(true);
       expect(body.offers.length).toBeGreaterThan(0);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const offer = body.offers.find((o: any) => o.offer_id === 'o1');
       expect(offer).toBeDefined();
       expect(offer).toHaveProperty('redemptions');

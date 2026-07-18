@@ -1,15 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { DiscountSchema } from '../schemas/discount';
-import type { Offer, OfferRepository } from '../types';
+import type { Offer } from '../types';
 import type { Rule } from '../schemas/offer';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    offerRepository?: OfferRepository;
-    db?: unknown;
-  }
-}
 
 const CreateOfferSchema = z.object({
   code: z.string().nullable().optional(),

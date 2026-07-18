@@ -1,12 +1,6 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { getDatabase, type Db } from '../config/database';
 
-declare module 'fastify' {
-  interface FastifyRequest {
-    merchantId?: string;
-  }
-}
-
 /**
  * Creates an authentication middleware that validates API keys.
  * Extracts the API key from x-api-key header and looks it up in the merchants collection.

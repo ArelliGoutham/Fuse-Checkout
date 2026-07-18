@@ -2,17 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { CartSchema } from '../schemas/cart';
 import { CustomerContextSchema } from '../schemas/customer';
-import type { OfferService, Offer } from '../types';
-import type { Db } from '../../../config/database';
-import type { Collection } from 'mongodb';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    offerService?: OfferService;
-    offerRepository?: unknown;
-    db?: Db;
-  }
-}
+import type { Offer } from '../types';
 
 const AvailableRequestSchema = z.object({
   cart: CartSchema,
@@ -66,13 +56,13 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
 
       // Fetch merchant and all offers
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const merchant = await (db.collection('merchants') as unknown as Collection).findOne({ _id: merchantId } as any);
+      const merchant = await (db.collection('merchants') ).findOne({ _id: merchantId } as any);
       if (!merchant) {
         return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Merchant not found' } });
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const offers = await (db.collection('offers') as unknown as Collection).find({ merchant_id: merchantId, status: 'active' } as any).toArray();
+      const offers = await (db.collection('offers') ).find({ merchant_id: merchantId, status: 'active' } as any).toArray();
 
       const { cart, customer } = parseResult.data;
       const now = new Date().toISOString();
@@ -89,7 +79,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
       };
 
       // Evaluate all offers
-      const evaluated = offers.map((offer) => {
+      const evaluated = offers.map((offer: Record<string, unknown>) => {
         const result = service.evaluate(offer as unknown as Offer, context);
         return {
           ...offer,
@@ -98,10 +88,8 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
         };
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const coupons = evaluated.filter((o) => (o as any).type === 'coupon');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const auto_offers = evaluated.filter((o) => (o as any).type === 'auto_offer');
+      const coupons = evaluated.filter((o) => (o as Record<string, unknown>).type === 'coupon');
+      const auto_offers = evaluated.filter((o) => (o as Record<string, unknown>).type === 'auto_offer');
 
       return reply.code(200).send({ coupons, auto_offers });
     },
@@ -133,7 +121,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
 
       // Find offer by code
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const offer = await (db.collection('offers') as unknown as Collection).findOne({ code: parseResult.data.code, merchant_id: merchantId, status: 'active' } as any);
+      const offer = await (db.collection('offers') ).findOne({ code: parseResult.data.code, merchant_id: merchantId, status: 'active' } as any);
 
       if (!offer) {
         return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Offer not found' } });
@@ -141,7 +129,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
 
       // Fetch merchant and build context
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const merchant = await (db.collection('merchants') as unknown as Collection).findOne({ _id: merchantId } as any);
+      const merchant = await (db.collection('merchants') ).findOne({ _id: merchantId } as any);
       if (!merchant) {
         return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Merchant not found' } });
       }
@@ -211,10 +199,10 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
       let offer;
       if (parseResult.data.code) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        offer = await (db.collection('offers') as unknown as Collection).findOne({ code: parseResult.data.code, merchant_id: merchantId, status: 'active' } as any);
+        offer = await (db.collection('offers') ).findOne({ code: parseResult.data.code, merchant_id: merchantId, status: 'active' } as any);
       } else if (parseResult.data.offer_id) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        offer = await (db.collection('offers') as unknown as Collection).findOne({ _id: parseResult.data.offer_id, merchant_id: merchantId, status: 'active' } as any);
+        offer = await (db.collection('offers') ).findOne({ _id: parseResult.data.offer_id, merchant_id: merchantId, status: 'active' } as any);
       }
 
       if (!offer) {
@@ -223,7 +211,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
 
       // Fetch merchant and build context
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const merchant = await (db.collection('merchants') as unknown as Collection).findOne({ _id: merchantId } as any);
+      const merchant = await (db.collection('merchants') ).findOne({ _id: merchantId } as any);
       if (!merchant) {
         return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Merchant not found' } });
       }
@@ -271,11 +259,11 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
       };
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (db.collection('redemptions') as unknown as Collection).insertOne(redemption as any);
+      await (db.collection('redemptions') ).insertOne(redemption as any);
 
       // Increment usage_count on offer
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (db.collection('offers') as unknown as Collection).updateOne({ _id: offer._id, merchant_id: merchantId } as any, { $inc: { usage_count: 1 } });
+      await (db.collection('offers') ).updateOne({ _id: offer._id, merchant_id: merchantId } as any, { $inc: { usage_count: 1 } });
 
       return reply.code(200).send({
         applied: true,
