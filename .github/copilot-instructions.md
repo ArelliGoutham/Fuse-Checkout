@@ -220,6 +220,52 @@ export function minCartValue(rule: { min_amount: number }, context: EvaluationCo
 
 ---
 
+## Branding & Configuration
+
+### No Hardcoded Brand Name
+- The product name "OfferForge" is **not hardcoded** in any user-facing string, email, dashboard title, API response, or documentation template.
+- The brand name is a single configuration value: `BRAND_NAME` environment variable (or `config.brandName` in app config).
+- All user-facing strings reference the config value, not a literal string.
+
+```typescript
+// ✅ CORRECT — brand name from config
+const appName = config.brandName; // "OfferForge" today, could be "OfferHub" tomorrow
+res.send({ message: `Welcome to ${appName}` });
+
+// ❌ WRONG — hardcoded brand string
+res.send({ message: 'Welcome to OfferForge' });
+```
+
+### Where Brand Name Appears
+- Dashboard UI (header, login page, emails)
+- API documentation (OpenAPI title, description)
+- Error messages that reference the product ("OfferForge API key required")
+- Email templates (if any in v1)
+- Future widget branding (white-label-ready by design)
+
+### Single Source of Truth
+```typescript
+// src/config/index.ts
+export const config = {
+  brandName: process.env.BRAND_NAME || 'OfferForge',
+  // ... other config
+};
+```
+
+- One place to change the brand name: the `BRAND_NAME` env var.
+- Default fallback is "OfferForge" — but every reference reads from config, not from the literal.
+- When the domain is finalized, set `BRAND_NAME=NewName` in deploy config. Zero code changes.
+
+### Also Configurable
+- `BRAND_LOGO_URL` — logo image URL
+- `BRAND_PRIMARY_COLOR` — primary brand color for dashboard
+- `BRAND_SUPPORT_EMAIL` — support contact
+- `BRAND_DOMAIN` — base domain for API and dashboard URLs
+
+All brand-related values live in the config module and are referenced via config, never hardcoded.
+
+---
+
 ## Code Structure & Modularity
 
 ### Architecture: Modular Monolith
@@ -385,6 +431,7 @@ src/
 
 - [ ] **Tests written first (TDD)** — failing test → implementation → green
 - [ ] **Zod schemas** for all API inputs and module boundaries
+- [ ] **No hardcoded brand name** — all references use `config.brandName`, not the literal "OfferForge"
 - [ ] **Modular monolith** — cross-module imports are interfaces only, no concrete classes
 - [ ] No `any` types — all types are explicit
 - [ ] All exported functions have TSDoc comments
@@ -402,6 +449,7 @@ src/
 ## Don'ts
 
 - **Don't** write implementation before a test (TDD — red first, always)
+- **Don't** hardcode the brand name "OfferForge" in any string — use `config.brandName` (env var `BRAND_NAME`)
 - **Don't** use `any` — use `unknown` and narrow
 - **Don't** define types and Zod schemas separately — use `z.infer<typeof Schema>`
 - **Don't** skip validation because "it's an internal call"
