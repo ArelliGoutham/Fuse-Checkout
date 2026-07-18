@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import { createServer } from './app';
 import { connectDatabase, closeDatabase, getDatabase } from './config/database';
 import { registerOfferRoutes } from './modules/offers/routes/offer-routes';

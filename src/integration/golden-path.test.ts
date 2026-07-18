@@ -1,3 +1,4 @@
+import type { Document } from 'mongodb';
 import { createServer } from '../app';
 import { connectDatabase, closeDatabase, getDatabase } from '../config/database';
 import { MongoMemoryServer } from 'mongodb-memory-server';
@@ -48,7 +49,7 @@ describe('Golden Path Integration Test', () => {
     for (const col of ['products', 'offers', 'redemptions', 'merchants']) {
       await db.collection(col).deleteMany({});
     }
-    await db.collection('merchants').insertOne(MERCHANT as unknown as import('mongodb').Document);
+    await db.collection('merchants').insertOne(MERCHANT as unknown as Document);
 
     server = createServer();
     const { service, repository } = createOfferComponents(db);

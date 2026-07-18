@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { AnyBulkWriteOperation } from 'mongodb';
 import { z } from 'zod';
 import type { Product } from '../schemas/product';
 
@@ -131,7 +132,7 @@ export function registerProductRoutes(server: FastifyInstance): void {
         },
       }));
 
-      const result = await db.collection('products').bulkWrite(operations as any);
+      const result = await db.collection('products').bulkWrite(operations as AnyBulkWriteOperation[]);
 
       return reply.code(200).send({
         upserted: result.upsertedCount,
