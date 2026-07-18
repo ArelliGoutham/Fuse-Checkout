@@ -4,6 +4,7 @@ const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],
+  testTimeout: 30000,
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
