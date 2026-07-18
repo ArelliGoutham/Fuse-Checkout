@@ -14,9 +14,9 @@ These practices are mandatory for all code in this repository. Follow them on ev
 ### SOLID Principles
 - **Single Responsibility**: Each module/function/class does one thing. If a function validates AND transforms AND persists, split it.
 - **Open/Closed**: Open for extension, closed for modification. The `OfferEvaluatorRegistry` is the canonical example — new offer types are added by registering a new evaluator, not by modifying existing evaluators.
-- **Liskov Substitution**: Any `OfferEvaluator` implementation must work wherever the interface is expected. Never add type-specific hacks in the registry.
-- **Interface Segregation**: Don't force implementations to depend on methods they don't use. Keep interfaces minimal.
-- **Dependency Inversion**: Depend on abstractions, not concrete classes. Inject dependencies (database connections, evaluators) via constructor or function params — never `require()` a concrete dependency directly inside business logic.
+- **Liskov Substitution**: Any `OfferEvaluator` implementation must work wherever the interface is expected. Never add type-specific hacks in the registry. Same applies to module service interfaces — any implementation (in-process or remote adapter) must be substitutable.
+- **Interface Segregation**: Don't force implementations to depend on methods they don't use. Keep interfaces minimal. Each module exposes only the methods its consumers need.
+- **Dependency Inversion**: Depend on abstractions (interfaces), not concrete classes. Inject dependencies via constructor or function params at the composition root (`app.ts`). This is critical for the modular monolith → microservice extraction path — see "Modular Monolith" section below.
 
 ---
 
@@ -222,6 +222,90 @@ export function minCartValue(rule: { min_amount: number }, context: EvaluationCo
 
 ## Code Structure & Modularity
 
+### Architecture: Modular Monolith
+
+OfferForge is a **modular monolith** — a single deployable unit with strict module boundaries. Each module (offers, products, customers, analytics, tracking) is self-contained with its own routes, services, models, and types. Modules communicate **through interfaces only, never concrete implementations** — because we may extract modules into separate microservices later.
+
+### Interface-Only Communication
+
+- Every module exports **interfaces** (TypeScript interfaces), not concrete classes.
+- Cross-module calls go through the interface, with the concrete implementation injected at the composition root (`app.ts`).
+- Never `import { ConcreteService } from '../other-module/service'` — import the interface and accept it as a dependency.
+
+```typescript
+// ✅ CORRECT — depend on interface, inject implementation
+import type { OfferService } from '../offers/types';
+
+// In module that needs offers:
+class CheckoutHandler {
+  constructor(private offerService: OfferService) {}  // interface, not concrete
+  async applyOffer(req) {
+    return this.offerService.validateAndApply(req);  // calls interface method
+  }
+}
+
+// Composition root (src/app.ts) wires concrete → interface
+const offerService = new ConcreteOfferService(db);
+const checkoutHandler = new CheckoutHandler(offerService);
+
+// ❌ WRONG — depends on concrete implementation
+import { ConcreteOfferService } from '../offers/services/offer-service';  // coupling!
+```
+
+### Why Interface-Only
+
+- **Microservice-ready**: When we extract `offers` into a separate service, the interface stays the same — other modules switch from in-process call to HTTP/gRPC call via a new adapter that implements the same interface. Zero changes to consuming modules.
+- **Testability**: Mock the interface in unit tests. No need to mock internal dependencies of a concrete class.
+- **Substitution**: Swap implementations (e.g., caching layer, different storage) without touching consumers.
+
+### Module Interface Contract
+
+Each module defines its public interface in `types/index.ts`:
+
+```typescript
+// src/modules/offers/types/index.ts
+export interface OfferService {
+  createOffer(input: CreateOfferInput): Promise<Offer>;
+  getOffers(query: OfferQuery): Promise<Offer[]>;
+  validateOffer(input: ValidateInput): Promise<ValidationResult>;
+  applyOffer(input: ApplyInput): Promise<ApplyResult>;
+}
+
+export interface OfferRepository {
+  findById(id: string, merchantId: string): Promise<Offer | null>;
+  findByCode(code: string, merchantId: string): Promise<Offer | null>;
+  // ... data access methods
+}
+```
+
+- `Service` interfaces define business operations (what the module does).
+- `Repository` interfaces define data access (how the module persists).
+- Concrete implementations live in `services/` and `repositories/` — never exported outside the module.
+- The module's `index.ts` exports only interfaces and types — the public contract.
+
+### Module Boundary Rules
+
+- **No cross-module internal imports**: `import { something } from '../offers/services/concrete-service'` is forbidden. Only import from `../offers/types` or `../offers/index`.
+- **No shared database access**: Module A never queries module B's collection directly. If A needs B's data, it calls B's service interface.
+- **No shared internal utilities**: Shared utilities go in `src/lib/` and are imported by all. Module-specific utilities stay inside the module.
+- **Events for async communication**: If modules need to react to each other's actions (e.g., tracking module reacts to offer applied), use an internal event bus. The publisher doesn't know who listens — same decoupling principle.
+
+### Microservice Extraction Path
+
+When a module is extracted to a microservice:
+1. The interface stays unchanged.
+2. A new **adapter** implements the interface and makes HTTP/gRPC calls to the new service.
+3. The composition root swaps the in-process implementation for the adapter.
+4. Consuming modules are unchanged — they still call the same interface methods.
+
+```
+Before (modular monolith):
+  Module A → OfferService (interface) → ConcreteOfferService (in-process)
+
+After (microservice):
+  Module A → OfferService (interface) → RemoteOfferServiceAdapter (HTTP) → [Offer Microservice]
+```
+
 ### File Organization
 ```
 src/
@@ -230,23 +314,21 @@ src/
   middleware/      — Fastify middleware (auth, rate limiting, error handling)
   modules/
     offers/        — offer CRUD, rule engine, evaluators, combo resolver
+      types/         — OfferService, OfferRepository interfaces (PUBLIC CONTRACT)
       evaluators/    — CouponEvaluator, AutoOfferEvaluator, OfferEvaluatorRegistry
       rules/         — individual rule evaluator functions
       combo/         — ComboResolver
+      services/      — ConcreteOfferService (implements OfferService)
+      repositories/  — MongoOfferRepository (implements OfferRepository)
       routes/        — Fastify route handlers
-      models/        — MongoDB schemas/queries
-      types/         — Offer, EvaluationContext, EvaluationResult types
-    products/      — product catalog + combos
+      schemas/       — Zod schemas for this module
+      index.ts       — exports only interfaces and types
+    products/      — product catalog + combos (same structure)
     customers/     — global customer, merchant_customer, customer_offers
     analytics/     — redemption aggregation, metrics
     tracking/      — conversion tracking
-  app.ts           — Fastify server setup
+  app.ts           — composition root: wire concrete implementations to interfaces
 ```
-
-### Module Boundaries
-- Modules communicate through their exported interfaces only — never reach into another module's internal files.
-- Cross-module data access goes through the module's service layer, not directly to the database.
-- If module A needs module B's data, it imports B's service function, not B's model.
 
 ---
 
@@ -303,6 +385,7 @@ src/
 
 - [ ] **Tests written first (TDD)** — failing test → implementation → green
 - [ ] **Zod schemas** for all API inputs and module boundaries
+- [ ] **Modular monolith** — cross-module imports are interfaces only, no concrete classes
 - [ ] No `any` types — all types are explicit
 - [ ] All exported functions have TSDoc comments
 - [ ] Tests written and passing for new logic
@@ -324,7 +407,8 @@ src/
 - **Don't** skip validation because "it's an internal call"
 - **Don't** write a function without tests for its core logic
 - **Don't** duplicate a rule, utility, or transformation — extract it
-- **Don't** reach into another module's internals — use its public interface
+- **Don't** reach into another module's internals — use its public interface only (modular monolith invariant)
+- **Don't** import concrete classes across module boundaries — import interfaces, inject implementations at the composition root
 - **Don't** store plaintext secrets
 - **Don't** leave `console.log` in committed code — use a logger
 - **Don't** hardcode config values — use environment variables
