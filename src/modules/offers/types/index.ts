@@ -2,6 +2,8 @@ import type { Offer } from '../schemas/offer';
 import type { EvaluationContext, EvaluationResult, StackingPolicy } from '../schemas/evaluation';
 import type { ComboResult } from '../schemas/combo';
 
+export type { Offer };
+
 export interface OfferService {
   evaluate(offer: Offer, context: EvaluationContext): EvaluationResult;
   evaluateEligible(offers: Offer[], context: EvaluationContext): Array<{ offer: Offer; result: EvaluationResult }>;

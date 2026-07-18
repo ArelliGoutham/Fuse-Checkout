@@ -30,6 +30,10 @@ export type { Cart, CartItem } from './schemas/cart';
 export type { CustomerContext } from './schemas/customer';
 export type { Discount } from './schemas/discount';
 
+// PUBLIC: export implementations
+export { createOfferComponents } from './services/offer-service';
+export { MongoOfferRepository } from './repositories/mongo-offer-repository';
+
 export function createOfferModule(): OfferService {
   const ruleRegistry = new RuleEvaluatorRegistry();
   ruleRegistry.register('min_cart_value', minCartValue);

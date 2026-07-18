@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { getDatabase } from '../config/database';
+import { getDatabase, type Db } from '../config/database';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -12,9 +12,10 @@ declare module 'fastify' {
  * Extracts the API key from x-api-key header and looks it up in the merchants collection.
  * Sets request.merchantId if valid, returns 401 otherwise.
  *
+ * @param db - Optional database instance. If not provided, uses getDatabase()
  * @returns Middleware function for Fastify
  */
-export function createAuthMiddleware() {
+export function createAuthMiddleware(db?: Db) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     const apiKey = request.headers['x-api-key'];
     if (!apiKey || typeof apiKey !== 'string') {
@@ -23,8 +24,8 @@ export function createAuthMiddleware() {
         .send({ error: { code: 'AUTH_INVALID', message: 'Missing x-api-key header' } });
     }
 
-    const db = getDatabase();
-    const merchant = await db.collection('merchants').findOne({ api_key_hash: apiKey });
+    const database = db || getDatabase();
+    const merchant = await database.collection('merchants').findOne({ api_key_hash: apiKey });
     if (!merchant) {
       return reply.code(401).send({ error: { code: 'AUTH_INVALID', message: 'Invalid API key' } });
     }
