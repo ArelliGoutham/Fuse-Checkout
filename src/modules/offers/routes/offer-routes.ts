@@ -46,6 +46,7 @@ export function registerOfferRoutes(server: FastifyInstance): void {
    */
   server.post<{ Body: z.infer<typeof CreateOfferSchema> }>(
     '/api/offers',
+    { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const merchantId = request.merchantId;
       if (!merchantId) {
@@ -91,7 +92,7 @@ export function registerOfferRoutes(server: FastifyInstance): void {
   /**
    * GET /api/offers - List offers for the merchant
    */
-  server.get('/api/offers', async (request: FastifyRequest, reply: FastifyReply) => {
+  server.get('/api/offers', { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } }, async (request: FastifyRequest, reply: FastifyReply) => {
     const merchantId = request.merchantId;
     if (!merchantId) {
       return reply.code(401).send({ error: { code: 'AUTH_INVALID', message: 'Missing merchant context' } });
@@ -111,6 +112,7 @@ export function registerOfferRoutes(server: FastifyInstance): void {
    */
   server.get<{ Params: { id: string } }>(
     '/api/offers/:id',
+    { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const merchantId = request.merchantId;
       if (!merchantId) {
@@ -136,6 +138,7 @@ export function registerOfferRoutes(server: FastifyInstance): void {
    */
   server.delete<{ Params: { id: string } }>(
     '/api/offers/:id',
+    { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const merchantId = request.merchantId;
       if (!merchantId) {

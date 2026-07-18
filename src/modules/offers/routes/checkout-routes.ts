@@ -35,6 +35,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
    */
   server.post<{ Body: z.infer<typeof AvailableRequestSchema> }>(
     '/api/offers/available',
+    { config: { rateLimit: { max: 100, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const merchantId = request.merchantId;
       if (!merchantId) {
@@ -100,6 +101,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
    */
   server.post<{ Body: z.infer<typeof ValidateRequestSchema> }>(
     '/api/offers/validate',
+    { config: { rateLimit: { max: 100, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const merchantId = request.merchantId;
       if (!merchantId) {
@@ -176,6 +178,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
    */
   server.post<{ Body: z.infer<typeof ApplyRequestSchema> }>(
     '/api/offers/apply',
+    { config: { rateLimit: { max: 100, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const merchantId = request.merchantId;
       if (!merchantId) {

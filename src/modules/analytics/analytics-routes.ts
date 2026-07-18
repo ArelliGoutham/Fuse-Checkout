@@ -12,6 +12,7 @@ export function registerAnalyticsRoutes(server: FastifyInstance): void {
    */
   server.get(
     '/api/analytics/overview',
+    { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const merchantId = request.merchantId;
       if (!merchantId) {
@@ -77,6 +78,7 @@ export function registerAnalyticsRoutes(server: FastifyInstance): void {
    */
   server.get(
     '/api/analytics/offers',
+    { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const merchantId = request.merchantId;
       if (!merchantId) {

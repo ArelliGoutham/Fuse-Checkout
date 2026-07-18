@@ -38,6 +38,7 @@ export function registerProductRoutes(server: FastifyInstance): void {
    */
   server.post<{ Body: z.infer<typeof CreateProductSchema> }>(
     '/api/products',
+    { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const merchantId = request.merchantId;
       if (!merchantId) {
@@ -91,6 +92,7 @@ export function registerProductRoutes(server: FastifyInstance): void {
    */
   server.post<{ Body: z.infer<typeof BulkProductsSchema> }>(
     '/api/products/bulk',
+    { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const merchantId = request.merchantId;
       if (!merchantId) {
@@ -144,6 +146,7 @@ export function registerProductRoutes(server: FastifyInstance): void {
    */
   server.get(
     '/api/products',
+    { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const merchantId = request.merchantId;
       if (!merchantId) {
@@ -172,6 +175,7 @@ export function registerProductRoutes(server: FastifyInstance): void {
    */
   server.delete(
     '/api/products/:sku_id',
+    { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const merchantId = request.merchantId;
       if (!merchantId) {

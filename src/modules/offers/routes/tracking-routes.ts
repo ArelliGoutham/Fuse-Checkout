@@ -13,6 +13,7 @@ type TrackingRequest = z.infer<typeof TrackingSchema>;
 export async function registerTrackingRoutes(server: FastifyInstance): Promise<void> {
   server.post<{ Body: TrackingRequest }>(
     '/api/track/conversion',
+    { config: { rateLimit: { max: 200, timeWindow: '1 minute' } } },
     async (request: FastifyRequest<{ Body: TrackingRequest }>, reply: FastifyReply) => {
       // Validate request body
       const parsed = TrackingSchema.safeParse(request.body);
