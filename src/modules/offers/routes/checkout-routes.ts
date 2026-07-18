@@ -72,9 +72,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const offers = await (db.collection('offers') as unknown as Collection)
-        .find({ merchant_id: merchantId, status: 'active' } as any)
-        .toArray();
+      const offers = await (db.collection('offers') as unknown as Collection).find({ merchant_id: merchantId, status: 'active' } as any).toArray();
 
       const { cart, customer } = parseResult.data;
       const now = new Date().toISOString();
@@ -100,8 +98,9 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
         };
       });
 
-      // Split into coupons and auto_offers
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const coupons = evaluated.filter((o) => (o as any).type === 'coupon');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const auto_offers = evaluated.filter((o) => (o as any).type === 'auto_offer');
 
       return reply.code(200).send({ coupons, auto_offers });
@@ -134,11 +133,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
 
       // Find offer by code
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const offer = await (db.collection('offers') as unknown as Collection).findOne({
-        code: parseResult.data.code,
-        merchant_id: merchantId,
-        status: 'active',
-      } as any);
+      const offer = await (db.collection('offers') as unknown as Collection).findOne({ code: parseResult.data.code, merchant_id: merchantId, status: 'active' } as any);
 
       if (!offer) {
         return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Offer not found' } });
@@ -216,18 +211,10 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
       let offer;
       if (parseResult.data.code) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        offer = await (db.collection('offers') as unknown as Collection).findOne({
-          code: parseResult.data.code,
-          merchant_id: merchantId,
-          status: 'active',
-        } as any);
+        offer = await (db.collection('offers') as unknown as Collection).findOne({ code: parseResult.data.code, merchant_id: merchantId, status: 'active' } as any);
       } else if (parseResult.data.offer_id) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        offer = await (db.collection('offers') as unknown as Collection).findOne({
-          _id: parseResult.data.offer_id,
-          merchant_id: merchantId,
-          status: 'active',
-        } as any);
+        offer = await (db.collection('offers') as unknown as Collection).findOne({ _id: parseResult.data.offer_id, merchant_id: merchantId, status: 'active' } as any);
       }
 
       if (!offer) {
@@ -288,10 +275,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
 
       // Increment usage_count on offer
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (db.collection('offers') as unknown as Collection).updateOne(
-        { _id: offer._id, merchant_id: merchantId } as any,
-        { $inc: { usage_count: 1 } },
-      );
+      await (db.collection('offers') as unknown as Collection).updateOne({ _id: offer._id, merchant_id: merchantId } as any, { $inc: { usage_count: 1 } });
 
       return reply.code(200).send({
         applied: true,

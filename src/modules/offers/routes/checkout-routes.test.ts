@@ -90,7 +90,8 @@ describe('Checkout Routes', () => {
       const coupon = createTestOffer({ _id: 'coupon-1', type: 'coupon', code: 'COUPON10' });
       const autoOffer = createTestOffer({ _id: 'auto-1', type: 'auto_offer', code: 'AUTO20' });
 
-      await (testDb.collection('offers') as unknown as Collection).insertMany([coupon, autoOffer] as unknown as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (testDb.collection('offers') as unknown as Collection).insertMany([coupon, autoOffer] as any);
 
       const response = await server.inject({
         method: 'POST',
@@ -141,7 +142,8 @@ describe('Checkout Routes', () => {
   describe('POST /api/offers/validate', () => {
     it('returns valid:true with discount details for valid code', async () => {
       const coupon = createTestOffer({ _id: 'coupon-1', code: 'VALID10', type: 'coupon' });
-      await (testDb.collection('offers') as unknown as Collection).insertOne(coupon as unknown as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (testDb.collection('offers') as unknown as Collection).insertOne(coupon as any);
 
       const response = await server.inject({
         method: 'POST',
@@ -184,7 +186,8 @@ describe('Checkout Routes', () => {
   describe('POST /api/offers/apply', () => {
     it('returns applied:true with discount details and creates redemption record', async () => {
       const coupon = createTestOffer({ _id: 'coupon-1', code: 'APPLY10', type: 'coupon' });
-      await (testDb.collection('offers') as unknown as Collection).insertOne(coupon as unknown as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (testDb.collection('offers') as unknown as Collection).insertOne(coupon as any);
 
       const response = await server.inject({
         method: 'POST',
@@ -207,9 +210,7 @@ describe('Checkout Routes', () => {
 
       // Verify redemption record was created
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const redemptions = await (testDb.collection('redemptions') as unknown as Collection)
-        .find({ session_id: 'session-123' } as any)
-        .toArray();
+      const redemptions = await (testDb.collection('redemptions') as unknown as Collection).find({ session_id: 'session-123' } as any).toArray();
 
       expect(redemptions).toHaveLength(1);
       expect(redemptions[0]).toMatchObject({
@@ -226,9 +227,7 @@ describe('Checkout Routes', () => {
 
       // Verify usage_count was incremented
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const updatedOffer = await (testDb.collection('offers') as unknown as Collection).findOne({
-        _id: 'coupon-1',
-      } as any);
+      const updatedOffer = await (testDb.collection('offers') as unknown as Collection).findOne({ _id: 'coupon-1' } as any);
       expect(updatedOffer?.usage_count).toBe(1);
     });
   });

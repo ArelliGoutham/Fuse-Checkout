@@ -53,21 +53,19 @@ describe('Tracking Routes', () => {
     it('updates redemptions with order_id and order_status', async () => {
       // Insert a redemption record manually
       const now = new Date().toISOString();
+      await (testDb.collection('redemptions') as unknown as Collection).insertOne({
+        offer_id: 'offer-1',
+        merchant_id: 'test-merchant-1',
+        session_id: 'session-123',
+        cart_amount: 1000,
+        discount_applied: 100,
+        final_amount: 900,
+        customer_id: 'cust-1',
+        applied_at: now,
+        order_id: null,
+        order_status: 'applied',
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (testDb.collection('redemptions') as unknown as Collection).insertOne(
-        {
-          offer_id: 'offer-1',
-          merchant_id: 'test-merchant-1',
-          session_id: 'session-123',
-          cart_amount: 1000,
-          discount_applied: 100,
-          final_amount: 900,
-          customer_id: 'cust-1',
-          applied_at: now,
-          order_id: null,
-          order_status: 'applied',
-        } as any,
-      );
+      } as any);
 
       const response = await server.inject({
         method: 'POST',
@@ -87,9 +85,8 @@ describe('Tracking Routes', () => {
       expect(body.updated).toBe(1);
 
       // Verify redemption was updated
-      const redemptions = await (testDb.collection('redemptions') as unknown as Collection)
-        .find({ session_id: 'session-123' } as any)
-        .toArray();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const redemptions = await (testDb.collection('redemptions') as unknown as Collection).find({ session_id: 'session-123' } as any).toArray();
 
       expect(redemptions).toHaveLength(1);
       expect(redemptions[0]).toMatchObject({

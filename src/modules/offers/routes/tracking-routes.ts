@@ -38,22 +38,18 @@ export async function registerTrackingRoutes(server: FastifyInstance): Promise<v
       try {
 
         // Update all redemptions matching session_id and merchant_id
-        const result = await db
-          .collection('redemptions')
+        const result = await db.collection('redemptions').updateMany(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .updateMany(
-            {
-              session_id,
-              merchant_id: merchantId,
-            } as any,
-            {
-              $set: {
-                order_id,
-                order_status: status,
-                updated_at: new Date().toISOString(),
-              },
-            } as any,
-          );
+          { session_id, merchant_id: merchantId } as any,
+          {
+            $set: {
+              order_id,
+              order_status: status,
+              updated_at: new Date().toISOString(),
+            },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
+        );
 
         return reply.code(200).send({
           tracked: true,
