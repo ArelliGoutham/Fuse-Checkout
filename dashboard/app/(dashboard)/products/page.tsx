@@ -1,113 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api';
 
 interface Product {
-  id: string;
-  sku: string;
+  _id: string;
+  sku_id: string;
   name: string;
-  category: string;
-  brand: string;
-  status: 'active' | 'inactive' | 'draft';
+  category?: string;
+  brand?: string;
+  status: string;
 }
 
-const products: Product[] = [
-  {
-    id: '1',
-    sku: 'TSHIRT-001',
-    name: 'Classic White T-Shirt',
-    category: 'Apparel',
-    brand: 'OfferForge Brand',
-    status: 'active',
-  },
-  {
-    id: '2',
-    sku: 'HOODIE-001',
-    name: 'Premium Hoodie',
-    category: 'Apparel',
-    brand: 'OfferForge Brand',
-    status: 'active',
-  },
-  {
-    id: '3',
-    sku: 'SHOES-001',
-    name: 'Running Shoes',
-    category: 'Footwear',
-    brand: 'SportGear',
-    status: 'active',
-  },
-  {
-    id: '4',
-    sku: 'SHOES-002',
-    name: 'Casual Sneakers',
-    category: 'Footwear',
-    brand: 'CasualWear',
-    status: 'inactive',
-  },
-  {
-    id: '5',
-    sku: 'CAP-001',
-    name: 'Baseball Cap',
-    category: 'Accessories',
-    brand: 'OfferForge Brand',
-    status: 'active',
-  },
-  {
-    id: '6',
-    sku: 'JACKET-001',
-    name: 'Winter Jacket',
-    category: 'Outerwear',
-    brand: 'ColdWeather',
-    status: 'draft',
-  },
-  {
-    id: '7',
-    sku: 'JEANS-001',
-    name: 'Blue Denim Jeans',
-    category: 'Apparel',
-    brand: 'DenimPro',
-    status: 'active',
-  },
-  {
-    id: '8',
-    sku: 'SOCKS-001',
-    name: 'Athletic Socks Pack',
-    category: 'Accessories',
-    brand: 'OfferForge Brand',
-    status: 'active',
-  },
-];
-
 export default function ProductsPage() {
-  const [sortBy, setSortBy] = useState<'name' | 'sku' | 'status'>('name');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive' | 'draft'>('all');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const sortedProducts = [...products].sort((a, b) => {
-    if (sortBy === 'sku') return a.sku.localeCompare(b.sku);
-    if (sortBy === 'status') return a.status.localeCompare(b.status);
-    return a.name.localeCompare(b.name);
-  });
+  useEffect(() => {
+    apiFetch('/api/products')
+      .then((data) => { setProducts(data.products || []); })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const filteredProducts = filterStatus === 'all' ? sortedProducts : sortedProducts.filter((p) => p.status === filterStatus);
-
-  const getStatusBadge = (status: Product['status']) => {
-    const styles = {
-      active: { bg: 'bg-success/10', text: 'text-success', label: 'Active' },
-      inactive: { bg: 'bg-danger/10', text: 'text-danger', label: 'Inactive' },
-      draft: { bg: 'bg-fg-muted/10', text: 'text-fg-muted', label: 'Draft' },
-    };
-    const style = styles[status];
-    return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${style.bg} ${style.text}`}>
-        <span className={`w-1.5 h-1.5 rounded-full ${style.bg === 'bg-success/10' ? 'bg-success' : style.bg === 'bg-danger/10' ? 'bg-danger' : 'bg-fg-muted'}`}></span>
-        {style.label}
-      </span>
-    );
-  };
+  if (loading) return <div className="flex justify-center py-12"><i className="fa-solid fa-spinner fa-spin text-accent text-2xl"></i></div>;
+  if (error) return <div className="bg-danger/10 border border-danger/20 rounded-xl p-6 text-danger text-center">{error}</div>;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-fg">Products</h1>
@@ -115,49 +36,14 @@ export default function ProductsPage() {
         </div>
         <div className="flex gap-3">
           <button className="px-4 py-2 border border-border bg-surface rounded-[10px] text-fg text-sm font-medium hover:bg-surface-2 transition flex items-center gap-2">
-            <i className="fa-solid fa-arrow-up-from-bracket text-accent"></i>
-            Bulk Import
+            <i className="fa-solid fa-arrow-up-from-bracket text-accent"></i>Bulk Import
           </button>
           <button className="px-4 py-2 bg-accent text-bg rounded-[10px] text-sm font-semibold hover:bg-accent/90 transition flex items-center gap-2">
-            <i className="fa-solid fa-plus text-sm"></i>
-            Add Product
+            <i className="fa-solid fa-plus text-sm"></i>Add Product
           </button>
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="bg-surface rounded-2xl border border-border p-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div>
-            <label className="text-xs font-medium text-fg-muted mr-2">Filter:</label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-              className="px-3 py-1.5 bg-[#151821] border border-[#252836] rounded-lg text-fg text-sm focus:border-accent/50 outline-none transition"
-            >
-              <option value="all">All Products</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="draft">Draft</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-fg-muted mr-2">Sort by:</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="px-3 py-1.5 bg-[#151821] border border-[#252836] rounded-lg text-fg text-sm focus:border-accent/50 outline-none transition"
-            >
-              <option value="name">Name</option>
-              <option value="sku">SKU</option>
-              <option value="status">Status</option>
-            </select>
-          </div>
-        </div>
-        <p className="text-xs text-fg-muted">{filteredProducts.length} products</p>
-      </div>
-
-      {/* Products Table */}
       <div className="bg-surface rounded-2xl border border-border overflow-hidden">
         <table className="w-full">
           <thead className="bg-surface-2 border-b border-border">
@@ -171,22 +57,22 @@ export default function ProductsPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredProducts.map((product, index) => (
-              <tr key={product.id} className={`border-b border-border hover:bg-surface-2 transition ${index === filteredProducts.length - 1 ? 'border-b-0' : ''}`}>
-                <td className="px-6 py-4 text-sm font-mono text-fg-muted">{product.sku}</td>
+            {products.length === 0 ? (
+              <tr><td colSpan={6} className="text-center py-8 text-fg-muted">No products yet</td></tr>
+            ) : products.map((product) => (
+              <tr key={product._id} className="border-b border-border hover:bg-surface-2 transition last:border-0">
+                <td className="px-6 py-4 text-sm font-mono text-fg-muted">{product.sku_id}</td>
                 <td className="px-6 py-4 text-sm font-medium text-fg">{product.name}</td>
-                <td className="px-6 py-4 text-sm text-fg-muted">{product.category}</td>
-                <td className="px-6 py-4 text-sm text-fg-muted">{product.brand}</td>
-                <td className="px-6 py-4">{getStatusBadge(product.status)}</td>
+                <td className="px-6 py-4 text-sm text-fg-muted">{product.category || '—'}</td>
+                <td className="px-6 py-4 text-sm text-fg-muted">{product.brand || '—'}</td>
+                <td className="px-6 py-4">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-success/10 text-success">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success"></span>{product.status}
+                  </span>
+                </td>
                 <td className="px-6 py-4 text-center">
-                  <div className="flex items-center justify-center gap-3">
-                    <button className="text-fg-muted hover:text-accent transition" title="Edit">
-                      <i className="fa-solid fa-pen-to-square text-sm"></i>
-                    </button>
-                    <button className="text-fg-muted hover:text-danger transition" title="Delete">
-                      <i className="fa-solid fa-trash text-sm"></i>
-                    </button>
-                  </div>
+                  <button className="text-fg-muted hover:text-accent transition mr-3"><i className="fa-solid fa-pen-to-square text-sm"></i></button>
+                  <button className="text-fg-muted hover:text-danger transition"><i className="fa-solid fa-trash text-sm"></i></button>
                 </td>
               </tr>
             ))}
