@@ -2,7 +2,7 @@
 
 > **Date:** 2026-07-18  
 > **Status:** Draft  
-> **Author:** @Arelli-Goutham_pinegit  
+> **Author:** @ArelliGoutham 
 > **Module:** Coupons & Auto-Applied Offers (Module 1 of OfferForge platform)
 
 ---
