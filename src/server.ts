@@ -7,9 +7,11 @@ import { registerTrackingRoutes } from './modules/offers/routes/tracking-routes'
 import { registerProductRoutes } from './modules/products/routes/product-routes';
 import { registerAnalyticsRoutes } from './modules/analytics/analytics-routes';
 import { createOfferComponents } from './modules/offers';
+import { createAuthMiddleware } from './middleware/auth';
+import { errorHandler } from './middleware/error-handler';
 
 async function start() {
-  const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017';
+  const mongoUri = process.env.MONGO_URI || 'mongodb://offerforge:offerforge@localhost:27017/offerforge?authSource=admin';
   const mongoDbName = process.env.MONGO_DB_NAME || 'offerforge';
   const port = parseInt(process.env.PORT || '3000', 10);
 
@@ -29,6 +31,12 @@ async function start() {
     server.decorate('db', db);
     server.decorate('offerService', offerService);
     server.decorate('offerRepository', offerRepository);
+
+    // Set error handler
+    server.setErrorHandler(errorHandler);
+
+    // Add auth middleware (applies to all routes except /health)
+    server.addHook('preHandler', createAuthMiddleware(db));
 
     // Register all route groups
     await registerOfferRoutes(server);
