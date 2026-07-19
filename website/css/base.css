@@ -117,6 +117,16 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .hero-code-body { padding: 22px; font-family: var(--font-mono); font-size: 13px; line-height: 1.85; color: var(--text-soft); text-align: left; }
 .c-comment { color: var(--text-muted); } .c-accent { color: var(--accent); } .c-success { color: var(--success); } .c-info { color: var(--info); } .c-danger { color: var(--danger); }
 
+/* === GRADIENT TEXT === */
+.gradient-text { background: linear-gradient(135deg, var(--accent), var(--accent-light), var(--accent)); background-size: 200% 100%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: shimmer 6s linear infinite; }
+@keyframes shimmer { 0% { background-position: 0 0; } 100% { background-position: 200% 0; } }
+
+/* === SECTIONS === */
+.section { padding: 120px 24px; max-width: 1200px; margin-left: auto; margin-right: auto; position: relative; z-index: 2; overflow-x: hidden; }
+.section-label { font-family: var(--font-mono); font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 2.5px; margin-bottom: 14px; font-weight: 500; }
+.section-heading { font-family: var(--font-display); font-size: clamp(30px, 4.5vw, 46px); font-weight: 700; letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 18px; text-wrap: balance; }
+.section-subtitle { font-size: 18px; color: var(--text-soft); max-width: 580px; margin-bottom: 48px; text-wrap: pretty; }
+
 /* === STATS === */
 .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; max-width: 1000px; margin: 48px auto; padding: 40px 24px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; z-index: 2; }
 .stat { text-align: center; }
@@ -203,7 +213,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* Reveal */
 .reveal { opacity: 0; transition: opacity 0.8s var(--ease), transform 0.8s var(--ease); }
-.reveal.revealed { opacity: 1; transform: translateY(0) !important; }
+.reveal.revealed { opacity: 1; transform: none !important; }
 .reveal[data-anim="up"] { transform: translateY(36px); }
 .reveal[data-anim="scale"] { transform: scale(0.97); }
 .reveal-stagger > * { opacity: 0; transform: translateY(28px); transition: opacity 0.7s var(--ease), transform 0.7s var(--ease); }
