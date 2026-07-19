@@ -1,189 +1,131 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api';
 
-interface Combo {
-  id: string;
+interface Product {
+  _id: string;
+  sku_id: string;
   name: string;
-  skus: string[];
-  type: 'bundle' | 'tiered' | 'spend';
-  createdAt: string;
-  active: boolean;
+  category?: string;
+  brand?: string;
 }
 
-const combos: Combo[] = [
-  {
-    id: '1',
-    name: 'Summer Essentials Bundle',
-    skus: ['TSHIRT-001', 'CAP-001', 'SOCKS-001'],
-    type: 'bundle',
-    createdAt: '2024-06-15',
-    active: true,
-  },
-  {
-    id: '2',
-    name: 'Cold Weather Combo',
-    skus: ['JACKET-001', 'CAP-001', 'SOCKS-001'],
-    type: 'bundle',
-    createdAt: '2024-05-20',
-    active: true,
-  },
-  {
-    id: '3',
-    name: 'Footwear Collection',
-    skus: ['SHOES-001', 'SHOES-002'],
-    type: 'tiered',
-    createdAt: '2024-04-10',
-    active: true,
-  },
-  {
-    id: '4',
-    name: 'Complete Wardrobe',
-    skus: ['TSHIRT-001', 'JEANS-001', 'JACKET-001'],
-    type: 'spend',
-    createdAt: '2024-03-05',
-    active: false,
-  },
-  {
-    id: '5',
-    name: 'Casual Friday Pack',
-    skus: ['TSHIRT-001', 'JEANS-001', 'SHOES-002'],
-    type: 'bundle',
-    createdAt: '2024-02-28',
-    active: true,
-  },
-  {
-    id: '6',
-    name: 'Premium Collection',
-    skus: ['HOODIE-001', 'SHOES-001', 'CAP-001'],
-    type: 'tiered',
-    createdAt: '2024-01-15',
-    active: true,
-  },
-];
-
-const comboTypeLabels = {
-  bundle: { label: 'Bundle', icon: 'fa-box', color: 'text-info' },
-  tiered: { label: 'Tiered', icon: 'fa-layer-group', color: 'text-accent' },
-  spend: { label: 'Spend-Based', icon: 'fa-wallet', color: 'text-success' },
-};
+interface Combo {
+  _id: string;
+  name: string;
+  product_skus: string[];
+}
 
 export default function CombosPage() {
-  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [combos, setCombos] = useState<Combo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [comboName, setComboName] = useState('');
+  const [selectedSkus, setSelectedSkus] = useState<string[]>([]);
 
-  const filteredCombos = activeFilter === 'all' ? combos : combos.filter((c) => (activeFilter === 'active' ? c.active : !c.active));
+  useEffect(() => {
+    Promise.all([
+      apiFetch('/api/products').catch(() => ({ products: [] })),
+      apiFetch('/api/product-combos').catch(() => ({ combos: [] })),
+    ])
+      .then(([prodRes, comboRes]) => {
+        setProducts(prodRes.products || []);
+        setCombos(comboRes.combos || []);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="flex justify-center py-12"><i className="fa-solid fa-spinner fa-spin text-accent text-2xl"></i></div>;
+
+  const toggleSku = (sku: string) => {
+    setSelectedSkus(prev => prev.includes(sku) ? prev.filter(s => s !== sku) : [...prev, sku]);
+  };
+
+  const createCombo = async () => {
+    if (!comboName || selectedSkus.length < 2) return;
+    try {
+      await apiFetch('/api/product-combos', {
+        method: 'POST',
+        body: JSON.stringify({ name: comboName, product_skus: selectedSkus }),
+      });
+      setCombos([...combos, { _id: Date.now().toString(), name: comboName, product_skus: selectedSkus }]);
+      setComboName('');
+      setSelectedSkus([]);
+      setShowCreate(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create combo');
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-fg">Product Combos</h1>
-          <p className="text-sm text-fg-muted mt-1">Create and manage product bundles and combos</p>
+          <p className="text-sm text-fg-muted mt-1">Define bundles for product_combo rules</p>
         </div>
-        <button className="px-4 py-2 bg-accent text-bg rounded-[10px] text-sm font-semibold hover:bg-accent/90 transition flex items-center gap-2">
-          <i className="fa-solid fa-plus text-sm"></i>
-          Create Combo
+        <button onClick={() => setShowCreate(!showCreate)} className="px-4 py-2 bg-accent text-bg rounded-[10px] text-sm font-semibold hover:bg-accent/90 transition flex items-center gap-2">
+          <i className="fa-solid fa-plus text-sm"></i>Create Combo
         </button>
       </div>
 
-      {/* Filter */}
-      <div className="bg-surface rounded-2xl border border-border p-4 flex items-center gap-4">
-        <label className="text-xs font-medium text-fg-muted">Show:</label>
-        <div className="flex gap-2">
-          {['all', 'active', 'inactive'].map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setActiveFilter(filter as typeof activeFilter)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                activeFilter === filter
-                  ? 'bg-accent text-bg'
-                  : 'bg-surface-2 text-fg-muted hover:text-fg'
-              }`}
-            >
-              {filter === 'all' ? 'All' : filter === 'active' ? 'Active' : 'Inactive'}
-            </button>
-          ))}
+      {error && (
+        <div className="bg-danger/10 border border-danger/20 rounded-xl p-4 text-danger text-sm">
+          <i className="fa-solid fa-circle-exclamation mr-2"></i>{error}
         </div>
-        <span className="text-xs text-fg-muted ml-auto">{filteredCombos.length} combos</span>
-      </div>
+      )}
 
-      {/* Combo Grid */}
+      {showCreate && (
+        <div className="bg-surface rounded-2xl border border-border p-6 space-y-4">
+          <h2 className="text-lg font-bold text-fg">New Combo</h2>
+          <div>
+            <label className="block text-sm font-medium text-fg mb-2">Combo Name</label>
+            <input type="text" value={comboName} onChange={(e) => setComboName(e.target.value)} placeholder="e.g., iPhone + Case Bundle"
+              className="w-full bg-[#151821] border border-[#252836] rounded-[10px] px-3.5 py-2.5 text-fg text-sm focus:border-accent/50 outline-none transition" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-fg mb-2">Select Products (min 2)</label>
+            <div className="flex flex-wrap gap-2">
+              {products.map((p) => (
+                <button key={p._id} onClick={() => toggleSku(p.sku_id)}
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition ${selectedSkus.includes(p.sku_id) ? 'bg-accent text-bg' : 'bg-surface-2 text-fg-soft hover:text-fg border border-border'}`}>
+                  {selectedSkus.includes(p.sku_id) && <i className="fa-solid fa-check mr-1"></i>}
+                  {p.sku_id} — {p.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={createCombo} disabled={!comboName || selectedSkus.length < 2}
+              className="px-6 py-2 bg-accent text-bg rounded-lg font-semibold text-sm disabled:opacity-50">Create</button>
+            <button onClick={() => setShowCreate(false)} className="px-6 py-2 bg-surface-2 text-fg rounded-lg font-medium text-sm border border-border">Cancel</button>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-6">
-        {filteredCombos.map((combo) => (
-          <div
-            key={combo.id}
-            className={`bg-surface rounded-2xl border border-border p-6 hover:border-border/80 transition group cursor-pointer ${
-              !combo.active ? 'opacity-60' : ''
-            }`}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="text-lg font-bold text-fg">{combo.name}</h3>
-                  {!combo.active && (
-                    <span className="px-2 py-0.5 text-xs bg-danger/10 text-danger rounded-full font-medium">
-                      Inactive
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <i className={`fa-solid ${comboTypeLabels[combo.type].icon} text-xs ${comboTypeLabels[combo.type].color}`}></i>
-                  <span className={`text-xs font-medium ${comboTypeLabels[combo.type].color}`}>
-                    {comboTypeLabels[combo.type].label}
-                  </span>
-                </div>
-              </div>
-              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                <button
-                  className="p-2 bg-surface-2 text-fg-muted hover:text-accent rounded-lg transition"
-                  title="Edit"
-                >
-                  <i className="fa-solid fa-pen-to-square text-sm"></i>
-                </button>
-                <button
-                  className="p-2 bg-surface-2 text-fg-muted hover:text-danger rounded-lg transition"
-                  title="Delete"
-                >
-                  <i className="fa-solid fa-trash text-sm"></i>
-                </button>
-              </div>
-            </div>
-
-            {/* Product SKUs */}
+        {combos.length === 0 ? (
+          <div className="col-span-2 bg-surface rounded-2xl border border-border p-12 text-center">
+            <i className="fa-solid fa-cubes text-4xl text-fg-muted/30 mb-4 block"></i>
+            <p className="text-fg-muted text-sm">No combos yet. Create one to use in product_combo rules.</p>
+          </div>
+        ) : combos.map((combo) => (
+          <div key={combo._id} className="bg-surface rounded-2xl border border-border p-6 hover:border-border/80 transition">
+            <h3 className="text-lg font-bold text-fg mb-4">{combo.name}</h3>
             <div className="pt-4 border-t border-border">
-              <p className="text-xs text-fg-muted mb-2 font-medium">Products ({combo.skus.length})</p>
+              <p className="text-xs text-fg-muted mb-2 font-medium">Products ({combo.product_skus.length})</p>
               <div className="flex flex-wrap gap-2">
-                {combo.skus.map((sku) => (
-                  <span
-                    key={sku}
-                    className="px-2.5 py-1 bg-accent/10 text-accent rounded-lg text-xs font-mono font-medium"
-                  >
-                    {sku}
-                  </span>
+                {combo.product_skus.map((sku) => (
+                  <span key={sku} className="px-2.5 py-1 bg-accent/10 text-accent rounded-lg text-xs font-mono font-medium">{sku}</span>
                 ))}
-              </div>
-            </div>
-
-            {/* Meta Info */}
-            <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-              <p className="text-xs text-fg-muted">Created {new Date(combo.createdAt).toLocaleDateString()}</p>
-              <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${combo.active ? 'bg-success' : 'bg-fg-muted'}`}></span>
-                <span className="text-xs text-fg-muted">{combo.active ? 'Live' : 'Draft'}</span>
               </div>
             </div>
           </div>
         ))}
       </div>
-
-      {/* Empty State */}
-      {filteredCombos.length === 0 && (
-        <div className="bg-surface rounded-2xl border border-border p-12 text-center">
-          <i className="fa-solid fa-inbox text-4xl text-fg-muted/30 mb-4 block"></i>
-          <p className="text-fg-muted text-sm">No combos found</p>
-        </div>
-      )}
     </div>
   );
 }
