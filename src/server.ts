@@ -6,9 +6,14 @@ import { registerCheckoutRoutes } from './modules/offers/routes/checkout-routes'
 import { registerTrackingRoutes } from './modules/offers/routes/tracking-routes';
 import { registerProductRoutes } from './modules/products/routes/product-routes';
 import { registerAnalyticsRoutes } from './modules/analytics/analytics-routes';
+import { registerAuthRoutes } from './modules/auth/routes/auth-routes';
+import { registerInviteRoutes } from './modules/auth/routes/invite-routes';
+import { registerApiKeyRoutes } from './modules/auth/routes/api-key-routes';
 import { createOfferComponents } from './modules/offers';
 import { createAuthMiddleware } from './middleware/auth';
+import { createJwtAuthMiddleware } from './middleware/jwt-auth';
 import { errorHandler } from './middleware/error-handler';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 
 async function start() {
   const mongoUri = process.env.MONGO_URI || 'mongodb://offerforge:offerforge@localhost:27017/offerforge?authSource=admin';
@@ -35,8 +40,27 @@ async function start() {
     // Set error handler
     server.setErrorHandler(errorHandler);
 
-    // Add auth middleware (applies to all routes except /health)
-    server.addHook('preHandler', createAuthMiddleware(db));
+    // Register auth routes first (signup, login, accept-invite — no JWT required)
+    registerAuthRoutes(server);
+    registerInviteRoutes(server);
+    registerApiKeyRoutes(server);
+
+    // Add auth middleware (applies to all routes except /health and /api/auth/*)
+    server.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+      // Skip auth for health check and auth endpoints
+      if (request.url === '/health' || request.url.startsWith('/api/auth/')) {
+        return;
+      }
+      // Try JWT first (Authorization header)
+      const authHeader = request.headers['authorization'];
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const jwtMiddleware = createJwtAuthMiddleware();
+        return jwtMiddleware(request, reply);
+      }
+      // Fall back to API key
+      const apikeyMiddleware = createAuthMiddleware(db);
+      return apikeyMiddleware(request, reply);
+    });
 
     // Register all route groups
     await registerOfferRoutes(server);
