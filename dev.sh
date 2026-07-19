@@ -114,11 +114,36 @@ fi
 
 cd /Users/arelligoutham/Documents/OfferForge
 
+# Step 8: Start marketing website on port 8080
+echo ""
+echo "🌐 Starting marketing website on port 8080..."
+EXISTING_WEB_PID=$(lsof -ti:8080 2>/dev/null)
+if [ -n "$EXISTING_WEB_PID" ]; then
+  echo "⚠️  Port 8080 in use (PID: $EXISTING_WEB_PID), stopping it..."
+  kill $EXISTING_WEB_PID 2>/dev/null
+  sleep 2
+fi
+
+cd /Users/arelligoutham/Documents/OfferForge/website
+if command -v python3 &> /dev/null; then
+  python3 -m http.server 8080 > /tmp/offerforge-website.log 2>&1 &
+  WEB_PID=$!
+  echo "✅ Marketing site running (PID: $WEB_PID) at http://localhost:8080"
+  echo "   Logs: tail -f /tmp/offerforge-website.log"
+else
+  echo "ℹ️  python3 not found. Marketing site files at website/"
+  echo "   Open website/index.html directly in your browser."
+  WEB_PID=""
+fi
+
+cd /Users/arelligoutham/Documents/OfferForge
+
 # Print summary
 echo ""
 echo "======================================"
 echo "🎉 OfferForge is running!"
 echo ""
+echo "   🌐 Marketing:  http://localhost:8080"
 echo "   🖥️  Dashboard:  http://localhost:3030"
 echo "   🔧 API:        http://localhost:3010"
 echo "   ❤️  Health:     http://localhost:3010/health"
@@ -135,10 +160,13 @@ echo "   🔌 API Key (for programmatic access):"
 echo "      demo-key-123"
 echo ""
 echo "   📋 Logs:"
-echo "      API:       /tmp/offerforge-api.log"
-echo "      Dashboard: /tmp/offerforge-dashboard.log"
+echo "      API:       tail -f /tmp/offerforge-api.log"
+echo "      Dashboard: tail -f /tmp/offerforge-dashboard.log"
 if [ -n "$DOCS_PID" ]; then
-echo "      Docs:      /tmp/offerforge-docs.log"
+echo "      Docs:      tail -f /tmp/offerforge-docs.log"
+fi
+if [ -n "$WEB_PID" ]; then
+echo "      Website:   tail -f /tmp/offerforge-website.log"
 fi
 echo ""
 echo "   Press Ctrl+C to stop all services"
@@ -150,6 +178,9 @@ kill_all() {
   echo "🛑 Shutting down..."
   kill $API_PID $DASH_PID 2>/dev/null
   if [ -n "$DOCS_PID" ]; then kill $DOCS_PID 2>/dev/null; fi
+  if [ -n "$WEB_PID" ]; then kill $WEB_PID 2>/dev/null; fi
+  # Kill any python http.server we started for the website
+  lsof -ti:8080 2>/dev/null | xargs kill 2>/dev/null || true
   docker compose down 2>/dev/null
   echo "✅ All services stopped"
   exit 0

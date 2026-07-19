@@ -21,6 +21,15 @@ else
   echo "ℹ️  Dashboard was not running"
 fi
 
+# Kill marketing website (port 8080)
+WEB_PID=$(lsof -ti:8080 2>/dev/null)
+if [ -n "$WEB_PID" ]; then
+  kill $WEB_PID 2>/dev/null
+  echo "✅ Marketing website stopped"
+else
+  echo "ℹ️  Marketing website was not running"
+fi
+
 # Kill docs server (port 3000)
 DOCS_PID=$(lsof -ti:3000 2>/dev/null)
 if [ -n "$DOCS_PID" ]; then
