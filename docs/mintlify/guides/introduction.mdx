@@ -7,38 +7,100 @@ description: OfferForge is a modular offers platform for Indian e-commerce — c
 
 OfferForge is a drop-in offers layer that sits between "customer sees price" and "customer pays" at checkout. It handles coupon validation, auto-applied offers, stacking conflicts, and analytics — so merchants don't have to build any of it.
 
+<Tip>
+  New to OfferForge? Check out the [Quickstart](/guides/quickstart) to get your first offer live in 5 minutes.
+</Tip>
+
 ## What OfferForge does
 
-- **Creates and manages coupons** — flat discounts, percentage off, with caps and restrictions
-- **Auto-applied offers** — offers shown to customers based on cart contents (no code needed)
-- **Rule engine** — 13 rule types: min cart value, customer segment, weekend only, category restriction, product combo, and more
-- **Stacking & conflict resolution** — merchants define how offers combine, the engine resolves conflicts
-- **Product catalog** — sync SKUs for product/category/brand-based rules
-- **Analytics** — redemption tracking, conversion rates, revenue impact
-- **Team management** — invite team members with role-based access
+<AccordionGroup>
+  <Accordion title="Coupon Management">
+    Create flat or percentage discounts with codes like `FLAT50`, `SAVE10`. Set min cart values, max discount caps, validity windows, and per-customer usage limits.
+  </Accordion>
+  <Accordion title="Auto-Applied Offers">
+    Show offers automatically based on cart contents — no code needed. e.g., "10% off Electronics" appears when the cart has electronics items.
+  </Accordion>
+  <Accordion title="Rule Engine">
+    13 composable rule types: min cart value, customer segment, first-time buyer, weekend only, category restriction, product combo, date range, and more.
+  </Accordion>
+  <Accordion title="Stacking & Conflict Resolution">
+    Merchants define how offers combine. The engine resolves conflicts using priority, exclusive flags, and global stacking policies.
+  </Accordion>
+  <Accordion title="Product Catalog">
+    Sync SKUs for product/category/brand-based rules. Bulk upsert via API. Define product combos for bundle rules.
+  </Accordion>
+  <Accordion title="Analytics">
+    Track redemptions, conversions, abandonment. Measure AOV lift and revenue impact per offer.
+  </Accordion>
+  <Accordion title="Team Management">
+    Invite team members with role-based access (owner, admin, offer_manager, analytics_viewer). Email-bound invite codes with 7-day expiry.
+  </Accordion>
+</AccordionGroup>
 
 ## What OfferForge is NOT
 
-- Not a payment gateway — we don't process transactions
-- Not a checkout page — merchants already have one
-- Not a coupon aggregator — we're embedded in checkout, not a standalone site
+<Callout type="warning">
+  OfferForge is not a payment gateway, not a checkout page, and not a coupon aggregator. We're the calculation and presentation layer between price and payment.
+</Callout>
+
+| Not this | Because |
+|---|---|
+| A payment gateway | We don't process transactions |
+| A checkout page | Merchants already have one |
+| A lending platform | We don't lend money |
+| A coupon aggregator | We're embedded in checkout, not a standalone site |
 
 ## Architecture
 
-OfferForge is built as a **modular monolith** — a single backend with strict module boundaries. Each offer type (coupons, auto-offers, future bank/brand/EMI offers) is a plugin that registers with the rule engine. This means new offer types can be added without touching existing code.
+OfferForge is built as a **modular monolith** — a single backend with strict module boundaries. Each offer type is a plugin:
 
-## Tech stack
+```
+OfferEvaluatorRegistry
+  ├── CouponEvaluator      (v1 — code-based)
+  ├── AutoOfferEvaluator   (v1 — cart-data-driven)
+  ├── BankOfferEvaluator   (v2 — card BIN validation)
+  ├── BrandOfferEvaluator  (v2 — brand-subsidized)
+  └── EMIOfferEvaluator    (v3 — EMI engine)
+```
 
-| Layer | Technology |
-|---|---|
-| Backend | Node.js + Fastify |
-| Database | MongoDB |
-| Validation | Zod |
-| Dashboard | Next.js + Tailwind CSS |
-| Auth | JWT (dashboard) + API keys (programmatic) |
+New offer types slot in as new evaluators — no changes to existing code.
 
-## Quick links
+## Tech Stack
 
-- [Quickstart Guide](/guides/quickstart) — get your first offer live in 5 minutes
-- [Authentication](/guides/authentication) — JWT vs API keys, how to authenticate
-- [API Reference](/api-reference/auth/signup) — full endpoint documentation
+<CardGroup cols={2}>
+  <Card title="Backend" icon="server" href="/api-reference/auth/signup">
+    Node.js + Fastify + MongoDB. Zod for validation. JWT + API key auth.
+  </Card>
+  <Card title="Dashboard" icon="monitor" href="https://offerforge.io">
+    Next.js + Tailwind CSS. Sora font. Dark theme with amber accent.
+  </Card>
+  <Card title="Rule Engine" icon="cpu" href="/guides/offers">
+    Pure TypeScript functions. 13 rule types. Strategy pattern for extensibility.
+  </Card>
+  <Card title="Database" icon="database">
+    MongoDB Atlas. 8 collections. Tenant isolation on every query.
+  </Card>
+</CardGroup>
+
+## Quick Links
+
+<CardGroup cols={3}>
+  <Card title="Quickstart" icon="rocket" href="/guides/quickstart">
+    Get your first offer live in 5 minutes
+  </Card>
+  <Card title="Authentication" icon="lock" href="/guides/authentication">
+    JWT vs API keys, roles, team invites
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/auth/signup">
+    Full endpoint documentation
+  </Card>
+  <Card title="Offers & Rules" icon="tag" href="/guides/offers">
+    All 13 rule types explained
+  </Card>
+  <Card title="Stacking" icon="layers" href="/guides/stacking">
+    How offers combine and resolve conflicts
+  </Card>
+  <Card title="Products" icon="box" href="/guides/products">
+    Sync your catalog for targeted offers
+  </Card>
+</CardGroup>
