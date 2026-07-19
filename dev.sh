@@ -81,28 +81,76 @@ if [ -n "$EXISTING_DASH_PID" ]; then
   sleep 2
 fi
 
-cd dashboard && npx next dev -p 3030 &
+cd dashboard && npx next dev -p 3030 > /tmp/offerforge-dashboard.log 2>&1 &
 DASH_PID=$!
 echo "✅ Dashboard running (PID: $DASH_PID) at http://localhost:3030"
+echo "   Logs: /tmp/offerforge-dashboard.log"
+
+# Step 7: Start Mintlify docs on port 3333
+echo ""
+echo "📚 Starting docs on port 3333..."
+EXISTING_DOCS_PID=$(lsof -ti:3333 2>/dev/null)
+if [ -n "$EXISTING_DOCS_PID" ]; then
+  echo "⚠️  Port 3333 in use (PID: $EXISTING_DOCS_PID), stopping it..."
+  kill $EXISTING_DOCS_PID 2>/dev/null
+  sleep 2
+fi
+
+# Check if mintlify CLI is installed
+if command -v mint &> /dev/null; then
+  cd /Users/arelligoutham/Documents/OfferForge/docs/mintlify && mint dev -p 3333 > /tmp/offerforge-docs.log 2>&1 &
+  DOCS_PID=$!
+  echo "✅ Docs running (PID: $DOCS_PID) at http://localhost:3333"
+  echo "   Logs: /tmp/offerforge-docs.log"
+else
+  echo "ℹ️  Mintlify CLI not installed (npm i -g mint). Skipping docs server."
+  echo "   Docs source: docs/mintlify/"
+  DOCS_PID=""
+fi
+
+cd /Users/arelligoutham/Documents/OfferForge
 
 # Print summary
 echo ""
 echo "======================================"
 echo "🎉 OfferForge is running!"
 echo ""
-echo "   Dashboard:  http://localhost:3030"
-echo "   API:        http://localhost:3010"
-echo "   API Health: http://localhost:3010/health"
+echo "   🖥️  Dashboard:  http://localhost:3030"
+echo "   🔧 API:        http://localhost:3010"
+echo "   ❤️  Health:     http://localhost:3010/health"
+if [ -n "$DOCS_PID" ]; then
+echo "   📚 Docs:       http://localhost:3333"
+fi
+echo "   🗄️  MongoDB:    localhost:27017 (Docker)"
 echo ""
-echo "   Test credentials:"
-echo "     Email:    owner@store.in (not seeded — signup first)"
-echo "     API Key:  demo-key-123 (for programmatic access)"
+echo "   🔑 Login credentials:"
+echo "      Email:    owner@techstore.in"
+echo "      Password: password123"
+echo ""
+echo "   🔌 API Key (for programmatic access):"
+echo "      demo-key-123"
+echo ""
+echo "   📋 Logs:"
+echo "      API:       /tmp/offerforge-api.log"
+echo "      Dashboard: /tmp/offerforge-dashboard.log"
+if [ -n "$DOCS_PID" ]; then
+echo "      Docs:      /tmp/offerforge-docs.log"
+fi
 echo ""
 echo "   Press Ctrl+C to stop all services"
 echo "======================================"
 
 # Trap Ctrl+C to kill all processes
-trap "echo ''; echo '🛑 Shutting down...'; kill $API_PID $DASH_PID 2>/dev/null; docker compose down 2>/dev/null; echo '✅ Stopped'; exit 0" INT TERM
+kill_all() {
+  echo ""
+  echo "🛑 Shutting down..."
+  kill $API_PID $DASH_PID 2>/dev/null
+  if [ -n "$DOCS_PID" ]; then kill $DOCS_PID 2>/dev/null; fi
+  docker compose down 2>/dev/null
+  echo "✅ All services stopped"
+  exit 0
+}
+trap kill_all INT TERM
 
 # Wait for processes to exit
 wait

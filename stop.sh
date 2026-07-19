@@ -21,6 +21,15 @@ else
   echo "ℹ️  Dashboard was not running"
 fi
 
+# Kill docs server (port 3333)
+DOCS_PID=$(lsof -ti:3333 2>/dev/null)
+if [ -n "$DOCS_PID" ]; then
+  kill $DOCS_PID 2>/dev/null
+  echo "✅ Docs stopped"
+else
+  echo "ℹ️  Docs were not running"
+fi
+
 # Stop Docker MongoDB
 if docker ps -q --filter name=offerforge-mongo | grep -q .; then
   docker compose down 2>/dev/null
