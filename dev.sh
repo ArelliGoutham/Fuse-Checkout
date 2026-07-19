@@ -2,7 +2,7 @@
 # OfferForge — Local Development Setup
 # Starts MongoDB, backend API, seeds data, and dashboard
 
-set -e
+# Don't use set -e — background processes may return non-zero
 
 echo "🚀 OfferForge Local Development Setup"
 echo "======================================"
@@ -43,6 +43,7 @@ echo "✅ Database seeded (API key: demo-key-123)"
 # Step 4: Kill any existing process on port 3010 and start backend API
 echo ""
 echo "🔧 Starting backend API server on port 3010..."
+cd /Users/arelligoutham/Documents/OfferForge
 EXISTING_API_PID=$(lsof -ti:3010 2>/dev/null)
 if [ -n "$EXISTING_API_PID" ]; then
   echo "⚠️  Port 3010 in use (PID: $EXISTING_API_PID), stopping it..."
@@ -53,7 +54,7 @@ fi
 PORT=3010 npx tsx src/server.ts > /tmp/offerforge-api.log 2>&1 &
 API_PID=$!
 echo "✅ API server running (PID: $API_PID) at http://localhost:3010"
-echo "   Logs: /tmp/offerforge-api.log"
+echo "   Logs: tail -f /tmp/offerforge-api.log"
 
 # Step 5: Wait for API to be ready
 echo ""
@@ -81,8 +82,9 @@ if [ -n "$EXISTING_DASH_PID" ]; then
   sleep 2
 fi
 
-cd dashboard && npx next dev -p 3030 > /tmp/offerforge-dashboard.log 2>&1 &
+cd /Users/arelligoutham/Documents/OfferForge/dashboard && npx next dev -p 3030 > /tmp/offerforge-dashboard.log 2>&1 &
 DASH_PID=$!
+cd /Users/arelligoutham/Documents/OfferForge
 echo "✅ Dashboard running (PID: $DASH_PID) at http://localhost:3030"
 echo "   Logs: /tmp/offerforge-dashboard.log"
 
