@@ -1,0 +1,39 @@
+---
+title: Delete Offer
+description: Delete an offer by ID.
+---
+
+# Delete Offer
+
+<Endpoint method="DELETE" path="/api/offers/:id" />
+
+Delete an offer by its ID. This cannot be undone. Requires `offers:write` scope (API key) or `offer_manager`+ role (JWT).
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+The offer ID (e.g., `offer_123456_abc`).
+</ParamField>
+
+## Example
+
+```bash
+curl -X DELETE https://api.offerforge.io/api/offers/offer_123456_abc \
+  -H "x-api-key: of_live_..." \
+  -H "Content-Type: application/json"
+```
+
+## Response (200)
+
+```json
+{
+  "deleted": true
+}
+```
+
+## Errors
+
+| Status | Code | When |
+|---|---|---|
+| 404 | `NOT_FOUND` | Offer does not exist |
+| 401 | `AUTH_INVALID` | Missing or invalid API key |

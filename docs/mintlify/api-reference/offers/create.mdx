@@ -1,0 +1,99 @@
+---
+title: Create Offer
+description: Create a new coupon or auto-applied offer.
+---
+
+import { Tabs } from 'nextra/components'
+
+# Create Offer
+
+<Endpoint method="POST" path="/api/offers" />
+
+Create a new coupon code or auto-applied offer. Requires `offers:write` scope (API key) or `offer_manager`+ role (JWT).
+
+## Request Body
+
+<ParamField path="code" type="string" required={false}>
+Coupon code (e.g., "FLAT50"). Set to `null` for auto-offers.
+</ParamField>
+
+<ParamField path="type" type="string" required>
+Offer type: `"coupon"` or `"auto_offer"`.
+</ParamField>
+
+<ParamField path="title" type="string" required>
+Display title (e.g., "Flat ₹50 off on orders above ₹500").
+</ParamField>
+
+<ParamField path="discount" type="object" required>
+<ParamField path="discount.type" type="string" required>`"flat"` or `"percentage"`</ParamField>
+<ParamField path="discount.value" type="number" required>Discount value (₹ for flat, % for percentage)</ParamField>
+<ParamField path="discount.max_discount" type="number">Optional cap for percentage discounts (₹)</ParamField>
+</ParamField>
+
+<ParamField path="validity" type="object" required>
+<ParamField path="validity.starts_at" type="string" required>ISO 8601 datetime</ParamField>
+<ParamField path="validity.ends_at" type="string" required>ISO 8601 datetime</ParamField>
+</ParamField>
+
+<ParamField path="usage_limits" type="object">
+<ParamField path="usage_limits.total" type="number">Max total uses (null = unlimited)</ParamField>
+<ParamField path="usage_limits.per_customer" type="number">Max uses per customer (null = unlimited)</ParamField>
+</ParamField>
+
+<ParamField path="rules" type="array">
+Array of rule objects. See [Offers & Rules](/guides/offers) for all rule types.
+</ParamField>
+
+<ParamField path="stacking" type="object">
+<ParamField path="stacking.stacks_with" type="array">Offer types this can stack with (null = all)</ParamField>
+<ParamField path="stacking.exclusive" type="boolean">If true, no other offers can stack</ParamField>
+<ParamField path="stacking.priority" type="number">Higher = evaluated first</ParamField>
+</ParamField>
+
+## Example
+
+```bash
+curl -X POST https://api.offerforge.io/api/offers \
+  -H "x-api-key: of_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "FLAT50",
+    "type": "coupon",
+    "title": "Flat ₹50 off",
+    "discount": { "type": "flat", "value": 50, "max_discount": null },
+    "validity": { "starts_at": "2026-01-01T00:00:00.000Z", "ends_at": "2026-12-31T23:59:59.000Z" },
+    "usage_limits": { "total": null, "per_customer": null },
+    "rules": [{ "rule_type": "min_cart_value", "config": { "min_amount": 500 } }]
+  }'
+```
+
+## Response (201)
+
+```json
+{
+  "_id": "offer_123456_abc",
+  "merchant_id": "merch_demo",
+  "code": "FLAT50",
+  "type": "coupon",
+  "title": "Flat ₹50 off",
+  "discount": { "type": "flat", "value": 50, "max_discount": null },
+  "subsidy_model": "merchant",
+  "status": "active",
+  "validity": { "starts_at": "2026-01-01T00:00:00.000Z", "ends_at": "2026-12-31T23:59:59.000Z" },
+  "usage_limits": { "total": null, "per_customer": null },
+  "usage_count": 0,
+  "rules": [{ "rule_type": "min_cart_value", "config": { "min_amount": 500 } }],
+  "stacking": { "stacks_with": null, "exclusive": false, "priority": 0 },
+  "tags": [],
+  "created_at": "2026-07-18T...",
+  "updated_at": "2026-07-18T..."
+}
+```
+
+## Errors
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | Invalid request body |
+| 401 | `AUTH_INVALID` | Missing or invalid API key |

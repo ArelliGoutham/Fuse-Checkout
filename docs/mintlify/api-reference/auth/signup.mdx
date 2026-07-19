@@ -1,0 +1,67 @@
+---
+title: Sign Up
+description: Create a new merchant account.
+---
+
+# Sign Up
+
+<Endpoint method="POST" path="/api/auth/signup" />
+
+Create a new merchant account and receive an authentication token. This endpoint does not require authentication.
+
+## Request Body
+
+<ParamField path="email" type="string" required>
+Unique email address for the merchant.
+</ParamField>
+
+<ParamField path="password" type="string" required>
+Password (minimum 8 characters).
+</ParamField>
+
+<ParamField path="name" type="string" required>
+Full name of the account owner.
+</ParamField>
+
+<ParamField path="store_name" type="string" required>
+Name of the merchant's store or business.
+</ParamField>
+
+## Example
+
+```bash
+curl -X POST https://api.offerforge.io/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "owner@mystore.com",
+    "password": "securePassword123",
+    "name": "John Doe",
+    "store_name": "My Store"
+  }'
+```
+
+## Response (201)
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "_id": "user_123456",
+    "email": "owner@mystore.com",
+    "name": "John Doe"
+  },
+  "merchant": {
+    "_id": "merch_demo",
+    "store_name": "My Store",
+    "tier": "starter"
+  },
+  "role": "owner"
+}
+```
+
+## Errors
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | Invalid email, weak password, or missing fields |
+| 409 | `DUPLICATE_EMAIL` | Email already registered |

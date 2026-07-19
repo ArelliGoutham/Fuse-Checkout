@@ -1,0 +1,76 @@
+---
+title: Validate Offer Code
+description: Validate and preview a coupon code or offer.
+---
+
+# Validate Offer Code
+
+<Endpoint method="POST" path="/api/offers/validate" />
+
+Validate a coupon code or offer ID against a customer's cart without creating a redemption record. Use this to show discount previews during checkout. No authentication required for checkout flows.
+
+## Request Body
+
+<ParamField path="code" type="string">
+Coupon code to validate (e.g., `"FLAT50"`). Either `code` or `offer_id` is required.
+</ParamField>
+
+<ParamField path="offer_id" type="string">
+Offer ID to validate. Either `code` or `offer_id` is required.
+</ParamField>
+
+<ParamField path="cart" type="object" required>
+<ParamField path="cart.amount" type="number" required>Total cart value in ₹</ParamField>
+<ParamField path="cart.items" type="array" required>Array of cart items with `sku_id` and `quantity`</ParamField>
+</ParamField>
+
+<ParamField path="customer" type="object" required>
+<ParamField path="customer.customer_id" type="string" required>Unique customer identifier</ParamField>
+<ParamField path="customer.segments" type="array">Customer segments</ParamField>
+<ParamField path="customer.total_orders" type="number">Total orders placed by customer</ParamField>
+<ParamField path="customer.per_customer_used" type="object">Object mapping offer IDs to times used</ParamField>
+</ParamField>
+
+## Example
+
+```bash
+curl -X POST https://api.offerforge.io/api/offers/validate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "FLAT50",
+    "cart": {
+      "amount": 1500,
+      "items": [{ "sku_id": "prod_123", "quantity": 2 }]
+    },
+    "customer": {
+      "customer_id": "cust_demo",
+      "segments": ["vip"],
+      "total_orders": 5,
+      "per_customer_used": {}
+    }
+  }'
+```
+
+## Response (200)
+
+```json
+{
+  "valid": true,
+  "offer": {
+    "_id": "offer_123456_abc",
+    "code": "FLAT50",
+    "title": "Flat ₹50 off",
+    "discount": { "type": "flat", "value": 50 }
+  },
+  "discount_amount": 50,
+  "final_amount": 1450
+}
+```
+
+## Errors
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `INVALID_OFFER` | Offer code/ID not found or expired |
+| 400 | `NOT_ELIGIBLE` | Customer does not meet offer criteria (reason field explains why) |
+| 400 | `VALIDATION_ERROR` | Invalid request body |

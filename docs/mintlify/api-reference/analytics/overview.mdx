@@ -1,0 +1,37 @@
+---
+title: Analytics Overview
+description: Get high-level analytics and KPIs for your offers.
+---
+
+# Analytics Overview
+
+<Endpoint method="GET" path="/api/analytics/overview" />
+
+Get high-level key performance indicators and analytics for all offers. Requires `analytics:read` scope (API key) or `analytics` role (JWT).
+
+## Example
+
+```bash
+curl -X GET https://api.offerforge.io/api/analytics/overview \
+  -H "x-api-key: of_live_..." \
+  -H "Content-Type: application/json"
+```
+
+## Response (200)
+
+```json
+{
+  "total_redemptions": 1250,
+  "conversions": 850,
+  "abandoned": 400,
+  "conversion_rate": 0.68,
+  "revenue_via_offers": 45000,
+  "total_discount_given": 12500
+}
+```
+
+## Errors
+
+| Status | Code | When |
+|---|---|---|
+| 401 | `AUTH_INVALID` | Missing or invalid API key |

@@ -1,0 +1,64 @@
+---
+title: Create Product
+description: Create or update a product by SKU.
+---
+
+# Create Product
+
+<Endpoint method="POST" path="/api/products" />
+
+Create a new product or update an existing one by SKU ID. Requires `products:write` scope (API key) or `product_manager`+ role (JWT).
+
+## Request Body
+
+<ParamField path="sku_id" type="string" required>
+Unique SKU identifier (e.g., `"PROD-001"`). Used for upsert logic.
+</ParamField>
+
+<ParamField path="name" type="string" required>
+Product name (e.g., `"Blue Cotton T-Shirt"`).
+</ParamField>
+
+<ParamField path="category" type="string">
+Product category (e.g., `"apparel"`, `"electronics"`).
+</ParamField>
+
+<ParamField path="brand" type="string">
+Product brand (e.g., `"Nike"`, `"Apple"`).
+</ParamField>
+
+## Example
+
+```bash
+curl -X POST https://api.offerforge.io/api/products \
+  -H "x-api-key: of_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sku_id": "PROD-001",
+    "name": "Blue Cotton T-Shirt",
+    "category": "apparel",
+    "brand": "Nike"
+  }'
+```
+
+## Response (201)
+
+```json
+{
+  "_id": "prod_123456_abc",
+  "merchant_id": "merch_demo",
+  "sku_id": "PROD-001",
+  "name": "Blue Cotton T-Shirt",
+  "category": "apparel",
+  "brand": "Nike",
+  "created_at": "2026-07-18T10:00:00.000Z",
+  "updated_at": "2026-07-18T10:00:00.000Z"
+}
+```
+
+## Errors
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | Invalid request body |
+| 401 | `AUTH_INVALID` | Missing or invalid API key |
