@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="32" viewBox="0 0 120 32">
+  <rect width="28" height="28" x="2" y="2" rx="7" fill="#F59E0B"/>
+  <path d="M18 8 L11 19 L16 19 L14 24 L21 15 L17 15 Z" fill="#0C0E14"/>
+  <text x="36" y="22" font-family="Sora, sans-serif" font-size="16" font-weight="700" fill="#0C0E14">OfferForge</text>
+</svg>

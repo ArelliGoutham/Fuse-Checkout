@@ -88,26 +88,28 @@ cd /Users/arelligoutham/Documents/OfferForge
 echo "✅ Dashboard running (PID: $DASH_PID) at http://localhost:3030"
 echo "   Logs: /tmp/offerforge-dashboard.log"
 
-# Step 7: Start Mintlify docs on port 3333
+# Step 7: Start Mintlify docs on port 3000 (mintlify default, can't be changed)
 echo ""
-echo "📚 Starting docs on port 3333..."
-EXISTING_DOCS_PID=$(lsof -ti:3333 2>/dev/null)
+echo "📚 Starting docs server..."
+EXISTING_DOCS_PID=$(lsof -ti:3000 2>/dev/null)
 if [ -n "$EXISTING_DOCS_PID" ]; then
-  echo "⚠️  Port 3333 in use (PID: $EXISTING_DOCS_PID), stopping it..."
+  echo "⚠️  Port 3000 in use (PID: $EXISTING_DOCS_PID), stopping it..."
   kill $EXISTING_DOCS_PID 2>/dev/null
   sleep 2
 fi
 
 # Check if mintlify CLI is installed
 if command -v mint &> /dev/null; then
-  cd /Users/arelligoutham/Documents/OfferForge/docs/mintlify && mint dev -p 3333 > /tmp/offerforge-docs.log 2>&1 &
+  cd /Users/arelligoutham/Documents/OfferForge/docs/mintlify && mint dev --no-open > /tmp/offerforge-docs.log 2>&1 &
   DOCS_PID=$!
-  echo "✅ Docs running (PID: $DOCS_PID) at http://localhost:3333"
-  echo "   Logs: /tmp/offerforge-docs.log"
+  echo "✅ Docs running (PID: $DOCS_PID) at http://localhost:3000"
+  echo "   Logs: tail -f /tmp/offerforge-docs.log"
+  DOCS_PORT=3000
 else
   echo "ℹ️  Mintlify CLI not installed (npm i -g mint). Skipping docs server."
   echo "   Docs source: docs/mintlify/"
   DOCS_PID=""
+  DOCS_PORT=""
 fi
 
 cd /Users/arelligoutham/Documents/OfferForge
@@ -121,7 +123,7 @@ echo "   🖥️  Dashboard:  http://localhost:3030"
 echo "   🔧 API:        http://localhost:3010"
 echo "   ❤️  Health:     http://localhost:3010/health"
 if [ -n "$DOCS_PID" ]; then
-echo "   📚 Docs:       http://localhost:3333"
+echo "   📚 Docs:       http://localhost:3000"
 fi
 echo "   🗄️  MongoDB:    localhost:27017 (Docker)"
 echo ""

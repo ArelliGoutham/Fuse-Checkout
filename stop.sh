@@ -21,8 +21,8 @@ else
   echo "ℹ️  Dashboard was not running"
 fi
 
-# Kill docs server (port 3333)
-DOCS_PID=$(lsof -ti:3333 2>/dev/null)
+# Kill docs server (port 3000)
+DOCS_PID=$(lsof -ti:3000 2>/dev/null)
 if [ -n "$DOCS_PID" ]; then
   kill $DOCS_PID 2>/dev/null
   echo "✅ Docs stopped"
