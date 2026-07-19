@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "amber",
+  "theme": "willow",
   "name": "OfferForge",
   "colors": {
     "primary": "#F59E0B",
