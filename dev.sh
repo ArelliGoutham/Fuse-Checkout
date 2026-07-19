@@ -114,26 +114,35 @@ fi
 
 cd /Users/arelligoutham/Documents/OfferForge
 
-# Step 8: Start marketing website on port 8080
+# Step 8: Start marketing website (port 8080) and playground (port 8081)
 echo ""
 echo "🌐 Starting marketing website on port 8080..."
-EXISTING_WEB_PID=$(lsof -ti:8080 2>/dev/null)
-if [ -n "$EXISTING_WEB_PID" ]; then
-  echo "⚠️  Port 8080 in use (PID: $EXISTING_WEB_PID), stopping it..."
-  kill $EXISTING_WEB_PID 2>/dev/null
-  sleep 2
-fi
+for port in 8080 8081; do
+  EXISTING=$(lsof -ti:$port 2>/dev/null)
+  if [ -n "$EXISTING" ]; then
+    echo "⚠️  Port $port in use (PID: $EXISTING), stopping it..."
+    kill $EXISTING 2>/dev/null
+    sleep 1
+  fi
+done
 
 cd /Users/arelligoutham/Documents/OfferForge/website
 if command -v python3 &> /dev/null; then
   python3 -m http.server 8080 > /tmp/offerforge-website.log 2>&1 &
   WEB_PID=$!
-  echo "✅ Marketing site running (PID: $WEB_PID) at http://localhost:8080"
-  echo "   Logs: tail -f /tmp/offerforge-website.log"
+  echo "✅ Marketing site running at http://localhost:8080"
 else
-  echo "ℹ️  python3 not found. Marketing site files at website/"
-  echo "   Open website/index.html directly in your browser."
+  echo "ℹ️  python3 not found. Open website/index.html in browser."
   WEB_PID=""
+fi
+
+cd /Users/arelligoutham/Documents/OfferForge/playground
+if command -v python3 &> /dev/null; then
+  python3 -m http.server 8081 > /tmp/offerforge-playground.log 2>&1 &
+  PLAY_PID=$!
+  echo "✅ Playground running at http://localhost:8081"
+else
+  PLAY_PID=""
 fi
 
 cd /Users/arelligoutham/Documents/OfferForge
@@ -144,6 +153,7 @@ echo "======================================"
 echo "🎉 OfferForge is running!"
 echo ""
 echo "   🌐 Marketing:  http://localhost:8080"
+echo "   🎮 Playground: http://localhost:8081"
 echo "   🖥️  Dashboard:  http://localhost:3030"
 echo "   🔧 API:        http://localhost:3010"
 echo "   ❤️  Health:     http://localhost:3010/health"
@@ -168,6 +178,9 @@ fi
 if [ -n "$WEB_PID" ]; then
 echo "      Website:   tail -f /tmp/offerforge-website.log"
 fi
+if [ -n "$PLAY_PID" ]; then
+echo "      Playground: tail -f /tmp/offerforge-playground.log"
+fi
 echo ""
 echo "   Press Ctrl+C to stop all services"
 echo "======================================"
@@ -179,8 +192,10 @@ kill_all() {
   kill $API_PID $DASH_PID 2>/dev/null
   if [ -n "$DOCS_PID" ]; then kill $DOCS_PID 2>/dev/null; fi
   if [ -n "$WEB_PID" ]; then kill $WEB_PID 2>/dev/null; fi
-  # Kill any python http.server we started for the website
+  if [ -n "$PLAY_PID" ]; then kill $PLAY_PID 2>/dev/null; fi
+  # Kill any python http.server we started
   lsof -ti:8080 2>/dev/null | xargs kill 2>/dev/null || true
+  lsof -ti:8081 2>/dev/null | xargs kill 2>/dev/null || true
   docker compose down 2>/dev/null
   echo "✅ All services stopped"
   exit 0

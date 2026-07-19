@@ -21,13 +21,21 @@ else
   echo "ℹ️  Dashboard was not running"
 fi
 
-# Kill marketing website (port 8080)
+# Kill marketing website (port 8080) and playground (port 8081)
 WEB_PID=$(lsof -ti:8080 2>/dev/null)
 if [ -n "$WEB_PID" ]; then
   kill $WEB_PID 2>/dev/null
   echo "✅ Marketing website stopped"
 else
   echo "ℹ️  Marketing website was not running"
+fi
+
+PLAY_PID=$(lsof -ti:8081 2>/dev/null)
+if [ -n "$PLAY_PID" ]; then
+  kill $PLAY_PID 2>/dev/null
+  echo "✅ Playground stopped"
+else
+  echo "ℹ️  Playground was not running"
 fi
 
 # Kill docs server (port 3000)
