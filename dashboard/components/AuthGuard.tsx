@@ -7,8 +7,9 @@ export function AuthGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    const token = localStorage.getItem('offerforge_token');
     const apiKey = localStorage.getItem('offerforge_api_key');
-    if (!apiKey) {
+    if (!token && !apiKey) {
       router.push('/login');
     }
   }, [router]);
