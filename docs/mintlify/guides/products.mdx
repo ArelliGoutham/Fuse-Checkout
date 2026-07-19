@@ -1,0 +1,78 @@
+---
+title: Product Catalog
+description: Sync products to OfferForge for category, brand, and product-combo based rules.
+---
+
+# Product Catalog
+
+Product metadata is stored in OfferForge so you can create rules that reference specific SKUs, categories, or brands.
+
+## What we store
+
+| Field | Required | Description |
+|---|---|---|
+| `sku_id` | Yes | Your unique product SKU |
+| `name` | Yes | Product name |
+| `category` | No | e.g., "Electronics" |
+| `subcategory` | No | e.g., "Smartphones" |
+| `brand` | No | e.g., "Apple" — used for brand_restriction rules |
+| `parent_sku` | No | For product variants |
+
+**Prices are NOT stored** — they change frequently. Your cart sends prices per-request. We only store identity and classification.
+
+## Syncing products
+
+### Single product
+
+```bash
+curl -X POST https://api.offerforge.io/api/products \
+  -H "x-api-key: of_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sku_id": "SKU-IP15",
+    "name": "iPhone 15 Pro",
+    "category": "Electronics",
+    "brand": "Apple"
+  }'
+```
+
+### Bulk sync (upsert)
+
+```bash
+curl -X POST https://api.offerforge.io/api/products/bulk \
+  -H "x-api-key: of_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "products": [
+      { "sku_id": "SKU-1", "name": "Product 1", "category": "Electronics" },
+      { "sku_id": "SKU-2", "name": "Product 2", "category": "Clothing" }
+    ]
+  }'
+```
+
+Products are upserted by `{merchant_id, sku_id}` — sync as often as you need.
+
+## Using products in rules
+
+Once synced, products power these rule types:
+
+- `category_restriction` — "10% off Electronics"
+- `product_restriction` — "FLAT50 only on SKU-IP15"
+- `brand_restriction` — "Apple products get 5% off"
+- `product_combo` — "Buy iPhone + Case → ₹500 off" (requires a combo definition)
+
+## Product combos
+
+Define bundles for `product_combo` rules:
+
+```bash
+curl -X POST https://api.offerforge.io/api/product-combos \
+  -H "x-api-key: of_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "iPhone + Case Bundle",
+    "product_skus": ["SKU-IP15", "SKU-CASE01"]
+  }'
+```
+
+Then use the combo in an offer's rules — the customer must have all SKUs in their cart.

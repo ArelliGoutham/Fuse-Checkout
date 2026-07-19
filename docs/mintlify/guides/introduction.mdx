@@ -1,0 +1,44 @@
+---
+title: Introduction
+description: OfferForge is a modular offers platform for Indian e-commerce — create coupons, auto-applied offers, and stacking rules without building anything.
+---
+
+# Introduction
+
+OfferForge is a drop-in offers layer that sits between "customer sees price" and "customer pays" at checkout. It handles coupon validation, auto-applied offers, stacking conflicts, and analytics — so merchants don't have to build any of it.
+
+## What OfferForge does
+
+- **Creates and manages coupons** — flat discounts, percentage off, with caps and restrictions
+- **Auto-applied offers** — offers shown to customers based on cart contents (no code needed)
+- **Rule engine** — 13 rule types: min cart value, customer segment, weekend only, category restriction, product combo, and more
+- **Stacking & conflict resolution** — merchants define how offers combine, the engine resolves conflicts
+- **Product catalog** — sync SKUs for product/category/brand-based rules
+- **Analytics** — redemption tracking, conversion rates, revenue impact
+- **Team management** — invite team members with role-based access
+
+## What OfferForge is NOT
+
+- Not a payment gateway — we don't process transactions
+- Not a checkout page — merchants already have one
+- Not a coupon aggregator — we're embedded in checkout, not a standalone site
+
+## Architecture
+
+OfferForge is built as a **modular monolith** — a single backend with strict module boundaries. Each offer type (coupons, auto-offers, future bank/brand/EMI offers) is a plugin that registers with the rule engine. This means new offer types can be added without touching existing code.
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Node.js + Fastify |
+| Database | MongoDB |
+| Validation | Zod |
+| Dashboard | Next.js + Tailwind CSS |
+| Auth | JWT (dashboard) + API keys (programmatic) |
+
+## Quick links
+
+- [Quickstart Guide](/guides/quickstart) — get your first offer live in 5 minutes
+- [Authentication](/guides/authentication) — JWT vs API keys, how to authenticate
+- [API Reference](/api-reference/auth/signup) — full endpoint documentation

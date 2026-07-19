@@ -1,0 +1,83 @@
+---
+title: Authentication
+description: How to authenticate with the OfferForge API — JWT for dashboard, API keys for programmatic access.
+---
+
+# Authentication
+
+OfferForge supports two authentication methods that coexist:
+
+## 1. JWT Tokens (Dashboard)
+
+Used by the merchant dashboard. Obtained via login or signup:
+
+```bash
+# Login
+curl -X POST https://api.offerforge.io/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{ "email": "owner@store.in", "password": "password123" }'
+```
+
+Returns a JWT token valid for 7 days. Send it in the `Authorization` header:
+
+```bash
+curl https://api.offerforge.io/api/offers \
+  -H "Authorization: Bearer <jwt-token>"
+```
+
+## 2. API Keys (Programmatic)
+
+Used for checkout integrations, scripts, and server-to-server calls. Create keys from the dashboard or API:
+
+```bash
+curl -X POST https://api.offerforge.io/api/api-keys \
+  -H "Authorization: Bearer <jwt-token>" \
+  -H "Content-Type: application/json" \
+  -d '{ "label": "Production", "scopes": ["offers:read", "checkout", "tracking"] }'
+```
+
+Send the API key in the `x-api-key` header:
+
+```bash
+curl https://api.offerforge.io/api/offers \
+  -H "x-api-key: of_live_..."
+```
+
+## API Key Scopes
+
+| Scope | Description |
+|---|---|
+| `offers:read` | View offers |
+| `offers:write` | Create/update/delete offers |
+| `analytics:read` | View analytics |
+| `products:read` | View products |
+| `products:write` | Create/update products |
+| `checkout` | Use /available, /validate, /apply endpoints |
+| `tracking` | Track conversions |
+
+## API Key Management
+
+- **Create**: Owner or admin role required. Plaintext key shown only once on creation.
+- **Revoke**: Owner or admin. Key stops working immediately.
+- **Rotate**: Create a new key, revoke the old one.
+
+## Roles & Permissions
+
+| Role | Dashboard | Create Offers | Analytics | Team Management | API Keys |
+|---|---|---|---|---|---|
+| **owner** | ✅ Full | ✅ | ✅ | ✅ | ✅ |
+| **admin** | ✅ Full | ✅ | ✅ | ✅ | ✅ |
+| **offer_manager** | Offers + Products | ✅ | ❌ | ❌ | ❌ |
+| **analytics_viewer** | Analytics only | ❌ | ✅ | ❌ | ❌ |
+
+## Team Invitations
+
+Owners and admins can invite team members by email:
+
+1. Owner creates invite → gets a 6-character code (e.g., `AX7K9B`)
+2. Code is bound to the invited email — can't be used by anyone else
+3. Code expires after 7 days
+4. Invitee visits `/invite/AX7K9B` or enters code at `/invite`
+5. Invitee signs up with the matching email → gets JWT with assigned role
+
+The inviter must have a higher role than the invitee (e.g., admin can invite offer_manager but not another admin).

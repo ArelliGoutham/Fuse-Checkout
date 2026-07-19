@@ -1,0 +1,144 @@
+---
+title: Quickstart
+description: Get your first offer live in 5 minutes — sign up, create a coupon, and validate it at checkout.
+---
+
+# Quickstart
+
+Get your first offer running in under 5 minutes.
+
+## Step 1: Create an account
+
+Sign up via the dashboard or API to create your merchant account:
+
+```bash
+curl -X POST https://api.offerforge.io/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "owner@mystore.in",
+    "password": "securepassword123",
+    "name": "Store Owner",
+    "store_name": "My Store"
+  }'
+```
+
+This returns a JWT token and creates your merchant with the `owner` role:
+
+```json
+{
+  "token": "eyJhbG...",
+  "user": { "_id": "user_...", "email": "owner@mystore.in", "name": "Store Owner" },
+  "merchant": { "_id": "merch_...", "name": "My Store" },
+  "role": "owner"
+}
+```
+
+## Step 2: Create an API key
+
+For programmatic access (checkout integration), create an API key:
+
+```bash
+curl -X POST https://api.offerforge.io/api/api-keys \
+  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "label": "Checkout Integration",
+    "scopes": ["offers:read", "checkout", "tracking"]
+  }'
+```
+
+Save the returned `key` — it's shown only once:
+
+```json
+{
+  "key": "of_live_a1b2c3d4e5f6...",
+  "label": "Checkout Integration",
+  "scopes": ["offers:read", "checkout", "tracking"]
+}
+```
+
+## Step 3: Create a coupon
+
+```bash
+curl -X POST https://api.offerforge.io/api/offers \
+  -H "x-api-key: of_live_a1b2c3d4e5f6..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "FLAT50",
+    "type": "coupon",
+    "title": "Flat ₹50 off on orders above ₹500",
+    "discount": { "type": "flat", "value": 50, "max_discount": null },
+    "validity": {
+      "starts_at": "2026-01-01T00:00:00.000Z",
+      "ends_at": "2026-12-31T23:59:59.000Z"
+    },
+    "usage_limits": { "total": null, "per_customer": null },
+    "rules": [
+      { "rule_type": "min_cart_value", "config": { "min_amount": 500 } }
+    ]
+  }'
+```
+
+## Step 4: Validate at checkout
+
+When a customer enters a coupon code at checkout, call the validate endpoint:
+
+```bash
+curl -X POST https://api.offerforge.io/api/offers/validate \
+  -H "x-api-key: of_live_a1b2c3d4e5f6..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "FLAT50",
+    "cart": { "amount": 5000, "items": [{ "sku_id": "SKU-1", "price": 5000, "qty": 1 }] },
+    "customer": { "customer_id": "c1", "segments": ["new"], "total_orders": 0, "per_customer_used": 0 }
+  }'
+```
+
+Response:
+
+```json
+{
+  "valid": true,
+  "offer": { "_id": "offer_...", "code": "FLAT50", ... },
+  "discount_amount": 50,
+  "final_amount": 4950
+}
+```
+
+## Step 5: Apply and track
+
+When the customer confirms the offer, apply it (creates a redemption record):
+
+```bash
+curl -X POST https://api.offerforge.io/api/offers/apply \
+  -H "x-api-key: of_live_a1b2c3d4e5f6..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "FLAT50",
+    "cart": { "amount": 5000, "items": [{ "sku_id": "SKU-1", "price": 5000, "qty": 1 }] },
+    "customer": { "customer_id": "c1", "segments": ["new"], "total_orders": 0, "per_customer_used": 0 },
+    "session_id": "checkout_123"
+  }'
+```
+
+After payment completes, track the conversion:
+
+```bash
+curl -X POST https://api.offerforge.io/api/track/conversion \
+  -H "x-api-key: of_live_a1b2c3d4e5f6..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "checkout_123",
+    "order_id": "order_456",
+    "order_value": 4950,
+    "status": "paid"
+  }'
+```
+
+That's it! You've created a coupon, validated it, applied it, and tracked the conversion. 🎉
+
+## Next steps
+
+- [Authentication](/guides/authentication) — understand JWT vs API keys
+- [Offers & Rules](/guides/offers) — learn about all 13 rule types
+- [Stacking Policy](/guides/stacking) — configure how offers combine

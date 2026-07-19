@@ -1,0 +1,117 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "amber",
+  "name": "OfferForge",
+  "colors": {
+    "primary": "#F59E0B",
+    "light": "#FBBF24",
+    "dark": "#D97706"
+  },
+  "favicon": "/favicon.png",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "guides/introduction",
+              "guides/quickstart",
+              "guides/authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "guides/offers",
+              "guides/rules",
+              "guides/stacking",
+              "guides/products"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Auth",
+            "pages": [
+              "api-reference/auth/signup",
+              "api-reference/auth/login",
+              "api-reference/auth/me",
+              "api-reference/auth/accept-invite"
+            ]
+          },
+          {
+            "group": "Offers",
+            "pages": [
+              "api-reference/offers/create",
+              "api-reference/offers/list",
+              "api-reference/offers/get",
+              "api-reference/offers/delete"
+            ]
+          },
+          {
+            "group": "Checkout",
+            "pages": [
+              "api-reference/checkout/available",
+              "api-reference/checkout/validate",
+              "api-reference/checkout/apply"
+            ]
+          },
+          {
+            "group": "Products",
+            "pages": [
+              "api-reference/products/create",
+              "api-reference/products/list",
+              "api-reference/products/bulk",
+              "api-reference/products/delete"
+            ]
+          },
+          {
+            "group": "Analytics",
+            "pages": [
+              "api-reference/analytics/overview",
+              "api-reference/analytics/offers"
+            ]
+          },
+          {
+            "group": "Team",
+            "pages": [
+              "api-reference/team/invite",
+              "api-reference/team/invites",
+              "api-reference/team/revoke"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.png",
+    "dark": "/logo/dark.png"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Dashboard",
+        "href": "https://offerforge.io"
+      },
+      {
+        "label": "GitHub",
+        "href": "https://github.com/ArelliGoutham/OfferForge"
+      }
+    ],
+    "primary": {
+      "label": "Get API Key",
+      "href": "https://offerforge.io/signup"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/ArelliGoutham/OfferForge"
+    }
+  }
+}

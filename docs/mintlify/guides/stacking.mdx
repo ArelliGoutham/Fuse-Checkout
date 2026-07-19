@@ -1,0 +1,75 @@
+---
+title: Stacking & Conflicts
+description: Configure how offers combine at checkout — global policy, per-offer overrides, and the combo resolution algorithm.
+---
+
+# Stacking & Conflicts
+
+When multiple offers are eligible for a cart, the ComboResolver decides which ones apply.
+
+## Global Stacking Policy
+
+Set at the merchant level. Configured in the dashboard or via the merchant document:
+
+```json
+{
+  "max_coupons": 1,
+  "max_auto_offers": 1,
+  "max_total_discount": null,
+  "allow_cross_type": true,
+  "exclusive_tags": ["flash"]
+}
+```
+
+| Field | Description |
+|---|---|
+| `max_coupons` | Maximum coupon codes per order |
+| `max_auto_offers` | Maximum auto-applied offers per order |
+| `max_total_discount` | Optional cap on total discount amount (₹) |
+| `allow_cross_type` | Can a coupon + auto-offer stack together? |
+| `exclusive_tags` | Offers with these tags can't stack with anything |
+
+## Per-Offer Overrides
+
+Each offer can override the global policy:
+
+```json
+{
+  "stacking": {
+    "stacks_with": ["auto_offer"],
+    "exclusive": true,
+    "priority": 10
+  }
+}
+```
+
+| Field | Description |
+|---|---|
+| `stacks_with` | Array of offer types this can stack with (null = stacks with all) |
+| `exclusive` | If true, no other offers can stack with this one |
+| `priority` | Higher priority offers evaluated first |
+
+## Resolution Algorithm
+
+The ComboResolver processes eligible offers in this order:
+
+1. **Sort by priority** (descending), then by discount (descending)
+2. **Exclusive offers** — if an exclusive offer is applied, reject all others
+3. **Exclusive tags** — offers with exclusive tags clear all previously applied offers
+4. **Global limits** — stop when max_coupons or max_auto_offers reached
+5. **Cross-type check** — if `allow_cross_type` is false, only one type allowed
+6. **Per-offer stacks_with** — check if this offer can stack with already-applied ones
+7. **Discount cap** — if total exceeds max_total_discount, cap it
+
+## Example
+
+Cart: ₹5,000 (iPhone)
+Available: FLAT50 (coupon, ₹50 off), SAVE10 (coupon, 10% off), Auto Electronics (auto, 10% off)
+
+Policy: `max_coupons: 1, max_auto_offers: 1, allow_cross_type: true`
+
+Result:
+- FLAT50 → rejected (max_coupons reached after SAVE10)
+- SAVE10 → applied (₹500 off, higher discount than FLAT50)
+- Auto Electronics → applied (₹500 off)
+- Total discount: ₹1,000, final amount: ₹4,000

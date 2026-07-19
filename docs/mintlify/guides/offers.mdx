@@ -1,0 +1,71 @@
+---
+title: Offers & Rules
+description: Understand offer types (coupons, auto-offers), discount types, and the 13 rule types available for restricting offers.
+---
+
+# Offers & Rules
+
+## Offer Types
+
+| Type | Code Required | Description |
+|---|---|---|
+| `coupon` | Yes | Customer enters a code at checkout (e.g., FLAT50) |
+| `auto_offer` | No | Automatically shown based on cart contents |
+
+## Discount Types
+
+| Type | Field | Description |
+|---|---|---|
+| `flat` | `value` (₹) | Fixed amount off (e.g., ₹50) |
+| `percentage` | `value` (%) | Percentage of cart amount (e.g., 10%) |
+| | `max_discount` | Optional cap for percentage (e.g., max ₹300) |
+
+## Rule Types
+
+Rules are conditions that must ALL pass for an offer to be eligible. Add multiple rules to create complex conditions.
+
+### Cart Value Rules
+
+| Rule | Config | Description |
+|---|---|---|
+| `min_cart_value` | `{ min_amount: 500 }` | Cart must be ≥ ₹500 |
+| `max_cart_value` | `{ max_amount: 50000 }` | Cart must be ≤ ₹50,000 |
+
+### Customer Rules
+
+| Rule | Config | Description |
+|---|---|---|
+| `customer_segment` | `{ segments: ["new", "vip"] }` | Customer must be in one of these segments |
+| `first_time_buyer` | `{}` | Customer has zero paid orders |
+| `per_customer_limit` | `{ limit: 2 }` | Customer has used this offer < 2 times |
+| `total_usage_limit` | `{ limit: 1000 }` | Total redemptions < 1000 |
+
+### Product Rules
+
+| Rule | Config | Description |
+|---|---|---|
+| `category_restriction` | `{ categories: ["Electronics"], exclude: false }` | Cart must (or must not) contain items in these categories |
+| `product_restriction` | `{ skus: ["SKU-1"], exclude: false }` | Cart must (or must not) contain these SKUs |
+| `brand_restriction` | `{ brands: ["Apple"], exclude: false }` | Cart must (or must not) contain these brands |
+| `product_combo` | `{ skus: ["SKU-1", "SKU-2"] }` | All specified SKUs must be present (bundle) |
+
+### Time Rules
+
+| Rule | Config | Description |
+|---|---|---|
+| `time_window` | `{ days: ["sat", "sun"], start_hour: 0, end_hour: 23 }` | Valid only on specified days/hours |
+| `weekend_only` | `{}` | Valid only on Saturday and Sunday |
+| `date_range` | `{ start_date: "2026-07-01", end_date: "2026-07-31" }` | Valid only within date range |
+
+## Evaluation Order
+
+When an offer is evaluated, the engine checks in this order:
+
+1. **Status** — must be `active`
+2. **Validity window** — current time must be between `starts_at` and `ends_at`
+3. **Total usage limit** — `usage_count` must be < `usage_limits.total`
+4. **Per-customer limit** — `per_customer_used` must be < `usage_limits.per_customer`
+5. **Rules** — ALL rules must pass (AND logic, first failure returns reason)
+6. **Discount computation** — calculates the actual discount amount
+
+If any check fails, the response includes a human-readable `reason`.
