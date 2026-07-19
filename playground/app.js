@@ -90,6 +90,7 @@ async function refreshOffers() {
       cart: getCartPayload(),
       customer,
     });
+    // API returns offers directly with is_eligible as a property on each offer
     availableOffers = [...(data.coupons || []), ...(data.auto_offers || [])];
     renderOffers();
     renderSummary();
@@ -190,33 +191,34 @@ function renderOffers() {
 
   couponEl.style.display = 'block';
 
-  // Show auto-offers and available coupons
-  const eligibleOffers = availableOffers.filter(o => o.is_eligible);
-  
-  if (eligibleOffers.length === 0 && !appliedCoupon) {
+  // Show all offers (both eligible and ineligible with reason)
+  if (availableOffers.length === 0) {
     offersEl.innerHTML = '<div style="font-size:13px;color:var(--text-muted);padding:12px 0;">No offers available for this cart</div>';
     return;
   }
 
   let html = '';
-  for (const offer of eligibleOffers) {
-    const isApplied = appliedOffers.has(offer.offer._id) || (appliedCoupon && appliedCoupon.offer._id === offer.offer._id);
-    const isAuto = offer.offer.type === 'auto_offer';
-    const discount = computeDiscountDisplay(offer.offer);
+  for (const offer of availableOffers) {
+    const offerId = offer._id;
+    const isEligible = offer.is_eligible;
+    const isApplied = appliedOffers.has(offerId) || (appliedCoupon && appliedCoupon.offer && appliedCoupon.offer._id === offerId);
+    const isAuto = offer.type === 'auto_offer';
+    const discount = computeDiscountDisplay(offer);
+    const reason = offer.evaluation_result?.reason;
     
     html += `
-      <div class="offer-card ${isApplied ? 'applied' : ''}" onclick="toggleOffer('${offer.offer._id}')">
+      <div class="offer-card ${isApplied ? 'applied' : ''}" ${isEligible ? `onclick="toggleOffer('${offerId}')"` : 'style="opacity:0.5;cursor:default;"'}>
         <div class="offer-card-header">
           <div class="offer-card-title">
             <div class="offer-icon ${isAuto ? 'auto' : 'coupon'}">
               <i class="fa-solid ${isAuto ? 'fa-bolt' : 'fa-tag'}"></i>
             </div>
             <div>
-              <div class="offer-name">${offer.offer.title}</div>
-              <div class="offer-desc">${offer.offer.code || 'Auto-applied'} · ${discount}</div>
+              <div class="offer-name">${offer.title}${!isEligible ? ' <span style="font-size:11px;color:var(--danger);">(not eligible)</span>' : ''}</div>
+              <div class="offer-desc">${offer.code || 'Auto-applied'} · ${discount}${reason ? ' · ' + reason : ''}</div>
             </div>
           </div>
-          <div class="offer-toggle ${isApplied ? 'active' : ''}"></div>
+          ${isEligible ? `<div class="offer-toggle ${isApplied ? 'active' : ''}"></div>` : ''}
         </div>
       </div>
     `;
@@ -235,8 +237,8 @@ function renderSummary() {
 
   // Calculate discount from applied auto-offers
   for (const offer of availableOffers) {
-    if (appliedOffers.has(offer.offer._id) && offer.is_eligible) {
-      totalDiscount += computeDiscount(offer.offer, subtotal);
+    if (appliedOffers.has(offer._id) && offer.is_eligible) {
+      totalDiscount += computeDiscount(offer, subtotal);
     }
   }
 
@@ -255,10 +257,10 @@ function renderSummary() {
   }
   
   for (const offer of availableOffers) {
-    if (appliedOffers.has(offer.offer._id) && offer.is_eligible && offer.offer.type === 'auto_offer') {
-      const disc = computeDiscount(offer.offer, subtotal);
+    if (appliedOffers.has(offer._id) && offer.is_eligible && offer.type === 'auto_offer') {
+      const disc = computeDiscount(offer, subtotal);
       if (disc > 0) {
-        html += `<div class="summary-row discount"><span>${offer.offer.title}</span><span>−${formatINR(disc)}</span></div>`;
+        html += `<div class="summary-row discount"><span>${offer.title}</span><span>−${formatINR(disc)}</span></div>`;
       }
     }
   }
