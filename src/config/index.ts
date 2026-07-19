@@ -8,4 +8,5 @@ export const config = {
   brandPrimaryColor: process.env.BRAND_PRIMARY_COLOR ?? '#4F46E5',
   brandSupportEmail: process.env.BRAND_SUPPORT_EMAIL ?? 'support@offerforge.io',
   brandDomain: process.env.BRAND_DOMAIN ?? 'offerforge.io',
+  jwtSecret: process.env.JWT_SECRET ?? 'dev-secret',
 } as const;
