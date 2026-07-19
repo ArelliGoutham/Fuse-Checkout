@@ -40,12 +40,20 @@ echo "🌱 Seeding database with demo data..."
 npx tsx scripts/seed.ts
 echo "✅ Database seeded (API key: demo-key-123)"
 
-# Step 4: Start backend API
+# Step 4: Kill any existing process on port 3010 and start backend API
 echo ""
 echo "🔧 Starting backend API server on port 3010..."
-PORT=3010 npx tsx src/server.ts &
+EXISTING_API_PID=$(lsof -ti:3010 2>/dev/null)
+if [ -n "$EXISTING_API_PID" ]; then
+  echo "⚠️  Port 3010 in use (PID: $EXISTING_API_PID), stopping it..."
+  kill $EXISTING_API_PID 2>/dev/null
+  sleep 2
+fi
+
+PORT=3010 npx tsx src/server.ts > /tmp/offerforge-api.log 2>&1 &
 API_PID=$!
 echo "✅ API server running (PID: $API_PID) at http://localhost:3010"
+echo "   Logs: /tmp/offerforge-api.log"
 
 # Step 5: Wait for API to be ready
 echo ""
@@ -63,9 +71,16 @@ for i in $(seq 1 10); do
   sleep 2
 done
 
-# Step 6: Start dashboard
+# Step 6: Kill any existing process on port 3030 and start dashboard
 echo ""
 echo "🖥️  Starting dashboard on port 3030..."
+EXISTING_DASH_PID=$(lsof -ti:3030 2>/dev/null)
+if [ -n "$EXISTING_DASH_PID" ]; then
+  echo "⚠️  Port 3030 in use (PID: $EXISTING_DASH_PID), stopping it..."
+  kill $EXISTING_DASH_PID 2>/dev/null
+  sleep 2
+fi
+
 cd dashboard && npx next dev -p 3030 &
 DASH_PID=$!
 echo "✅ Dashboard running (PID: $DASH_PID) at http://localhost:3030"
