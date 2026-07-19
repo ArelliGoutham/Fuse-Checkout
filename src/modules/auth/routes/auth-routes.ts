@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { Db } from 'mongodb';
 import { SignupSchema, LoginSchema } from '../schemas/user';
+import { AcceptInviteSchema } from '../schemas/invite';
 import { hashPassword, verifyPassword } from '../../../lib/password';
 import { generateToken } from '../../../lib/jwt';
 import { AppError } from '../../../lib/errors';
@@ -206,6 +207,58 @@ export function registerAuthRoutes(server: FastifyInstance): void {
       });
     },
   );
+
+  // POST /api/auth/accept-invite — no JWT required
+  server.post('/api/auth/accept-invite', async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsed = AcceptInviteSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message } });
+    }
+
+    const db = server.db!;
+    const { invite_code, email, password, name } = parsed.data;
+
+    const invite = await db.collection('merchant_users').findOne({ invite_code, status: 'pending' });
+    if (!invite) {
+      return reply.code(404).send({ error: { code: 'INVITE_NOT_FOUND', message: 'Invalid or already used invite code' } });
+    }
+
+    if (invite.email !== email) {
+      return reply.code(403).send({ error: { code: 'EMAIL_MISMATCH', message: 'This invite code is for a different email address' } });
+    }
+
+    if (new Date(invite.expires_at) < new Date()) {
+      await db.collection('merchant_users').updateOne({ _id: invite._id }, { $set: { status: 'expired' } });
+      return reply.code(410).send({ error: { code: 'INVITE_EXPIRED', message: 'This invite has expired. Please ask your admin to resend.' } });
+    }
+
+    let userId: string;
+    const existingUser = await db.collection('users').findOne({ email }) as any;
+    if (existingUser) {
+      userId = existingUser._id;
+    } else {
+      userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const passwordHash = await hashPassword(password);
+      const now = new Date().toISOString();
+      await db.collection('users').insertOne({
+        _id: userId, email, password_hash: passwordHash, name, created_at: now, updated_at: now,
+      } as any);
+    }
+
+    await db.collection('merchant_users').updateOne(
+      { _id: invite._id },
+      { $set: { user_id: userId, status: 'active', accepted_at: new Date().toISOString() } },
+    );
+
+    const token = generateToken({ user_id: userId, merchant_id: invite.merchant_id, role: invite.role });
+
+    return reply.code(201).send({
+      token,
+      user: { _id: userId, email, name },
+      merchant: { _id: invite.merchant_id },
+      role: invite.role,
+    });
+  });
 }
 
 /**
