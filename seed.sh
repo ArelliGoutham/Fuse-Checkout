@@ -11,7 +11,8 @@ npx tsx scripts/seed.ts
 
 echo ""
 echo "✅ Done! Demo data loaded."
-echo "   API Key: demo-key-123"
+echo "   Login:    owner@techstore.in / password123"
+echo "   API Key:  demo-key-123"
 echo "   Merchant: TechStore.in"
 echo "   Offers: FLAT50, SAVE10, FIRST100, Auto Electronics"
 echo "   Products: 5 (iPhone 15, Galaxy S24, T-Shirt, Shoes, Belt)"

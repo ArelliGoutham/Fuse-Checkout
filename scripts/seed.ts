@@ -12,6 +12,8 @@ async function seed() {
 
   await Promise.all([
     db.collection('merchants').deleteMany({}),
+    db.collection('users').deleteMany({}),
+    db.collection('merchant_users').deleteMany({}),
     db.collection('offers').deleteMany({}),
     db.collection('products').deleteMany({}),
     db.collection('redemptions').deleteMany({}),
@@ -24,6 +26,32 @@ async function seed() {
     created_at: new Date().toISOString(),
   });
   console.log('✓ Merchant: TechStore.in (API key: demo-key-123)');
+
+  // Create owner user account linked to merchant
+  const { hashPassword } = await import('../src/lib/password');
+  const passwordHash = await hashPassword('password123');
+  await db.collection('users').insertOne({
+    _id: 'user_demo_owner',
+    email: 'owner@techstore.in',
+    password_hash: passwordHash,
+    name: 'Store Owner',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  });
+  await db.collection('merchant_users').insertOne({
+    _id: 'mu_demo_owner',
+    merchant_id: 'merch_demo',
+    email: 'owner@techstore.in',
+    user_id: 'user_demo_owner',
+    role: 'owner',
+    status: 'active',
+    invite_code: '',
+    invited_by: '',
+    invited_at: new Date().toISOString(),
+    expires_at: new Date().toISOString(),
+    accepted_at: new Date().toISOString(),
+  });
+  console.log('✓ User: owner@techstore.in / password123 (role: owner)');
 
   const products = [
     { _id: 'merch_demo_SKU-IP15', merchant_id: 'merch_demo', sku_id: 'SKU-IP15', name: 'iPhone 15 Pro', category: 'Electronics', brand: 'Apple', attributes: {}, status: 'active', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
