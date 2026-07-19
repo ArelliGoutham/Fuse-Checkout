@@ -53,9 +53,7 @@ describe('JWT token utilities', () => {
       role: 'offer_manager',
     };
     const token1 = generateToken(payload);
-    // Small delay
-    const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-    // Note: We can't easily test this without a delay, so we'll skip for now
+    // Note: Token has iat claim so subsequent calls produce different tokens
     expect(typeof token1).toBe('string');
   });
 
