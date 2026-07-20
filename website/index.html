@@ -36,10 +36,10 @@
       <a href="#how-it-works" class="nav-link">How it Works</a>
       <a href="#roadmap" class="nav-link">Roadmap</a>
       <a href="#pricing" class="nav-link">Pricing</a>
-      <a href="https://docs.offerforge.io" class="nav-link">Docs</a>
-      <a href="https://dashboard.offerforge.io" class="nav-link">Dashboard</a>
+      <a data-href="docs" class="nav-link">Docs</a>
+      <a data-href="dashboard" class="nav-link">Dashboard</a>
     </div>
-    <a href="https://dashboard.offerforge.io/signup" class="nav-cta">Get Started <span aria-hidden="true">→</span></a>
+    <a data-href="dashboard:signup" class="nav-cta">Get Started <span aria-hidden="true">→</span></a>
     <button class="nav-mobile-toggle" aria-label="Toggle menu">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
     </button>
@@ -55,8 +55,8 @@
   <h1>Offers that <span class="gradient">convert</span>.<br>Checkout that sells.</h1>
   <p>A drop-in offers layer for Indian e-commerce. Create coupons, auto-applied discounts, and stacking rules — without building anything. We handle the math, the rules, and the analytics.</p>
   <div class="hero-actions">
-    <a href="https://dashboard.offerforge.io/signup" class="btn-primary">Start Free <span aria-hidden="true">→</span></a>
-    <a href="https://docs.offerforge.io" class="btn-secondary">
+    <a data-href="dashboard:signup" class="btn-primary">Start Free <span aria-hidden="true">→</span></a>
+    <a data-href="docs" class="btn-secondary">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
       Read the Docs
     </a>
@@ -255,7 +255,7 @@
         <li>Basic widget</li>
         <li>OfferForge branding</li>
       </ul>
-      <a href="https://dashboard.offerforge.io/signup" class="btn-secondary" style="width:100%; justify-content:center;">Start Free</a>
+      <a data-href="dashboard:signup" class="btn-secondary" style="width:100%; justify-content:center;">Start Free</a>
     </div>
     <div class="price-card">
       <div class="price-tier">Starter</div>
@@ -269,7 +269,7 @@
         <li>API access</li>
         <li>Your branding</li>
       </ul>
-      <a href="https://dashboard.offerforge.io/signup" class="btn-secondary" style="width:100%; justify-content:center;">Get Starter</a>
+      <a data-href="dashboard:signup" class="btn-secondary" style="width:100%; justify-content:center;">Get Starter</a>
     </div>
     <div class="price-card featured">
       <div class="price-tier">Growth</div>
@@ -283,7 +283,7 @@
         <li>API access</li>
         <li>Your branding</li>
       </ul>
-      <a href="https://dashboard.offerforge.io/signup" class="btn-primary" style="width:100%; justify-content:center;">Get Growth</a>
+      <a data-href="dashboard:signup" class="btn-primary" style="width:100%; justify-content:center;">Get Growth</a>
     </div>
     <div class="price-card">
       <div class="price-tier">Enterprise</div>
@@ -306,7 +306,7 @@
   <div class="cta-glow" aria-hidden="true"></div>
   <h2 class="reveal" data-anim="up">Ready to forge better offers?</h2>
   <p class="reveal" data-anim="up">Join the beta — free for the first 100 merchants.</p>
-  <a href="https://dashboard.offerforge.io/signup" class="btn-primary reveal" data-anim="up">Start Free <span aria-hidden="true">→</span></a>
+  <a data-href="dashboard:signup" class="btn-primary reveal" data-anim="up">Start Free <span aria-hidden="true">→</span></a>
 </section>
 
 <!-- Footer -->
@@ -325,13 +325,13 @@
       <h5>Product</h5>
       <a href="#features">Features</a>
       <a href="#pricing">Pricing</a>
-      <a href="https://dashboard.offerforge.io">Dashboard</a>
+      <a data-href="dashboard">Dashboard</a>
     </div>
     <div class="footer-col">
       <h5>Developers</h5>
-      <a href="https://docs.offerforge.io">Documentation</a>
-      <a href="https://docs.offerforge.io/guides/quickstart">Quickstart</a>
-      <a href="https://docs.offerforge.io/api-reference/auth/signup">API Reference</a>
+      <a data-href="docs">Documentation</a>
+      <a data-href="docs:guides/quickstart">Quickstart</a>
+      <a data-href="docs:api-reference/auth/signup">API Reference</a>
       <a href="https://github.com/ArelliGoutham/OfferForge">GitHub</a>
     </div>
     <div class="footer-col">
@@ -348,6 +348,30 @@
   </div>
 </footer>
 
+<script>
+// OfferForge URL resolver — maps data-href to local or production URLs
+(function() {
+  var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  var routes = {
+    'dashboard': isLocal ? 'http://localhost:3030' : 'https://dashboard.offerforge.io',
+    'docs': isLocal ? 'http://localhost:3000' : 'https://docs.offerforge.io',
+    'playground': isLocal ? 'http://localhost:8081' : 'https://playground.offerforge.io',
+    'api': isLocal ? 'http://localhost:3010' : 'https://api.offerforge.io',
+  };
+
+  function resolve(key) {
+    var parts = key.split(':');
+    var base = routes[parts[0]] || ('https://' + parts[0] + '.offerforge.io');
+    var path = parts.length > 1 ? '/' + parts.slice(1).join('/') : '';
+    return base + path;
+  }
+
+  document.querySelectorAll('[data-href]').forEach(function(el) {
+    el.setAttribute('href', resolve(el.getAttribute('data-href')));
+  });
+})();
+</script>
 <script src="js/main.js" defer></script>
 </body>
 </html>
