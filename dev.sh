@@ -145,24 +145,11 @@ else
   PLAY_PID=""
 fi
 
-cd /Users/arelligoutham/Documents/OfferForge/website/checkout
-if command -v python3 &> /dev/null; then
-  # SPA server — serve index.html for all routes (so /sess_xxx works)
-  python3 -c "
-import http.server, os
-class SPAHandler(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        path = self.translate_path(self.path)
-        if not os.path.exists(path) or os.path.isdir(path):
-            self.path = '/index.html'
-        return super().do_GET()
-    def log_message(self, *args): pass
-os.chdir('.')
-httpd = http.server.HTTPServer(('0.0.0.0', 8082), SPAHandler)
-httpd.serve_forever()
-  " > /tmp/offerforge-checkout.log 2>&1 &
+cd /Users/arelligoutham/Documents/OfferForge/checkout
+if command -v npx &> /dev/null; then
+  npx next dev -p 8082 > /tmp/offerforge-checkout.log 2>&1 &
   CHECKOUT_PID=$!
-  echo "✅ Checkout page running at http://localhost:8082"
+  echo "✅ Checkout (Next.js) running at http://localhost:8082"
 else
   CHECKOUT_PID=""
 fi
