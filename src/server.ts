@@ -50,11 +50,14 @@ async function start() {
 
     // Add auth middleware (applies to all routes except /health and /api/auth/*)
     server.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
-      // Skip auth for health check, auth endpoints, and checkout page (session-based) endpoints
+      // Skip auth for health, auth endpoints, and checkout page endpoints
+      // Checkout page endpoints use session_id as auth (not API key)
+      // Skip /api/checkout/sess_* (cart load, customer save, select-payment, process-payment)
+      // But DON'T skip /api/checkout/sessions (merchant session creation — needs auth)
       if (
         request.url === '/health'
         || request.url.startsWith('/api/auth/')
-        || request.url.startsWith('/api/checkout/sess_')
+        || (request.url.startsWith('/api/checkout/') && !request.url.includes('/sessions'))
       ) {
         return;
       }
