@@ -2,10 +2,13 @@
 import { createServer } from './app';
 import { connectDatabase, closeDatabase, getDatabase } from './config/database';
 import { registerOfferRoutes } from './modules/offers/routes/offer-routes';
-import { registerCheckoutRoutes } from './modules/offers/routes/checkout-routes';
+import { registerCheckoutRoutes as registerOffersCheckoutRoutes } from './modules/offers/routes/checkout-routes';
 import { registerTrackingRoutes } from './modules/offers/routes/tracking-routes';
 import { registerProductRoutes } from './modules/products/routes/product-routes';
 import { registerAnalyticsRoutes } from './modules/analytics/analytics-routes';
+import { registerCheckoutRoutes } from './modules/checkout/routes/checkout-routes';
+import { registerOrderRoutes } from './modules/checkout/routes/order-routes';
+import { registerBankRateRoutes } from './modules/checkout/routes/bank-rate-routes';
 import { registerAuthRoutes } from './modules/auth/routes/auth-routes';
 import { registerInviteRoutes } from './modules/auth/routes/invite-routes';
 import { registerApiKeyRoutes } from './modules/auth/routes/api-key-routes';
@@ -47,8 +50,12 @@ async function start() {
 
     // Add auth middleware (applies to all routes except /health and /api/auth/*)
     server.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
-      // Skip auth for health check and auth endpoints
-      if (request.url === '/health' || request.url.startsWith('/api/auth/')) {
+      // Skip auth for health check, auth endpoints, and checkout page (session-based) endpoints
+      if (
+        request.url === '/health'
+        || request.url.startsWith('/api/auth/')
+        || request.url.startsWith('/api/checkout/sess_')
+      ) {
         return;
       }
       // Try JWT first (Authorization header)
@@ -64,10 +71,13 @@ async function start() {
 
     // Register all route groups
     await registerOfferRoutes(server);
-    await registerCheckoutRoutes(server);
+    await registerOffersCheckoutRoutes(server);
     await registerTrackingRoutes(server);
     await registerProductRoutes(server);
     await registerAnalyticsRoutes(server);
+    registerCheckoutRoutes(server);
+    registerOrderRoutes(server);
+    registerBankRateRoutes(server);
 
     console.log('✓ All routes registered');
 

@@ -1,7 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { CreateSessionSchema, CheckoutSessionSchema } from '../schemas/checkout-session';
-import { CreateBankRateSchema } from '../schemas/bank-rate';
+import { CreateSessionSchema } from '../schemas/checkout-session';
 import { MongoSessionRepository } from '../repositories/mongo-session-repository';
 import { MongoOrderRepository } from '../repositories/mongo-order-repository';
 import { calculateEMI } from '../services/emi-engine';
@@ -38,7 +37,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
         });
       }
 
-      const db = server.db;
+      const db = server.db!;
       const repository = new MongoSessionRepository(db);
 
       try {
@@ -70,8 +69,8 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
         });
       }
 
-      const { id } = request.params;
-      const db = server.db;
+      const { id } = request.params as { id: string };
+      const db = server.db!;
       const repository = new MongoSessionRepository(db);
 
       try {
@@ -97,8 +96,8 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
     '/api/checkout/:session_id/cart',
     { config: { rateLimit: { max: 120, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { session_id } = request.params;
-      const db = server.db;
+      const { session_id } = request.params as { session_id: string };
+      const db = server.db!;
       const repository = new MongoSessionRepository(db);
 
       try {
@@ -139,7 +138,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
     '/api/checkout/:session_id/customer',
     { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { session_id } = request.params;
+      const { session_id } = request.params as { session_id: string };
 
       const CustomerSchema = z.object({
         name: z.string().min(1),
@@ -160,7 +159,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
         });
       }
 
-      const db = server.db;
+      const db = server.db!;
       const repository = new MongoSessionRepository(db);
 
       try {
@@ -191,7 +190,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
     '/api/checkout/:session_id/select-payment',
     { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { session_id } = request.params;
+      const { session_id } = request.params as { session_id: string };
 
       const SelectPaymentSchema = z.object({
         method: z.enum(['card', 'bank_transfer', 'upi']),
@@ -207,7 +206,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
         });
       }
 
-      const db = server.db;
+      const db = server.db!;
       const sessionRepository = new MongoSessionRepository(db);
 
       try {
@@ -313,7 +312,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
     '/api/checkout/:session_id/process-payment',
     { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { session_id } = request.params;
+      const { session_id } = request.params as { session_id: string };
 
       const ProcessPaymentSchema = z.object({
         method: z.string(),
@@ -326,7 +325,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
         });
       }
 
-      const db = server.db;
+      const db = server.db!;
       const sessionRepository = new MongoSessionRepository(db);
       const orderRepository = new MongoOrderRepository(db);
       const pgAdapter = new MockPGAdapter();
@@ -363,16 +362,17 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
             _id: orderId,
             merchant_id: session.merchant_id,
             session_id,
-            cart: session.cart,
-            customer_info: session.customer_info,
+            cart_amount: session.cart.amount,
+            total_discount: session.applied_offers.reduce((sum, offer) => sum + offer.discount_amount, 0),
+            final_amount: session.cart.amount,
+            customer_info: session.customer_info!,
             applied_offers: session.applied_offers,
             payment_method: parseResult.data.method,
             pg_transaction_id: paymentResult.transaction_id,
-            pg_order_id: pgOrder.order_id,
-            amount: session.cart.amount,
-            status: 'completed',
+            pg_name: 'MockPGAdapter',
+            order_status: 'paid' as const,
+            emi_details: null,
             created_at: now,
-            updated_at: now,
           };
           await orderRepository.create(order);
 

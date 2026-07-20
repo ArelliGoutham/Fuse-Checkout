@@ -17,14 +17,14 @@ export function registerBankRateRoutes(server: FastifyInstance): void {
     '/api/admin/bank-rates',
     { config: { rateLimit: { max: 120, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const userId = request.userId;
-      if (!userId) {
+      const user = (request as any).user;
+      if (!user) {
         return reply.code(401).send({
           error: { code: 'AUTH_INVALID', message: 'Missing authentication' },
         });
       }
 
-      const db = server.db;
+      const db = server.db!;
 
       try {
         const bankRates = await db
@@ -49,8 +49,8 @@ export function registerBankRateRoutes(server: FastifyInstance): void {
     '/api/admin/bank-rates',
     { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const userId = request.userId;
-      if (!userId) {
+      const user = (request as any).user;
+      if (!user) {
         return reply.code(401).send({
           error: { code: 'AUTH_INVALID', message: 'Missing authentication' },
         });
@@ -63,7 +63,7 @@ export function registerBankRateRoutes(server: FastifyInstance): void {
         });
       }
 
-      const db = server.db;
+      const db = server.db!;
       const now = new Date().toISOString();
       const id = `br_${parseResult.data.bank_code.toLowerCase()}_${parseResult.data.card_type}`;
 
@@ -107,15 +107,15 @@ export function registerBankRateRoutes(server: FastifyInstance): void {
     '/api/admin/bank-rates/:id',
     { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const userId = request.userId;
-      if (!userId) {
+      const user = (request as any).user;
+      if (!user) {
         return reply.code(401).send({
           error: { code: 'AUTH_INVALID', message: 'Missing authentication' },
         });
       }
 
-      const { id } = request.params;
-      const db = server.db;
+      const { id } = request.params as { id: string };
+      const db = server.db!;
 
       // Validate allowed update fields
       const UpdateSchema = z.object({

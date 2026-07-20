@@ -17,6 +17,7 @@ async function seed() {
     db.collection('offers').deleteMany({}),
     db.collection('products').deleteMany({}),
     db.collection('redemptions').deleteMany({}),
+    db.collection('bank_rates').deleteMany({}),
   ]);
 
   await db.collection('merchants').insertOne({
@@ -72,6 +73,15 @@ async function seed() {
   ];
   await db.collection('offers').insertMany(offers);
   console.log(`✓ Offers: ${offers.length} inserted`);
+
+  const bankRates = [
+    { _id: 'br_hdfc_cc', bank_name: 'HDFC', bank_code: 'HDFC', card_type: 'credit', interest_rate: 18, tenures: [3, 6, 9, 12, 18, 24], processing_fee: 199, min_amount: 2500, max_amount: null, status: 'active', updated_at: now },
+    { _id: 'br_icici_cc', bank_name: 'ICICI', bank_code: 'ICICI', card_type: 'credit', interest_rate: 16, tenures: [3, 6, 9, 12, 18, 24], processing_fee: 199, min_amount: 2500, max_amount: null, status: 'active', updated_at: now },
+    { _id: 'br_axis_cc', bank_name: 'AXIS', bank_code: 'AXIS', card_type: 'credit', interest_rate: 17, tenures: [3, 6, 9, 12, 18, 24], processing_fee: 199, min_amount: 2500, max_amount: null, status: 'active', updated_at: now },
+    { _id: 'br_sbi_cc', bank_name: 'SBI', bank_code: 'SBI', card_type: 'credit', interest_rate: 15, tenures: [3, 6, 9, 12, 18], processing_fee: 299, min_amount: 2500, max_amount: null, status: 'active', updated_at: now },
+  ];
+  await db.collection('bank_rates').insertMany(bankRates as any);
+  console.log('✓ Bank rates: 4 inserted (HDFC 18%, ICICI 16%, AXIS 17%, SBI 15%)');
 
   const redemptions = [
     { offer_id: 'offer_flat50', merchant_id: 'merch_demo', session_id: 'sess_001', cart_amount: 5000, discount_applied: 50, final_amount: 4950, customer_id: 'cust_001', applied_at: new Date(Date.now() - 2 * 60 * 1000).toISOString(), order_id: 'order_001', order_status: 'paid' },

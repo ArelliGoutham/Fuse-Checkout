@@ -1,5 +1,4 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
 import { MongoOrderRepository } from '../repositories/mongo-order-repository';
 
 /**
@@ -24,8 +23,9 @@ export function registerOrderRoutes(server: FastifyInstance): void {
       }
 
       // Parse query parameters
-      const page = parseInt(request.query.page as string, 10) || 1;
-      const limit = parseInt(request.query.limit as string, 10) || 10;
+      const querystring = request.query as { page?: string; limit?: string };
+      const page = parseInt(querystring.page || '1', 10);
+      const limit = parseInt(querystring.limit || '10', 10);
 
       if (page < 1 || limit < 1 || limit > 100) {
         return reply.code(400).send({
@@ -33,7 +33,7 @@ export function registerOrderRoutes(server: FastifyInstance): void {
         });
       }
 
-      const db = server.db;
+      const db = server.db!;
       const repository = new MongoOrderRepository(db);
 
       try {
@@ -67,8 +67,8 @@ export function registerOrderRoutes(server: FastifyInstance): void {
         });
       }
 
-      const { id } = request.params;
-      const db = server.db;
+      const { id } = request.params as { id: string };
+      const db = server.db!;
       const repository = new MongoOrderRepository(db);
 
       try {
