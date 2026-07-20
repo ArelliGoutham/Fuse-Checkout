@@ -41,6 +41,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cart, setCart] = useState<Cart | null>(null);
+  const [merchantId, setMerchantId] = useState('');
   const [appliedDiscounts, setAppliedDiscounts] = useState<AppliedDiscount[]>([]);
   const [couponInput, setCouponInput] = useState('');
   const [availableOffers, setAvailableOffers] = useState<Offer[]>([]);
@@ -70,10 +71,13 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
     (async () => {
       try {
         const cartData = await fetchCart(sessionId);
-        setCart(cartData);
+        // API returns { cart: {...}, merchant_id, customer, ... } — extract the cart
+        const cartObj = cartData.cart || cartData;
+        setCart(cartObj);
+        setMerchantId(cartData.merchant_id);
         // Fetch available offers
-        const apiKey = process.env.NEXT_PUBLIC_API_KEY || 'test_key';
-        const offersData = await fetchOffers(sessionId, cartData, apiKey);
+        const apiKey = process.env.NEXT_PUBLIC_API_KEY || 'demo-key-123';
+        const offersData = await fetchOffers(sessionId, cartObj, apiKey);
         const allOffers = [...(offersData.coupons || []), ...(offersData.auto_offers || [])];
         setAvailableOffers(allOffers.filter(o => o.is_eligible));
         setLoading(false);
