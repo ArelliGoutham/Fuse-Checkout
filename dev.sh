@@ -147,7 +147,20 @@ fi
 
 cd /Users/arelligoutham/Documents/OfferForge/website/checkout
 if command -v python3 &> /dev/null; then
-  python3 -m http.server 8082 > /tmp/offerforge-checkout.log 2>&1 &
+  # SPA server — serve index.html for all routes (so /sess_xxx works)
+  python3 -c "
+import http.server, os
+class SPAHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        path = self.translate_path(self.path)
+        if not os.path.exists(path) or os.path.isdir(path):
+            self.path = '/index.html'
+        return super().do_GET()
+    def log_message(self, *args): pass
+os.chdir('.')
+httpd = http.server.HTTPServer(('0.0.0.0', 8082), SPAHandler)
+httpd.serve_forever()
+  " > /tmp/offerforge-checkout.log 2>&1 &
   CHECKOUT_PID=$!
   echo "✅ Checkout page running at http://localhost:8082"
 else
