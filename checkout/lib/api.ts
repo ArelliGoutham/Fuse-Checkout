@@ -94,6 +94,7 @@ export async function processPayment(sessionId: string, method: string, tenure?:
 }
 
 export function formatINR(n: number) {
+  if (n == null || isNaN(n)) return '₹0';
   return '₹' + n.toLocaleString('en-IN');
 }
 
