@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#090A0E">
-<title>OfferForge Playground — Test Your Offers Live</title>
-<meta name="description" content="Interactive checkout page to test OfferForge offers, coupons, and stacking rules in real-time.">
+<title>TechStore.in — Powered by OfferForge</title>
+<meta name="description" content="Demo store showcasing OfferForge checkout with offers, EMI, and coupons.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -14,45 +14,44 @@
 </head>
 <body>
 
-<!-- Top bar -->
+<!-- Top bar — store header -->
 <nav class="topbar">
   <div class="topbar-brand">
     <div class="topbar-logo" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none"><path d="M13 2 L4 14 L10 14 L8 22 L18 10 L12 10 Z" fill="#090A0E"/></svg>
     </div>
     <div>
-      <span class="topbar-title">OfferForge Playground</span>
-      <span class="topbar-store">TechStore.in (demo)</span>
+      <span class="topbar-title">TechStore.in</span>
+      <span class="topbar-store">Powered by OfferForge</span>
     </div>
   </div>
   <div class="topbar-right">
     <div class="topbar-mode">
-      <button class="mode-btn active" data-mode="customer" onclick="setMode('customer')">Customer View</button>
-      <button class="mode-btn" data-mode="merchant" onclick="setMode('merchant')">Merchant View</button>
+      <button class="mode-btn active" data-mode="customer" onclick="setMode('customer')">Store</button>
+      <button class="mode-btn" data-mode="merchant" onclick="setMode('merchant')">Developer</button>
     </div>
-    <input class="api-key-input" id="apiKeyInput" type="text" placeholder="API Key (demo-key-123)" aria-label="API Key">
+    <input class="api-key-input" id="apiKeyInput" type="text" placeholder="API Key…" aria-label="API Key" value="demo-key-123">
+    <div class="cart-badge" onclick="document.getElementById('cartSidebar').scrollIntoView({behavior:'smooth'})">
+      <i class="fa-solid fa-cart-shopping"></i>
+      <span class="cart-badge-count" id="cartBadgeCount" style="display:none;">0</span>
+    </div>
   </div>
 </nav>
 
-<!-- Playground -->
-<div class="playground">
-  <!-- Left: Products + Cart -->
-  <div id="customerView">
-    <div class="products-section">
-      <h2>Products</h2>
-      <div class="product-grid" id="productGrid"></div>
-    </div>
+<!-- Store layout -->
+<div class="store-layout grid">
+  <!-- Left: Products -->
+  <div>
+    <div class="section-title">Featured Products</div>
+    <div class="product-grid" id="productGrid"></div>
   </div>
 
-  <!-- Right: Cart + Offers + Summary -->
-  <div>
+  <!-- Right: Cart sidebar -->
+  <div class="cart-sidebar" id="cartSidebar">
     <div class="cart-section">
       <h2><i class="fa-solid fa-cart-shopping"></i> Your Cart</h2>
       <div id="cartItems"></div>
-      <div class="cart-subtotal">
-        <span>Subtotal</span>
-        <span id="cartSubtotal">₹0</span>
-      </div>
+      <div class="cart-subtotal"><span>Subtotal</span><span id="cartSubtotal">₹0</span></div>
 
       <!-- Offers -->
       <div class="offers-section" id="offersSection"></div>
@@ -61,32 +60,42 @@
       <div class="coupon-box" id="couponBox" style="display:none;">
         <div class="coupon-label">Have a coupon code?</div>
         <div class="coupon-input-row">
-          <input class="coupon-input" id="couponInput" type="text" placeholder="Enter code (e.g., FLAT50)" aria-label="Coupon code">
+          <input class="coupon-input" id="couponInput" type="text" placeholder="Enter code…" aria-label="Coupon code">
           <button class="coupon-apply" id="couponApplyBtn">Apply</button>
         </div>
-        <div class="coupon-msg" id="couponMsg"></div>
       </div>
 
       <!-- Summary -->
       <div class="cart-summary" id="cartSummary"></div>
     </div>
   </div>
+</div>
 
-  <!-- Merchant Panel (hidden by default) -->
-  <div id="merchantPanel" class="merchant-panel" style="display:none; grid-column: 1 / -1;">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-      <div>
-        <h3><i class="fa-solid fa-code"></i> API Call Log</h3>
-        <div class="api-log" id="apiLog">
-          <div class="log-entry" style="color:var(--text-muted);">API calls will appear here as you interact with the playground…</div>
-        </div>
+<!-- PDP Modal -->
+<div class="pdp-overlay" id="pdpOverlay" onclick="if(event.target===this)closePDP()">
+  <div class="pdp-modal">
+    <div class="pdp-header">
+      <span class="pdp-close" onclick="closePDP()" aria-label="Close">×</span>
+      <div class="pdp-emoji" id="pdpEmoji">📦</div>
+    </div>
+    <div class="pdp-body">
+      <div class="pdp-name" id="pdpName">Product</div>
+      <div class="pdp-meta" id="pdpMeta">Brand · Category</div>
+      <div class="pdp-price" id="pdpPrice">₹0</div>
+      <div class="pdp-offers" id="pdpOffers">
+        <div class="pdp-no-offers">Loading offers…</div>
       </div>
-      <div>
-        <h3><i class="fa-solid fa-list-check"></i> Rule Evaluation Trace</h3>
-        <div class="rule-trace" id="ruleTrace">
-          <div style="font-size:12px;color:var(--text-muted);padding:12px 0;">Apply a coupon to see which rules pass or fail…</div>
-        </div>
-      </div>
+      <button class="pdp-add-btn" id="pdpAddBtn">Add to Cart</button>
+    </div>
+  </div>
+</div>
+
+<!-- Developer/Merchant panel -->
+<div class="store-layout" id="merchantPanel" style="display:none;">
+  <div class="merchant-panel">
+    <h3><i class="fa-solid fa-code"></i> API Call Log</h3>
+    <div class="api-log" id="apiLog">
+      <div class="log-entry" style="color:var(--text-muted);">Interact with the store to see API calls…</div>
     </div>
   </div>
 </div>
