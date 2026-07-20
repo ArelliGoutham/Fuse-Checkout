@@ -5,3 +5,5 @@ coverage/
 .env.local
 *.log
 .superpowers/
+image.png
+image copy.png

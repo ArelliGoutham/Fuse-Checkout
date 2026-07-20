@@ -1,282 +1,299 @@
-// OfferForge Hosted Checkout
+// OfferForge Hosted Checkout — Light + Dark theme, mobile-first
 
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:3010' : 'https://api.offerforge.io';
+const API_BASE = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'http://localhost:3010' : 'https://api.offerforge.io';
 
-let sessionId = null;
-let cart = null;
-let merchantId = null;
-let selectedMethod = null;
-let selectedEMI = null;
-let emiOptions = [];
-let appliedDiscount = 0;
+let sessionId = null, cart = null, merchantId = null;
+let selectedMethod = null, selectedEMI = null, emiOptions = [];
+let appliedCoupon = null, appliedDiscount = 0, autoOffers = [];
+let customerSaved = false;
+let currentTheme = 'dark';
+
+function formatINR(n) { return '₹' + n.toLocaleString('en-IN'); }
+function getFinalAmount() { return Math.max(0, (cart?.amount || 0) - appliedDiscount - getAutoDiscount()); }
+function getAutoDiscount() {
+  let d = 0;
+  for (const o of autoOffers) { if (o._applied && o.is_eligible) d += computeDisc(o); }
+  return d;
+}
+function computeDisc(o) {
+  const amt = cart?.amount || 0;
+  if (o.discount.type === 'flat') return Math.min(o.discount.value, amt);
+  const pct = Math.round((amt * o.discount.value) / 100);
+  return o.discount.max_discount ? Math.min(pct, o.discount.max_discount) : pct;
+}
 
 // === Init ===
 async function init() {
-  // Extract session_id from URL path
-  const path = window.location.pathname;
-  sessionId = path.split('/').filter(s => s.startsWith('sess_')).pop()
-    || path.split('/').pop();
+  // Theme
+  const savedTheme = sessionStorage.getItem('of_theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  setTheme(savedTheme);
 
-  if (!sessionId || sessionId === '' || sessionId === '/') {
-    showError('No checkout session found', 'The checkout URL is missing a session ID.');
-    return;
-  }
+  // Session ID from URL
+  const path = location.pathname;
+  sessionId = path.split('/').filter(s => s.startsWith('sess_')).pop() || path.split('/').pop();
+  if (!sessionId || sessionId === '/' || sessionId === '') { showError('No checkout session', 'The URL is missing a session ID.'); return; }
 
   try {
     const res = await fetch(`${API_BASE}/api/checkout/${sessionId}/cart`);
-    if (!res.ok) {
-      if (res.status === 404) {
-        showError('Session expired', 'This checkout session has expired. Please return to the store and try again.');
-      } else {
-        showError('Failed to load checkout', 'An error occurred while loading your checkout.');
-      }
-      return;
-    }
+    if (!res.ok) { showError(res.status === 404 ? 'Session expired' : 'Checkout error', res.status === 404 ? 'This session has expired. Please return to the store.' : 'Could not load checkout.'); return; }
     const data = await res.json();
-    cart = data.cart;
-    merchantId = data.merchant_id;
+    cart = data.cart; merchantId = data.merchant_id;
     appliedDiscount = data.applied_offers?.reduce((s, o) => s + o.discount_amount, 0) || 0;
     renderCart();
-    showStep('cart');
-  } catch (e) {
-    showError('Connection failed', 'Could not connect to the checkout server. Please try again.');
-  }
+    // Fetch available offers
+    await fetchOffers();
+    showStep('review');
+    updatePayBar();
+  } catch (e) { showError('Connection failed', 'Could not connect to checkout server.'); }
 }
 
-function formatINR(amount) { return '₹' + amount.toLocaleString('en-IN'); }
+function setTheme(t) {
+  currentTheme = t;
+  document.documentElement.setAttribute('data-theme', t);
+  sessionStorage.setItem('of_theme', t);
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = t === 'dark' ? '☀' : '🌙';
+}
 
-// === Step Management ===
+// === Steps ===
 function showStep(step) {
   document.querySelectorAll('.checkout-step').forEach(s => s.classList.remove('active'));
-  document.getElementById(`step-${step}`).classList.add('active');
-  // Update step indicators
-  const steps = ['cart', 'details', 'payment'];
-  const currentIdx = steps.indexOf(step);
+  const el = document.getElementById(`step-${step}`); if (el) el.classList.add('active');
+  const steps = ['review', 'details', 'payment'];
+  const idx = steps.indexOf(step);
   steps.forEach((s, i) => {
-    const el = document.getElementById(`step-ind-${s}`);
-    if (i < currentIdx) { el.className = 'step-indicator done'; el.textContent = '✓ ' + s; }
-    else if (i === currentIdx) { el.className = 'step-indicator active'; el.textContent = s; }
-    else { el.className = 'step-indicator pending'; el.textContent = s; }
+    const pill = document.getElementById(`pill-${s}`); if (!pill) return;
+    pill.className = 'step-pill ' + (i < idx ? 'done' : i === idx ? 'active' : '');
+    pill.textContent = (i < idx ? '✓ ' : '') + s.charAt(0).toUpperCase() + s.slice(1);
   });
+  window.scrollTo(0, 0);
+  updatePayBar();
 }
 
 // === Render Cart ===
 function renderCart() {
-  if (!cart || cart.items.length === 0) {
-    document.getElementById('cart-items').innerHTML = '<div class="empty-state">Your cart is empty</div>';
-    return;
-  }
-  let html = cart.items.map(item => `
+  if (!cart || !cart.items?.length) { document.getElementById('cartItems').innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">Cart is empty</p>'; return; }
+  document.getElementById('cartItems').innerHTML = cart.items.map(i => `
     <div class="cart-item">
-      <div>
-        <div class="cart-item-name">${item.name}</div>
-        <div class="cart-item-meta">Qty: ${item.qty} × ${formatINR(item.price)}</div>
-      </div>
-      <div class="cart-item-price">${formatINR(item.price * item.qty)}</div>
-    </div>
-  `).join('');
-  html += `<div class="cart-total"><span>Subtotal</span><span>${formatINR(cart.amount)}</span></div>`;
-  if (appliedDiscount > 0) {
-    html += `<div class="cart-total cart-discount"><span>Discount</span><span>−${formatINR(appliedDiscount)}</span></div>`;
-    html += `<div class="cart-total cart-final"><span>Total</span><span>${formatINR(cart.amount - appliedDiscount)}</span></div>`;
-  }
-  document.getElementById('cart-items').innerHTML = html;
+      <div class="cart-item-emoji">${i.category === 'Electronics' ? '📱' : i.category === 'Clothing' ? '👕' : i.category === 'Footwear' ? '👟' : i.category === 'Accessories' ? '👜' : '📦'}</div>
+      <div class="cart-item-info"><div class="cart-item-name">${i.name}</div><div class="cart-item-meta">Qty: ${i.qty} × ${formatINR(i.price)}</div></div>
+      <div class="cart-item-price">${formatINR(i.price * i.qty)}</div>
+    </div>`).join('');
 }
 
-// === Customer Details ===
-async function submitCustomer() {
-  const name = document.getElementById('cust-name').value;
-  const email = document.getElementById('cust-email').value;
-  const phone = document.getElementById('cust-phone').value;
-  const line1 = document.getElementById('cust-line1').value;
-  const city = document.getElementById('cust-city').value;
-  const state = document.getElementById('cust-state').value;
-  const pincode = document.getElementById('cust-pincode').value;
-
-  if (!name || !email || !phone || !line1 || !city || !state || !pincode) {
-    showToast('Please fill all fields', 'error');
-    return;
-  }
-
-  const btn = document.getElementById('btn-continue-details');
-  btn.innerHTML = '<span class="spinner"></span>';
-  btn.disabled = true;
-
+// === Offers ===
+async function fetchOffers() {
+  if (!cart?.items?.length) return;
+  autoOffers = [];
   try {
-    const res = await fetch(`${API_BASE}/api/checkout/${sessionId}/customer`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, address: { line1, city, state, pincode } }),
+    const res = await fetch(`${API_BASE}/api/offers/available`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': 'demo-key-123' },
+      body: JSON.stringify({ cart: { amount: cart.amount, items: cart.items }, customer: { customer_id: 'checkout_' + sessionId, segments: ['new'], total_orders: 0, per_customer_used: 0 } }),
     });
-    if (res.ok) {
-      showStep('payment');
-      loadPaymentMethods();
-    } else {
-      showToast('Failed to save details', 'error');
+    if (!res.ok) return;
+    const data = await res.json();
+    autoOffers = [...(data.auto_offers || [])].filter(o => o.is_eligible);
+    // Auto-apply all eligible auto-offers
+    autoOffers.forEach(o => o._applied = true);
+    renderBestOffer();
+    updatePayBar();
+  } catch (e) { /* ignore */ }
+}
+
+function renderBestOffer() {
+  const el = document.getElementById('bestOfferSection');
+  if (autoOffers.length === 0 && !appliedCoupon) { el.innerHTML = ''; return; }
+  let html = '';
+  if (autoOffers.length > 0) {
+    html += `<div class="best-offer"><div class="best-offer-title"><i class="fa-solid fa-bolt"></i> Best Offers For You</div>`;
+    for (const o of autoOffers) {
+      const disc = computeDisc(o);
+      html += `<div class="best-offer-row">
+        <div class="best-offer-icon auto"><i class="fa-solid fa-bolt"></i></div>
+        <div class="best-offer-name">${o.title}</div>
+        <div class="best-offer-saving">−${formatINR(disc)}</div>
+        <div class="offer-toggle ${o._applied ? 'active' : ''}" onclick="toggleAutoOffer('${o._id}')"></div>
+      </div>`;
     }
-  } catch (e) {
-    showToast('Connection error', 'error');
-  } finally {
-    btn.innerHTML = 'Continue to Payment →';
-    btn.disabled = false;
+    html += `</div>`;
+  }
+  el.innerHTML = html;
+}
+
+function toggleAutoOffer(id) {
+  const o = autoOffers.find(x => x._id === id); if (!o) return;
+  o._applied = !o._applied;
+  renderBestOffer();
+  updatePayBar();
+}
+
+// === Coupon ===
+async function applyCouponCk() {
+  const input = document.getElementById('couponInput');
+  const code = input.value.trim().toUpperCase();
+  if (!code || !cart?.items?.length) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/offers/validate`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': 'demo-key-123' },
+      body: JSON.stringify({ code, cart: { amount: cart.amount, items: cart.items }, customer: { customer_id: 'checkout_' + sessionId, segments: ['new'], total_orders: 0, per_customer_used: 0 } }),
+    });
+    const data = await res.json();
+    if (res.ok && data.valid) {
+      appliedCoupon = { code, discount: data.discount_amount };
+      appliedDiscount = data.discount_amount;
+      input.value = '';
+      renderCouponApplied();
+      renderBestOffer();
+      updatePayBar();
+    } else {
+      showToast(data.error?.message || data.reason || 'Invalid coupon', 'error');
+    }
+  } catch (e) { showToast('Failed to validate coupon', 'error'); }
+}
+
+function renderCouponApplied() {
+  const el = document.getElementById('couponAppliedTag');
+  if (appliedCoupon) {
+    el.innerHTML = `<div class="coupon-applied-tag"><i class="fa-solid fa-check-circle"></i> ${appliedCoupon.code} applied (−${formatINR(appliedCoupon.discount)}) <button onclick="removeCoupon()">×</button></div>`;
+    document.getElementById('couponInputRow').style.display = 'none';
+  } else {
+    el.innerHTML = '';
+    document.getElementById('couponInputRow').style.display = 'flex';
   }
 }
 
-// === Payment Methods ===
+function removeCoupon() { appliedCoupon = null; appliedDiscount = 0; renderCouponApplied(); renderBestOffer(); updatePayBar(); }
+
+// === Payment ===
 const METHODS = [
-  { id: 'upi', label: 'UPI (PhonePe, GPay, Paytm)', icon: '📱' },
-  { id: 'card', label: 'Credit / Debit Card', icon: '💳' },
-  { id: 'netbanking', label: 'Net Banking', icon: '🏦' },
-  { id: 'wallet', label: 'Wallet', icon: '👛' },
-  { id: 'cod', label: 'Cash on Delivery', icon: '💵' },
+  { id: 'upi', label: 'UPI', sub: 'PhonePe, GPay, Paytm', icon: '📱' },
+  { id: 'card', label: 'Credit / Debit Card', sub: 'Visa, Mastercard, RuPay', icon: '💳' },
+  { id: 'netbanking', label: 'Net Banking', sub: 'All major banks', icon: '🏦' },
+  { id: 'wallet', label: 'Wallet', sub: 'Paytm, Amazon Pay', icon: '👛' },
+  { id: 'cod', label: 'Cash on Delivery', sub: 'Pay when you receive', icon: '💵' },
 ];
 
-function loadPaymentMethods() {
-  const container = document.getElementById('payment-methods');
-  container.innerHTML = METHODS.map(m => `
-    <div class="payment-method" onclick="selectMethod('${m.id}')" id="method-${m.id}">
-      <span class="payment-method-icon">${m.icon}</span>
-      <span class="payment-method-label">${m.label}</span>
-    </div>
-  `).join('');
-  document.getElementById('payment-total').textContent = formatINR(cart.amount - appliedDiscount);
+function renderPaymentMethods() {
+  document.getElementById('paymentMethods').innerHTML = METHODS.map(m => `
+    <div class="payment-method" id="pm-${m.id}" onclick="selectMethod('${m.id}')">
+      <span class="pm-icon">${m.icon}</span>
+      <div style="flex:1;"><div class="pm-label">${m.label}</div><div class="pm-sublabel">${m.sub}</div></div>
+      <div class="pm-radio"></div>
+    </div>`).join('');
 }
 
-async function selectMethod(methodId) {
-  selectedMethod = methodId;
-  selectedEMI = null;
+function selectMethod(id) {
+  selectedMethod = id; selectedEMI = null;
   document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
-  document.getElementById(`method-${methodId}`).classList.add('selected');
-
-  // Show card input if card selected
-  const cardInput = document.getElementById('card-input');
-  const emiSection = document.getElementById('emi-section');
-  cardInput.style.display = methodId === 'card' ? 'block' : 'none';
-  emiSection.innerHTML = '';
+  document.getElementById(`pm-${id}`).classList.add('selected');
+  document.getElementById('cardArea').classList.toggle('show', id === 'card');
+  document.getElementById('emiSection').innerHTML = '';
   emiOptions = [];
-
-  if (methodId === 'card') return; // Wait for card number input
-
-  // For non-card methods, enable pay button
-  if (methodId !== 'card') {
-    const btn = document.getElementById('btn-pay');
-    const btnText = document.getElementById('pay-btn-text');
-    btn.disabled = false;
-    btnText.textContent = `Pay ${formatINR(cart.amount - appliedDiscount)}`;
-  } else {
-    const btn = document.getElementById('btn-pay');
-    btn.disabled = true;
-    document.getElementById('pay-btn-text').textContent = 'Enter card number to continue';
-  }
+  updatePayBar();
 }
 
 async function onCardInput(input) {
   const bin = input.value.replace(/\s/g, '');
   if (bin.length < 6) return;
-
-  // Call select-payment with BIN to get EMI options
+  if (!cart?.items?.length) return;
   try {
     const res = await fetch(`${API_BASE}/api/checkout/${sessionId}/select-payment`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ method: 'card', bin }),
     });
     if (!res.ok) return;
     const data = await res.json();
     emiOptions = data.emi_options || [];
-
-    if (emiOptions.length > 0) {
-      renderEMIOptions(data.bank);
-    }
-  } catch (e) { /* ignore */ }
+    if (emiOptions.length > 0) renderEMI(data.bank);
+  } catch (e) {}
 }
 
-function renderEMIOptions(bank) {
-  const container = document.getElementById('emi-section');
-  let html = `<div class="emi-options"><h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">${bank} EMI Options</h3><div class="emi-grid">`;
-  for (const opt of emiOptions) {
-    html += `
-      <div class="emi-card" onclick="selectEMI(${opt.tenure_months}, '${opt.emi_type}')" id="emi-${opt.tenure_months}">
-        <div class="emi-tenure">${opt.tenure_months} months</div>
-        <div class="emi-amount">${formatINR(opt.customer_emi)}</div>
-        <div class="emi-per-month">per month</div>
-        <div class="emi-type-badge ${opt.emi_type === 'no_cost' ? 'no-cost' : 'standard'}">
-          ${opt.emi_type === 'no_cost' ? 'No-Cost' : opt.emi_type === 'low_cost' ? 'Low-Cost' : 'Standard'}
-        </div>
-      </div>
-    `;
+function renderEMI(bank) {
+  let html = `<div class="emi-section"><div style="font-size:13px;font-weight:600;margin-bottom:10px;">${bank} EMI Options</div><div class="emi-grid">`;
+  for (const o of emiOptions) {
+    html += `<div class="emi-card" id="emi-${o.tenure_months}" onclick="selectEMI(${o.tenure_months})">
+      <div class="emi-tenure">${o.tenure_months} months</div>
+      <div class="emi-amount">${formatINR(o.customer_emi)}</div>
+      <div class="emi-unit">per month</div>
+      <div class="emi-tag ${o.emi_type === 'no_cost' ? 'no-cost' : 'standard'}">${o.emi_type === 'no_cost' ? 'No-Cost' : o.emi_type === 'low_cost' ? 'Low-Cost' : 'Standard'}</div>
+    </div>`;
   }
-  html += '</div></div>';
-  container.innerHTML = html;
+  html += `</div></div>`;
+  document.getElementById('emiSection').innerHTML = html;
 }
 
-function selectEMI(tenure, emiType) {
-  selectedEMI = { tenure, emiType };
+function selectEMI(tenure) {
+  selectedEMI = { tenure };
   document.querySelectorAll('.emi-card').forEach(c => c.classList.remove('selected'));
   document.getElementById(`emi-${tenure}`).classList.add('selected');
-  // Enable pay button
-  const btn = document.getElementById('btn-pay');
-  const btnText = document.getElementById('pay-btn-text');
-  btn.disabled = false;
-  btnText.textContent = `Pay ${formatINR(cart.amount - appliedDiscount)}`;
+  updatePayBar();
 }
+
+// === Pay bar (sticky bottom) ===
+function updatePayBar() {
+  const bar = document.getElementById('payBar');
+  const activeStep = document.querySelector('.checkout-step.active')?.id;
+  if (activeStep === 'step-payment' && selectedMethod && (selectedMethod !== 'card' || selectedEMI)) {
+    bar.style.display = 'flex';
+    document.getElementById('payAmount').textContent = formatINR(getFinalAmount());
+  } else if (activeStep === 'step-review') {
+    bar.style.display = 'flex';
+    document.getElementById('payAmount').textContent = formatINR(getFinalAmount());
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+// === Customer details ===
+async function submitDetails() {
+  const name = val('custName'), email = val('custEmail'), phone = val('custPhone');
+  const line1 = val('custLine1'), city = val('custCity'), state = val('custState'), pincode = val('custPincode');
+  if (!name || !email || !phone || !line1 || !city || !state || !pincode) { showToast('Please fill all fields', 'error'); return; }
+  const btn = document.getElementById('btnContinueDetails'); btn.innerHTML = '<span class="spinner"></span>'; btn.disabled = true;
+  try {
+    const res = await fetch(`${API_BASE}/api/checkout/${sessionId}/customer`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, address: { line1, city, state, pincode } }),
+    });
+    if (res.ok) { customerSaved = true; renderPaymentMethods(); showStep('payment'); }
+    else showToast('Failed to save details', 'error');
+  } catch (e) { showToast('Connection error', 'error'); }
+  btn.innerHTML = 'Continue to Payment →'; btn.disabled = false;
+}
+
+function val(id) { return document.getElementById(id)?.value.trim() || ''; }
 
 // === Process Payment ===
 async function processPayment() {
-  const btn = document.getElementById('btn-pay');
-  btn.innerHTML = '<span class="spinner"></span> Processing...';
-  btn.disabled = true;
+  const activeStep = document.querySelector('.checkout-step.active')?.id;
+  if (activeStep === 'step-review') { showStep('details'); return; }
+  if (activeStep === 'step-details') { await submitDetails(); return; }
+  // Payment step
+  if (!selectedMethod) { showToast('Select a payment method', 'error'); return; }
+  if (selectedMethod === 'card' && !selectedEMI && emiOptions.length > 0) { showToast('Select an EMI plan', 'error'); return; }
+  if (selectedMethod === 'card' && !selectedEMI && emiOptions.length === 0) { /* No EMI available, proceed as normal card payment */ }
 
+  const btn = document.getElementById('payBtn'); btn.innerHTML = '<span class="spinner"></span> Processing...'; btn.disabled = true;
   try {
     const body = { method: selectedMethod };
-    if (selectedEMI) { body.tenure = selectedEMI.tenure; body.emi_type = selectedEMI.emiType; }
-
-    const res = await fetch(`${API_BASE}/api/checkout/${sessionId}/process-payment`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    if (selectedEMI) body.tenure = selectedEMI.tenure;
+    const res = await fetch(`${API_BASE}/api/checkout/${sessionId}/process-payment`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json();
-
-    if (data.status === 'success') {
-      // Redirect to merchant's success page
-      window.location.href = data.redirect_url;
-    } else {
-      showToast(data.error?.message || 'Payment failed', 'error');
-      btn.innerHTML = `Pay ${formatINR(cart.amount - appliedDiscount)}`;
-      btn.disabled = false;
-    }
-  } catch (e) {
-    showToast('Connection error', 'error');
-    btn.innerHTML = `Pay ${formatINR(cart.amount - appliedDiscount)}`;
-    btn.disabled = false;
-  }
+    if (data.status === 'success') { window.location.href = data.redirect_url; }
+    else { showToast(data.error?.message || 'Payment failed', 'error'); btn.innerHTML = `Pay ${formatINR(getFinalAmount())}`; btn.disabled = false; }
+  } catch (e) { showToast('Payment failed', 'error'); btn.innerHTML = `Pay ${formatINR(getFinalAmount())}`; btn.disabled = false; }
 }
 
 // === Helpers ===
-function showToast(msg, type = 'success') {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.className = 'toast ' + type + ' show';
-  setTimeout(() => toast.classList.remove('show'), 3000);
-}
+function showToast(msg, type = 'success') { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast ' + type + ' show'; setTimeout(() => t.classList.remove('show'), 3000); }
+function showError(title, msg) { document.querySelector('.checkout-wrap').innerHTML = `<div class="error-state"><h2>⚠ ${title}</h2><p>${msg}</p></div>`; document.getElementById('payBar').style.display = 'none'; }
 
-function showError(title, msg) {
-  const container = document.querySelector('.checkout-container');
-  container.innerHTML = `
-    <div class="error-state">
-      <h2>⚠ ${title}</h2>
-      <p style="color:var(--text-muted);margin-bottom:20px;">${msg}</p>
-    </div>
-  `;
-}
+// === Event wiring ===
+document.getElementById('themeToggle')?.addEventListener('click', () => setTheme(currentTheme === 'dark' ? 'light' : 'dark'));
+document.getElementById('couponBtn')?.addEventListener('click', applyCouponCk);
+document.getElementById('couponInput')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyCouponCk(); } });
+document.getElementById('btnContinueDetails')?.addEventListener('click', submitDetails);
+document.getElementById('cardNumber')?.addEventListener('input', (e) => onCardInput(e.target));
+document.getElementById('payBtn')?.addEventListener('click', processPayment);
 
-// Event listeners
-document.getElementById('btn-continue-cart')?.addEventListener('click', () => showStep('details'));
-document.getElementById('btn-continue-details')?.addEventListener('click', submitCustomer);
-document.getElementById('btn-pay')?.addEventListener('click', processPayment);
-document.getElementById('card-number')?.addEventListener('input', (e) => onCardInput(e.target));
-
-// Start
 init();
