@@ -286,30 +286,43 @@ function computeDiscount(offer, cartAmount) {
 async function checkout() {
   if (cart.length === 0) return;
   
-  showToast('Processing payment…', 'success');
-  
+  const btn = document.querySelector('.checkout-btn');
+  if (btn) { btn.innerHTML = '<span class="spinner"></span> Creating checkout…'; btn.disabled = true; }
+
   try {
-    // Apply the primary offer
-    if (appliedCoupon) {
-      await apiCall('POST', '/api/offers/apply', {
-        code: appliedCoupon.code,
-        cart: getCartPayload(),
-        customer,
-        session_id: sessionId,
-      });
-    }
-    
-    // Track conversion
-    await apiCall('POST', '/api/track/conversion', {
-      session_id: sessionId,
-      order_id: 'order_' + Date.now(),
-      order_value: getCartTotal(),
-      status: 'paid',
+    // Create a checkout session via the OfferForge checkout API
+    const cartPayload = {
+      amount: getCartTotal(),
+      items: cart.map(i => ({
+        sku_id: i.sku_id, name: i.name, price: i.price, qty: i.qty,
+        category: i.category, brand: i.brand,
+      })),
+    };
+
+    const { data } = await apiCall('POST', '/api/checkout/sessions', {
+      cart: cartPayload,
+      redirect_urls: {
+        success: window.location.origin + '?status=success',
+        cancel: window.location.origin + '?status=cancel',
+      },
+      customer: { email: 'demo@playground.in' },
     });
-    
-    showToast('✓ Order placed successfully! Conversion tracked.', 'success');
+
+    // Log to merchant panel
+    logApiCall('POST', '/api/checkout/sessions', 201, data, 0);
+
+    // Redirect to hosted checkout page
+    // In local dev, point to localhost:8082; in production, use the checkout_url from API
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const checkoutUrl = isLocal
+      ? `http://localhost:8082/${data.session_id}`
+      : data.checkout_url;
+
+    showToast('Redirecting to checkout…', 'success');
+    setTimeout(() => { window.location.href = checkoutUrl; }, 800);
   } catch (e) {
     showToast('Checkout failed: ' + e.message, 'error');
+    if (btn) { btn.innerHTML = 'Proceed to Pay'; btn.disabled = false; }
   }
 }
 
