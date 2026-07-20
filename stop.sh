@@ -38,6 +38,14 @@ else
   echo "ℹ️  Playground was not running"
 fi
 
+CHECKOUT_PID=$(lsof -ti:8082 2>/dev/null)
+if [ -n "$CHECKOUT_PID" ]; then
+  kill $CHECKOUT_PID 2>/dev/null
+  echo "✅ Checkout page stopped"
+else
+  echo "ℹ️  Checkout page was not running"
+fi
+
 # Kill docs server (port 3000)
 DOCS_PID=$(lsof -ti:3000 2>/dev/null)
 if [ -n "$DOCS_PID" ]; then

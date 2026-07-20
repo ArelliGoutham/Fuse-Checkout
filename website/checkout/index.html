@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" style="color-scheme: dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090A0E">
+<title>Checkout — OfferForge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M13 2 L4 14 L10 14 L8 22 L18 10 L12 10 Z" fill="#090A0E"/></svg>
+    </div>
+    <span class="topbar-title">Checkout</span>
+  </div>
+  <div class="topbar-steps">
+    <span class="step-indicator active" id="step-ind-cart">cart</span>
+    <span class="step-indicator pending" id="step-ind-details">details</span>
+    <span class="step-indicator pending" id="step-ind-payment">payment</span>
+  </div>
+</nav>
+
+<div class="checkout-container">
+
+  <!-- Step 1: Cart -->
+  <div class="checkout-step active" id="step-cart">
+    <div class="carte-section">
+      <h2>Your Order</h2>
+      <div id="cart-items">
+        <div class="empty-state">Loading your cart…</div>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full" id="btn-continue-cart">Continue to Details →</button>
+  </div>
+
+  <!-- Step 2: Customer Details -->
+  <div class="checkout-step" id="step-details">
+    <div class="carte-section">
+      <h2>Your Details</h2>
+      <div class="form-group">
+        <label class="form-label" for="cust-name">Full Name</label>
+        <input class="form-input" id="cust-name" type="text" placeholder="John Doe…" autocomplete="name">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="cust-email">Email</label>
+          <input class="form-input" id="cust-email" type="email" placeholder="you@example.in" autocomplete="email" spellcheck="false">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cust-phone">Phone</label>
+          <input class="form-input" id="cust-phone" type="tel" placeholder="+91 98765 43210" autocomplete="tel">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="cust-line1">Address</label>
+        <input class="form-input" id="cust-line1" type="text" placeholder="House no, Street, Area…" autocomplete="address-line1">
+      </div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label" for="cust-city">City</label>
+          <input class="form-input" id="cust-city" type="text" placeholder="Mumbai" autocomplete="address-level2">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cust-state">State</label>
+          <input class="form-input" id="cust-state" type="text" placeholder="Maharashtra" autocomplete="address-level1">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cust-pincode">Pincode</label>
+          <input class="form-input" id="cust-pincode" type="text" placeholder="400001" autocomplete="postal-code" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="showStep('cart')">← Back</button>
+      <button class="btn btn-primary" id="btn-continue-details" style="flex:1;">Continue to Payment →</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Payment -->
+  <div class="checkout-step" id="step-payment">
+    <div class="carte-section">
+      <h2>Payment Method</h2>
+      <div class="payment-methods" id="payment-methods"></div>
+      
+      <!-- Card input (shown when card selected) -->
+      <div class="card-input" id="card-input" style="display:none;">
+        <div class="form-group" style="margin-top:16px;">
+          <label class="form-label" for="card-number">Card Number</label>
+          <input class="form-input" id="card-number" type="text" placeholder="4591 30XX XXXX XXXX" inputmode="numeric" maxlength="19" autocomplete="cc-number" spellcheck="false">
+        </div>
+      </div>
+
+      <!-- EMI options (shown after card BIN detected) -->
+      <div id="emi-section"></div>
+    </div>
+
+    <div class="carte-section">
+      <div class="cart-total" style="font-size:22px;">
+        <span>Amount to Pay</span>
+        <span id="payment-total" style="color:var(--accent);">₹0</span>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="showStep('details')">← Back</button>
+      <button class="btn btn-primary" id="btn-pay" style="flex:1;" disabled>
+        <span id="pay-btn-text">Select a payment method</span>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

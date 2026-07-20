@@ -145,6 +145,15 @@ else
   PLAY_PID=""
 fi
 
+cd /Users/arelligoutham/Documents/OfferForge/website/checkout
+if command -v python3 &> /dev/null; then
+  python3 -m http.server 8082 > /tmp/offerforge-checkout.log 2>&1 &
+  CHECKOUT_PID=$!
+  echo "✅ Checkout page running at http://localhost:8082"
+else
+  CHECKOUT_PID=""
+fi
+
 cd /Users/arelligoutham/Documents/OfferForge
 
 # Print summary
@@ -154,6 +163,7 @@ echo "🎉 OfferForge is running!"
 echo ""
 echo "   🌐 Marketing:  http://localhost:8080"
 echo "   🎮 Playground: http://localhost:8081"
+echo "   🛒 Checkout:   http://localhost:8082"
 echo "   🖥️  Dashboard:  http://localhost:3030"
 echo "   🔧 API:        http://localhost:3010"
 echo "   ❤️  Health:     http://localhost:3010/health"
@@ -193,9 +203,10 @@ kill_all() {
   if [ -n "$DOCS_PID" ]; then kill $DOCS_PID 2>/dev/null; fi
   if [ -n "$WEB_PID" ]; then kill $WEB_PID 2>/dev/null; fi
   if [ -n "$PLAY_PID" ]; then kill $PLAY_PID 2>/dev/null; fi
-  # Kill any python http.server we started
+  if [ -n "$CHECKOUT_PID" ]; then kill $CHECKOUT_PID 2>/dev/null; fi
   lsof -ti:8080 2>/dev/null | xargs kill 2>/dev/null || true
   lsof -ti:8081 2>/dev/null | xargs kill 2>/dev/null || true
+  lsof -ti:8082 2>/dev/null | xargs kill 2>/dev/null || true
   docker compose down 2>/dev/null
   echo "✅ All services stopped"
   exit 0
