@@ -27,9 +27,7 @@
   --color-fg: #12151C;
   --color-fg-soft: #5C6470;
   --color-fg-muted: #9AA1AC;
-  --font-sans: var(--font-jakarta), sans-serif;
-  --font-serif: var(--font-fraunces), serif;
-  --font-mono: var(--font-plex-mono), monospace;
+  --font-sans: var(--font-poppins), 'Poppins', system-ui, sans-serif;
 }
 
 @layer base {
@@ -48,15 +46,6 @@
 }
 
 @layer utilities {
-  .font-serif-num {
-    font-family: var(--font-serif);
-    font-variant-numeric: tabular-nums;
-    font-optical-sizing: auto;
-  }
-  .font-mono-label {
-    font-family: var(--font-mono);
-    letter-spacing: 0.06em;
-  }
   .screen-fade {
     animation: screenFade 0.3s ease;
   }

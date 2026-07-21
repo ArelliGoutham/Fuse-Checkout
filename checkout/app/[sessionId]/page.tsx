@@ -223,7 +223,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-2 mx-auto mb-3"
                style={{ borderColor: 'var(--color-navy)', borderTopColor: 'transparent' }} />
-          <div className="font-mono-label text-xs" style={{ color: 'var(--color-faint)' }}>LOADING CHECKOUT…</div>
+          <div className="font-medium tracking-wide text-xs" style={{ color: 'var(--color-faint)' }}>LOADING CHECKOUT…</div>
         </div>
       </div>
     );
@@ -271,7 +271,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
           </button>
           <div>
             <div className="font-bold text-[15px] text-ink">{meta.title}</div>
-            <div className="font-mono-label text-[10.5px]" style={{ color: 'var(--color-faint)' }}>{meta.sub}</div>
+            <div className="font-medium tracking-wide text-[10.5px]" style={{ color: 'var(--color-faint)' }}>{meta.sub}</div>
           </div>
         </div>
 
@@ -295,7 +295,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                     {i < step ? '✓' : s.idx + 1}
                   </div>
                   <span
-                    className="font-mono-label text-[11px] hidden sm:inline"
+                    className="font-medium tracking-wide text-[11px] hidden sm:inline"
                     style={{ color: i <= step ? 'var(--color-navy)' : 'var(--color-faint)' }}
                   >
                     {s.label}
@@ -329,7 +329,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
               {/* Cart Items Card */}
               <div className="bg-white rounded-[14px] border p-[22px_20px] mb-3.5"
                    style={{ borderColor: 'var(--color-line)', boxShadow: '0 1px 2px rgba(18,21,28,.03)' }}>
-                <div className="font-mono-label text-[10.5px] uppercase flex justify-between mb-4"
+                <div className="font-medium tracking-wide text-[10.5px] uppercase flex justify-between mb-4"
                      style={{ color: 'var(--color-muted)' }}>
                   <span>Items · {cart.items.length}</span>
                 </div>
@@ -352,7 +352,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                         Qty {item.qty}
                       </div>
                     </div>
-                    <div className="font-serif-num font-semibold text-[15.5px] text-ink whitespace-nowrap text-right">
+                    <div className="font-semibold tracking-tight text-[15.5px] text-ink whitespace-nowrap text-right">
                       {formatINR(item.price * item.qty)}
                     </div>
                   </div>
@@ -371,7 +371,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                 <div className="h-px my-3" style={{ background: 'var(--color-line)' }} />
                 <div className="flex justify-between text-[14px] font-semibold text-ink">
                   <span>Total amount</span>
-                  <span className="font-serif-num text-[22px] font-semibold">{formatINR(finalAmount)}</span>
+                  <span className="font-semibold tracking-tight text-[22px]">{formatINR(finalAmount)}</span>
                 </div>
                 {totalDiscount > 0 && (
                   <span className="inline-block mt-2.5 text-[12px] font-semibold px-2.5 py-1.5 rounded-full"
@@ -384,7 +384,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
               {/* Coupons & Offers Card */}
               <div className="bg-white rounded-[14px] border p-[22px_20px] mb-3.5"
                    style={{ borderColor: 'var(--color-line)', boxShadow: '0 1px 2px rgba(18,21,28,.03)' }}>
-                <div className="font-mono-label text-[10.5px] uppercase mb-4"
+                <div className="font-medium tracking-wide text-[10.5px] uppercase mb-4"
                      style={{ color: 'var(--color-muted)' }}>
                   Coupons &amp; Offers
                 </div>
@@ -446,12 +446,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                             </div>
                           </div>
                           {offer.type === 'auto_offer' ? (
-                            <span className="font-mono-label text-[10.5px] font-semibold px-2 py-1 rounded-full whitespace-nowrap"
+                            <span className="font-medium tracking-wide text-[10.5px] font-semibold px-2 py-1 rounded-full whitespace-nowrap"
                                   style={{ color: 'var(--color-gold)', background: 'var(--color-gold-soft)' }}>
                               AUTO
                             </span>
                           ) : (
-                            <span className="font-mono-label text-[12px] font-semibold whitespace-nowrap"
+                            <span className="font-medium tracking-wide text-[12px] font-semibold whitespace-nowrap"
                                   style={{ color: 'var(--color-green)' }}>
                               − {formatINR(discount)}
                             </span>
@@ -477,12 +477,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
               {/* Delivery Address */}
               <div className="bg-white rounded-[14px] border p-[22px_20px] mb-3.5"
                    style={{ borderColor: 'var(--color-line)', boxShadow: '0 1px 2px rgba(18,21,28,.03)' }}>
-                <div className="font-mono-label text-[10.5px] uppercase mb-4"
+                <div className="font-medium tracking-wide text-[10.5px] uppercase mb-4"
                      style={{ color: 'var(--color-muted)' }}>
                   Contact details
                 </div>
                 <div className="mb-3.5">
-                  <label className="block font-mono-label text-[10px] uppercase mb-1.5"
+                  <label className="block font-medium tracking-wide text-[10px] uppercase mb-1.5"
                          style={{ color: 'var(--color-muted)' }}>Full name</label>
                   <input
                     type="text"
@@ -495,7 +495,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                 </div>
                 <div className="flex gap-2.5 mb-3.5">
                   <div className="flex-1">
-                    <label className="block font-mono-label text-[10px] uppercase mb-1.5"
+                    <label className="block font-medium tracking-wide text-[10px] uppercase mb-1.5"
                            style={{ color: 'var(--color-muted)' }}>Email</label>
                     <input
                       type="email"
@@ -507,7 +507,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="block font-mono-label text-[10px] uppercase mb-1.5"
+                    <label className="block font-medium tracking-wide text-[10px] uppercase mb-1.5"
                            style={{ color: 'var(--color-muted)' }}>Mobile</label>
                     <input
                       type="tel"
@@ -524,12 +524,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
               {/* Shipping Address */}
               <div className="bg-white rounded-[14px] border p-[22px_20px] mb-3.5"
                    style={{ borderColor: 'var(--color-line)', boxShadow: '0 1px 2px rgba(18,21,28,.03)' }}>
-                <div className="font-mono-label text-[10.5px] uppercase mb-4"
+                <div className="font-medium tracking-wide text-[10.5px] uppercase mb-4"
                      style={{ color: 'var(--color-muted)' }}>
                   Shipping address
                 </div>
                 <div className="mb-3.5">
-                  <label className="block font-mono-label text-[10px] uppercase mb-1.5"
+                  <label className="block font-medium tracking-wide text-[10px] uppercase mb-1.5"
                          style={{ color: 'var(--color-muted)' }}>Address line</label>
                   <input
                     type="text"
@@ -542,7 +542,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                 </div>
                 <div className="flex gap-2.5">
                   <div className="flex-1">
-                    <label className="block font-mono-label text-[10px] uppercase mb-1.5"
+                    <label className="block font-medium tracking-wide text-[10px] uppercase mb-1.5"
                            style={{ color: 'var(--color-muted)' }}>City</label>
                     <input
                       type="text"
@@ -554,7 +554,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="block font-mono-label text-[10px] uppercase mb-1.5"
+                    <label className="block font-medium tracking-wide text-[10px] uppercase mb-1.5"
                            style={{ color: 'var(--color-muted)' }}>PIN code</label>
                     <input
                       type="text"
@@ -567,7 +567,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                   </div>
                 </div>
                 <div className="mt-3.5">
-                  <label className="block font-mono-label text-[10px] uppercase mb-1.5"
+                  <label className="block font-medium tracking-wide text-[10px] uppercase mb-1.5"
                          style={{ color: 'var(--color-muted)' }}>State</label>
                   <input
                     type="text"
@@ -584,7 +584,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
               <div className="flex justify-between items-center text-[13px] bg-white rounded-[14px] border p-[14px_20px] mb-3.5"
                    style={{ borderColor: 'var(--color-line)' }}>
                 <span style={{ color: 'var(--color-muted)' }}>Total payable</span>
-                <b className="font-serif-num text-[16px] text-ink">{formatINR(finalAmount)}</b>
+                <b className="font-semibold tracking-tight text-[16px] text-ink">{formatINR(finalAmount)}</b>
               </div>
             </>
           )}
@@ -595,7 +595,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
               {/* Payment Methods */}
               <div className="bg-white rounded-[14px] border p-[22px_20px] mb-3.5"
                    style={{ borderColor: 'var(--color-line)', boxShadow: '0 1px 2px rgba(18,21,28,.03)' }}>
-                <div className="font-mono-label text-[10.5px] uppercase mb-4"
+                <div className="font-medium tracking-wide text-[10.5px] uppercase mb-4"
                      style={{ color: 'var(--color-muted)' }}>
                   Choose payment method
                 </div>
@@ -624,7 +624,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                       <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--color-muted)' }}>{m.sub}</div>
                     </div>
                     {m.badge && (
-                      <span className="font-mono-label text-[9.5px] font-bold px-2 py-1 rounded-full whitespace-nowrap"
+                      <span className="font-medium tracking-wide text-[9.5px] font-bold px-2 py-1 rounded-full whitespace-nowrap"
                             style={{ color: 'var(--color-green)', background: 'var(--color-green-soft)' }}>
                         {m.badge}
                       </span>
@@ -637,7 +637,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
               {paymentMethod === 'card' && (
                 <div className="bg-white rounded-[14px] border p-[22px_20px] mb-3.5"
                      style={{ borderColor: 'var(--color-line)', boxShadow: '0 1px 2px rgba(18,21,28,.03)' }}>
-                  <div className="font-mono-label text-[10.5px] uppercase mb-4"
+                  <div className="font-medium tracking-wide text-[10.5px] uppercase mb-4"
                        style={{ color: 'var(--color-muted)' }}>
                     Card details
                   </div>
@@ -654,7 +654,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                   {emiOptions.length > 0 && (
                     <div className="rounded-[10px] border p-3.5"
                          style={{ background: 'var(--color-paper)', borderColor: 'var(--color-line)' }}>
-                      <div className="font-mono-label text-[10px] uppercase mb-3"
+                      <div className="font-medium tracking-wide text-[10px] uppercase mb-3"
                            style={{ color: 'var(--color-muted)' }}>
                         EMI options · {emiOptions[0]?.bank || 'Your bank'}
                       </div>
@@ -671,14 +671,14 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                                  }} />
                             <div>
                               <div className="text-[13px] font-semibold text-ink">
-                                <span className="font-mono-label">{formatINR(emi.customer_emi)}</span>/mo × {emi.tenure_months} mo
+                                <span className="font-medium tracking-wide">{formatINR(emi.customer_emi)}</span>/mo × {emi.tenure_months} mo
                               </div>
                               <div className="text-[11px] mt-0.5" style={{ color: 'var(--color-faint)' }}>
                                 Total: {formatINR(emi.customer_emi * emi.tenure_months)}
                               </div>
                             </div>
                           </div>
-                          <span className="font-mono-label text-[10px] font-bold px-2 py-1 rounded-full"
+                          <span className="font-medium tracking-wide text-[10px] font-bold px-2 py-1 rounded-full"
                                 style={{
                                   color: emi.emi_type === 'no_cost' ? 'var(--color-green)' : 'var(--color-gold)',
                                   background: emi.emi_type === 'no_cost' ? 'var(--color-green-soft)' : 'var(--color-gold-soft)',
@@ -697,7 +697,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                    style={{ borderColor: 'var(--color-line)' }}>
                 <div className="w-16 h-16 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 stamp-rotate"
                      style={{ borderColor: 'var(--color-navy)', borderStyle: 'dashed' }}>
-                  <div className="text-center font-mono-label" style={{ color: 'var(--color-navy)', lineHeight: 1.15 }}>
+                  <div className="text-center font-medium tracking-wide" style={{ color: 'var(--color-navy)', lineHeight: 1.15 }}>
                     <div className="text-[16px]">🔒</div>
                     <div className="text-[6.6px] font-semibold mt-0.5">VERIFIED<br />SECURE</div>
                   </div>
@@ -709,7 +709,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                   </div>
                   <div className="flex gap-1.5 mt-2.5 flex-wrap">
                     {['VISA', 'MASTERCARD', 'RUPAY', 'UPI', 'NET BANKING'].map(b => (
-                      <span key={b} className="font-mono-label text-[9.5px] font-semibold px-2 py-1 rounded border"
+                      <span key={b} className="font-medium tracking-wide text-[9.5px] font-semibold px-2 py-1 rounded border"
                             style={{ color: 'var(--color-muted)', borderColor: 'var(--color-line)', background: 'var(--color-paper)' }}>
                         {b}
                       </span>
@@ -726,7 +726,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
               <div className="text-center pt-6 pb-1.5">
                 <div className="w-24 h-24 mx-auto mb-5 rounded-full border-2 flex items-center justify-center stamp-rotate-success"
                      style={{ borderColor: 'var(--color-green)', borderStyle: 'dashed' }}>
-                  <div className="text-center font-mono-label" style={{ color: 'var(--color-green)', lineHeight: 1.2 }}>
+                  <div className="text-center font-medium tracking-wide" style={{ color: 'var(--color-green)', lineHeight: 1.2 }}>
                     <div className="text-[30px]">✓</div>
                     <div className="text-[8px] font-bold mt-0.5">PAYMENT<br />CONFIRMED</div>
                   </div>
@@ -740,7 +740,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
 
               <div className="bg-white rounded-[14px] border p-[22px_20px] mb-3.5"
                    style={{ borderColor: 'var(--color-line)' }}>
-                <div className="font-mono-label text-[10.5px] uppercase flex justify-between mb-3"
+                <div className="font-medium tracking-wide text-[10.5px] uppercase flex justify-between mb-3"
                      style={{ color: 'var(--color-muted)' }}>
                   <span>Receipt</span>
                   <span style={{ color: 'var(--color-faint)' }}>№ {orderResult.orderId.slice(-10).toUpperCase()}</span>
@@ -753,7 +753,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                   <div key={k} className="flex justify-between text-[13px] py-2.5"
                        style={{ borderBottom: '1px dashed var(--color-line)' }}>
                     <span style={{ color: 'var(--color-muted)' }}>{k}</span>
-                    <span className="font-mono-label font-semibold text-[12.5px] text-ink">{v}</span>
+                    <span className="font-semibold tracking-wide text-[12.5px] text-ink">{v}</span>
                   </div>
                 ))}
               </div>
@@ -790,7 +790,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
           <div className="w-full max-w-[440px] flex items-center justify-between rounded-2xl p-[14px_16px]"
                style={{ background: 'var(--color-navy)', boxShadow: '0 12px 28px rgba(22,35,63,.28)' }}>
             <div>
-              <div className="font-mono-label text-[10px] uppercase"
+              <div className="font-medium tracking-wide text-[10px] uppercase"
                    style={{ color: '#9FB0CC', letterSpacing: '0.06em' }}>
                 {meta.footLabel}
               </div>
