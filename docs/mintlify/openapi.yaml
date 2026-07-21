@@ -25,157 +25,156 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  schemas:
+    Offer:
+      type: object
+      properties:
+        _id:
+          type: string
+        merchant_id:
+          type: string
+        code:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [coupon, auto_offer]
+        title:
+          type: string
+        discount:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [flat, percentage]
+            value:
+              type: number
+            max_discount:
+              type: number
+              nullable: true
+        status:
+          type: string
+          enum: [active, inactive, expired]
+        usage_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+      required: [_id, merchant_id, type, title, discount, status]
+
+    CreateOffer:
+      type: object
+      properties:
+        code:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [coupon, auto_offer]
+        title:
+          type: string
+        discount:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [flat, percentage]
+            value:
+              type: number
+            max_discount:
+              type: number
+              nullable: true
+        validity:
+          type: object
+          properties:
+            starts_at:
+              type: string
+              format: date-time
+            ends_at:
+              type: string
+              format: date-time
+        usage_limits:
+          type: object
+          properties:
+            total:
+              type: integer
+              nullable: true
+            per_customer:
+              type: integer
+              nullable: true
+        rules:
+          type: array
+          items:
+            type: object
+            properties:
+              rule_type:
+                type: string
+              config:
+                type: object
+      required: [type, title, discount, validity]
+
+    Cart:
+      type: object
+      properties:
+        amount:
+          type: number
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              sku_id:
+                type: string
+              name:
+                type: string
+              price:
+                type: number
+              qty:
+                type: integer
+              category:
+                type: string
+              brand:
+                type: string
+      required: [amount, items]
+
+    Customer:
+      type: object
+      properties:
+        customer_id:
+          type: string
+        segments:
+          type: array
+          items:
+            type: string
+        total_orders:
+          type: integer
+        per_customer_used:
+          type: integer
+
+    CheckoutSession:
+      type: object
+      properties:
+        session_id:
+          type: string
+        checkout_url:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
 
 security:
   - apiKey: []
-
-schemas:
-  Offer:
-    type: object
-    properties:
-      _id:
-        type: string
-      merchant_id:
-        type: string
-      code:
-        type: string
-        nullable: true
-      type:
-        type: string
-        enum: [coupon, auto_offer]
-      title:
-        type: string
-      discount:
-        type: object
-        properties:
-          type:
-            type: string
-            enum: [flat, percentage]
-          value:
-            type: number
-          max_discount:
-            type: number
-            nullable: true
-      status:
-        type: string
-        enum: [active, inactive, expired]
-      usage_count:
-        type: integer
-      created_at:
-        type: string
-        format: date-time
-    required: [_id, merchant_id, type, title, discount, status]
-
-  CreateOffer:
-    type: object
-    properties:
-      code:
-        type: string
-        nullable: true
-      type:
-        type: string
-        enum: [coupon, auto_offer]
-      title:
-        type: string
-      discount:
-        type: object
-        properties:
-          type:
-            type: string
-            enum: [flat, percentage]
-          value:
-            type: number
-          max_discount:
-            type: number
-            nullable: true
-      validity:
-        type: object
-        properties:
-          starts_at:
-            type: string
-            format: date-time
-          ends_at:
-            type: string
-            format: date-time
-      usage_limits:
-        type: object
-        properties:
-          total:
-            type: integer
-            nullable: true
-          per_customer:
-            type: integer
-            nullable: true
-      rules:
-        type: array
-        items:
-          type: object
-          properties:
-            rule_type:
-              type: string
-            config:
-              type: object
-    required: [type, title, discount, validity]
-
-  Cart:
-    type: object
-    properties:
-      amount:
-        type: number
-      items:
-        type: array
-        items:
-          type: object
-          properties:
-            sku_id:
-              type: string
-            name:
-              type: string
-            price:
-              type: number
-            qty:
-              type: integer
-            category:
-              type: string
-            brand:
-              type: string
-    required: [amount, items]
-
-  Customer:
-    type: object
-    properties:
-      customer_id:
-        type: string
-      segments:
-        type: array
-        items:
-          type: string
-      total_orders:
-        type: integer
-      per_customer_used:
-        type: integer
-
-  CheckoutSession:
-    type: object
-    properties:
-      session_id:
-        type: string
-      checkout_url:
-        type: string
-      expires_at:
-        type: string
-        format: date-time
-
-  Error:
-    type: object
-    properties:
-      error:
-        type: object
-        properties:
-          code:
-            type: string
-          message:
-            type: string
 
 paths:
   # === OFFERS ===
