@@ -32,8 +32,8 @@
           {
             "group": "Core Concepts",
             "pages": [
+              "guides/checkout",
               "guides/offers",
-              "guides/rules",
               "guides/stacking",
               "guides/products"
             ]

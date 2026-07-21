@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#090A0E">
-<title>OfferForge — Offers Platform for Indian E-Commerce</title>
-<meta name="description" content="Drop-in offers layer for Indian e-commerce. Create coupons, auto-applied discounts, and stacking rules without building anything.">
+<title>OfferForge — Checkout & Offers Platform for Indian E-Commerce</title>
+<meta name="description" content="Hosted checkout with built-in offers, EMI engine, and payment orchestration for Indian e-commerce. Launch a full checkout experience in one API call.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -52,8 +52,8 @@
     <span class="hero-badge-dot" aria-hidden="true"></span>
     Now in beta — free for first 100 merchants
   </div>
-  <h1>Offers that <span class="gradient">convert</span>.<br>Checkout that sells.</h1>
-  <p>A drop-in offers layer for Indian e-commerce. Create coupons, auto-applied discounts, and stacking rules — without building anything. We handle the math, the rules, and the analytics.</p>
+  <h1>Checkout that <span class="gradient">converts</span>.<br>Offers that sell.</h1>
+  <p>A hosted checkout platform for Indian e-commerce. One API call launches a full checkout page with coupons, auto-offers, EMI calculation, and payment processing. We handle the checkout UX, the offer math, and the payment orchestration.</p>
   <div class="hero-actions">
     <a data-href="dashboard:signup" class="btn-primary">Start Free <span aria-hidden="true">→</span></a>
     <a data-href="docs" class="btn-secondary">
@@ -67,28 +67,28 @@
       <span class="hero-code-dot red" aria-hidden="true"></span>
       <span class="hero-code-dot yellow" aria-hidden="true"></span>
       <span class="hero-code-dot green" aria-hidden="true"></span>
-      <span class="hero-code-title">create-offer.sh</span>
+      <span class="hero-code-title">create-checkout.sh</span>
     </div>
     <div class="hero-code-body">
-<span class="c-comment"># Create a coupon in one API call</span>
-<span class="c-accent">POST</span> /api/offers
+<span class="c-comment"># Create a checkout session in one API call</span>
+<span class="c-accent">POST</span> /api/checkout/sessions
 {
-  <span class="c-info">"code"</span>: <span class="c-success">"FLAT50"</span>,
-  <span class="c-info">"type"</span>: <span class="c-success">"coupon"</span>,
-  <span class="c-info">"discount"</span>: { <span class="c-info">"type"</span>: <span class="c-success">"flat"</span>, <span class="c-info">"value"</span>: <span class="c-accent">50</span> },
-  <span class="c-info">"rules"</span>: [{ <span class="c-info">"rule_type"</span>: <span class="c-success">"min_cart_value"</span>, <span class="c-info">"config"</span>: { <span class="c-info">"min_amount"</span>: <span class="c-accent">500</span> } }]
+  <span class="c-info">"cart"</span>: { <span class="c-info">"amount"</span>: <span class="c-accent">8999</span>, <span class="c-info">"items"</span>: [{ <span class="c-info">"sku_id"</span>: <span class="c-success">"SKU-RS999"</span>, <span class="c-info">"price"</span>: <span class="c-accent">8999</span>, <span class="c-info">"qty"</span>: <span class="c-accent">1</span> }] },
+  <span class="c-info">"redirect_urls"</span>: { <span class="c-info">"success"</span>: <span class="c-success">"https://store.in/success"</span> }
 }
 
-<span class="c-comment"># Validate at checkout — instant response</span>
-{ <span class="c-info">"valid"</span>: <span class="c-success">true</span>, <span class="c-info">"discount_amount"</span>: <span class="c-accent">50</span>, <span class="c-info">"final_amount"</span>: <span class="c-accent">4950</span> } <span class="c-success">✓</span>
+<span class="c-comment"># Redirect customer to hosted checkout</span>
+{ <span class="c-info">"checkout_url"</span>: <span class="c-success">"https://checkout.offerforge.io/sess_..."</span> } <span class="c-success">✓</span>
+
+<span class="c-comment"># Customer gets: offers, EMI options, payment — all handled</span>
     </div>
   </div>
 </section>
 
 <!-- Stats -->
 <div class="stats-bar reveal" data-anim="scale">
+  <div class="stat"><div class="stat-value">24</div><div class="stat-label">API Endpoints</div></div>
   <div class="stat"><div class="stat-value">13</div><div class="stat-label">Rule Types</div></div>
-  <div class="stat"><div class="stat-value">15+</div><div class="stat-label">API Endpoints</div></div>
   <div class="stat"><div class="stat-value">&lt;100ms</div><div class="stat-label">Response Time</div></div>
   <div class="stat"><div class="stat-value">₹0</div><div class="stat-label">To Start</div></div>
 </div>
@@ -96,51 +96,51 @@
 <!-- Features -->
 <section class="section" id="features">
   <div class="section-label reveal" data-anim="up">// Features</div>
-  <h2 class="section-heading reveal" data-anim="up">Everything you need to run offers</h2>
-  <p class="section-subtitle reveal" data-anim="up">From simple flat discounts to complex stacking rules — OfferForge handles it all.</p>
+  <h2 class="section-heading reveal" data-anim="up">Everything you need to sell online</h2>
+  <p class="section-subtitle reveal" data-anim="up">From hosted checkout to EMI calculation to offer orchestration — OfferForge handles the entire post-cart experience.</p>
 
   <div class="features-grid reveal-stagger">
     <div class="feature-card">
       <div class="feature-icon amber" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M20 12v4H6a2 2 0 0 0 0 4h12v-4"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
       </div>
-      <h3>Coupon Codes</h3>
-      <p>Flat or percentage discounts with codes like FLAT50, SAVE10. Min cart values, max caps, per-customer limits.</p>
+      <h3>Hosted Checkout</h3>
+      <p>One API call creates a full checkout page. Review cart, apply offers, fill details, select payment — all hosted by us. Redirect and be done.</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon blue" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M20 12v4H6a2 2 0 0 0 0 4h12v-4"/></svg>
       </div>
-      <h3>Auto-Applied Offers</h3>
-      <p>Show offers automatically based on cart contents. No code needed. "10% off Electronics" when cart has electronics.</p>
+      <h3>Coupon Engine</h3>
+      <p>Flat or percentage discounts with codes like FLAT50, SAVE10. 13 rule types, stacking policies, per-customer limits — built in.</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon green" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       </div>
-      <h3>13 Rule Types</h3>
-      <p>Min cart value, customer segment, first-time buyer, weekend only, category restriction, product combo, and more.</p>
+      <h3>EMI Engine</h3>
+      <p>Calculate standard, no-cost, and low-cost EMI using our bank rate database. BIN lookup detects the card bank. Customers see monthly amounts instantly.</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon amber" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
       </div>
-      <h3>Stacking &amp; Conflicts</h3>
-      <p>Define how offers combine. The engine resolves conflicts using priority, exclusive flags, and global policies.</p>
+      <h3>Payment Orchestration</h3>
+      <p>Plug in any payment gateway via our adapter interface. We process the payment, create the order, and redirect back to your success URL.</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon purple" aria-hidden="true">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
       </div>
       <h3>Analytics</h3>
-      <p>Track redemptions, conversions, abandonment. Measure AOV lift and revenue impact per offer.</p>
+      <p>Track redemptions, conversions, abandonment. Measure AOV lift and revenue impact per offer. Full funnel from session to payment.</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon red" aria-hidden="true">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
       </div>
       <h3>Team &amp; Roles</h3>
-      <p>Invite team members with role-based access. Owner, admin, offer manager, analytics viewer.</p>
+      <p>Invite team members with role-based access. Owner, admin, offer manager, analytics viewer. API keys with scoped permissions.</p>
     </div>
   </div>
 </section>
@@ -148,41 +148,44 @@
 <!-- How It Works -->
 <section class="section" id="how-it-works">
   <div class="section-label reveal" data-anim="up">// How it Works</div>
-  <h2 class="section-heading reveal" data-anim="up">Three steps. No engineering required.</h2>
-  <p class="section-subtitle reveal" data-anim="up">Integrate in under an hour. Your checkout calls our API — we handle the rest.</p>
+  <h2 class="section-heading reveal" data-anim="up">One integration. Full checkout.</h2>
+  <p class="section-subtitle reveal" data-anim="up">Create a checkout session, redirect your customer, we handle the rest. No checkout frontend to build.</p>
 
   <div class="compare reveal" data-anim="scale">
     <div class="compare-col">
-      <div class="compare-header bad"><span aria-hidden="true">✗</span> Building it yourself</div>
+      <div class="compare-header bad"><span aria-hidden="true">✗</span> Building checkout yourself</div>
       <div class="compare-code">
-<span class="c-comment">// 3 sprints minimum — not your core business</span>
-<span class="c-danger">- Coupon math (flat, percentage, capped)</span>
-<span class="c-danger">- Stacking rules (what combines with what)</span>
-<span class="c-danger">- Per-customer limits, first-time buyer checks</span>
-<span class="c-danger">- Product/category restrictions</span>
-<span class="c-danger">- Time/window restrictions (weekend, flash)</span>
-<span class="c-danger">- Analytics on redemption and conversion</span>
-<span class="c-danger">- Maintain as rules get more complex</span>
-<span class="c-comment">// Or do nothing and lose 20-30%</span>
-<span class="c-comment">// of high-value orders to competitors</span>
+<span class="c-comment">// Months of work — not your core business</span>
+<span class="c-danger">- Build checkout page UI (responsive, accessible)</span>
+<span class="c-danger">- Coupon input, validation, stacking logic</span>
+<span class="c-danger">- EMI calculator with bank rates &amp; tenures</span>
+<span class="c-danger">- Payment gateway integration (Razorpay, etc.)</span>
+<span class="c-danger">- Order creation &amp; payment status tracking</span>
+<span class="c-danger">- BIN lookup for bank-specific offers</span>
+<span class="c-danger">- Analytics pipeline for conversion funnels</span>
+<span class="c-danger">- Maintain as payment landscape evolves</span>
+<span class="c-comment">// Or use a generic checkout that doesn't</span>
+<span class="c-comment">// understand Indian offers &amp; EMI</span>
       </div>
     </div>
     <div class="compare-col good">
       <div class="compare-header good"><span aria-hidden="true">✓</span> With OfferForge</div>
       <div class="compare-code">
-<span class="c-comment">// 1. Create an offer</span>
-<span class="c-accent">POST</span> /api/offers
-{ <span class="c-info">"code"</span>: <span class="c-success">"FLAT50"</span>, ... }
+<span class="c-comment">// 1. Create a checkout session</span>
+<span class="c-accent">POST</span> /api/checkout/sessions
+{ <span class="c-info">"cart"</span>: {...}, <span class="c-info">"redirect_urls"</span>: {...} }
 
-<span class="c-comment">// 2. Validate at checkout</span>
-<span class="c-accent">POST</span> /api/offers/validate
-{ <span class="c-info">"code"</span>: <span class="c-success">"FLAT50"</span>, <span class="c-info">"cart"</span>: {...} }
+<span class="c-comment">// 2. Redirect customer to checkout_url</span>
+<span class="c-success">→</span> https://checkout.offerforge.io/sess_...
 
-<span class="c-comment">// 3. Track conversion</span>
-<span class="c-accent">POST</span> /api/track/conversion
-{ <span class="c-info">"session_id"</span>: <span class="c-success">"..."</span>, <span class="c-info">"status"</span>: <span class="c-success">"paid"</span> }
+<span class="c-comment">// 3. Customer gets:</span>
+<span class="c-success">✓</span> Coupon codes &amp; auto-offers
+<span class="c-success">✓</span> EMI options (standard, no-cost, low-cost)
+<span class="c-success">✓</span> Payment processing (card, UPI, bank)
+<span class="c-success">✓</span> Order created &amp; tracked
 
-<span class="c-success">// That's it. We handle the rest.</span>
+<span class="c-comment">// 4. Redirect back to your success URL</span>
+<span class="c-success">// That's it. We handle the entire checkout.</span>
       </div>
     </div>
   </div>
@@ -191,48 +194,51 @@
 <!-- Roadmap -->
 <section class="section" id="roadmap">
   <div class="section-label reveal" data-anim="up">// Roadmap</div>
-  <h2 class="section-heading reveal" data-anim="up">Built for today. Ready for tomorrow.</h2>
-  <p class="section-subtitle reveal" data-anim="up">OfferForge is modular by design. New offer types slot in without touching existing code.</p>
+  <h2 class="section-heading reveal" data-anim="up">Built for Indian checkout. Ready to scale.</h2>
+  <p class="section-subtitle reveal" data-anim="up">OfferForge is modular by design. New offer types and payment methods slot in without touching existing code.</p>
 
   <div class="roadmap reveal" data-anim="up">
     <div class="roadmap-item current">
       <div class="roadmap-phase">Phase 1 — Shipped</div>
-      <h3>Coupons &amp; Auto-Offers</h3>
+      <h3>Checkout &amp; Offers</h3>
       <ul>
+        <li>Hosted checkout page (3-step flow)</li>
         <li>Coupon codes (flat &amp; percentage)</li>
         <li>Auto-applied offers</li>
-        <li>13 rule types</li>
-        <li>Stacking &amp; conflict resolution</li>
-        <li>Product catalog</li>
-        <li>Analytics</li>
+        <li>13 rule types &amp; stacking</li>
+        <li>EMI engine (standard, no-cost, low-cost)</li>
+        <li>Bank rate database with BIN lookup</li>
+        <li>Payment orchestration (adapter pattern)</li>
+        <li>Orders &amp; session management</li>
+        <li>Analytics &amp; conversion tracking</li>
         <li>Team management with roles</li>
-        <li>API key management</li>
       </ul>
     </div>
     <div class="roadmap-item future">
       <div class="roadmap-phase">Phase 2 — Next</div>
       <h3>Bank &amp; Brand Offers</h3>
       <ul>
-        <li>Card BIN validation</li>
+        <li>Card BIN validation for bank offers</li>
         <li>"Use Federal Bank CC → 10% off"</li>
         <li>Brand-subsidized discounts</li>
         <li>"Apple pays ₹2000 off iPhone"</li>
-        <li>Embeddable widget</li>
+        <li>Razorpay adapter (production PG)</li>
+        <li>Embeddable checkout widget</li>
         <li>Shopify app</li>
-        <li>WooCommerce plugin</li>
+        <li>Checkout A/B testing</li>
       </ul>
     </div>
     <div class="roadmap-item future">
       <div class="roadmap-phase">Phase 3 — Future</div>
-      <h3>EMI Engine</h3>
+      <h3>Scale &amp; Personalize</h3>
       <ul>
-        <li>EMI calculation (reducing balance)</li>
-        <li>No-cost EMI with subsidy models</li>
-        <li>Bank rates &amp; tenures database</li>
         <li>Cardless EMI partner APIs</li>
         <li>EMI widget for product pages</li>
         <li>Coupon + EMI conflict resolution</li>
         <li>Personalization engine</li>
+        <li>WooCommerce plugin</li>
+        <li>Multi-currency checkout</li>
+        <li>Subscription checkout flows</li>
       </ul>
     </div>
   </div>
@@ -250,9 +256,9 @@
       <div class="price-value">₹0</div>
       <div class="price-period">forever</div>
       <ul class="price-features">
+        <li>100 checkout sessions/mo</li>
         <li>3 offer types</li>
-        <li>500 offer views/mo</li>
-        <li>Basic widget</li>
+        <li>Basic checkout page</li>
         <li>OfferForge branding</li>
       </ul>
       <a data-href="dashboard:signup" class="btn-secondary" style="width:100%; justify-content:center;">Start Free</a>
@@ -262,12 +268,12 @@
       <div class="price-value">₹2,999</div>
       <div class="price-period">per month</div>
       <ul class="price-features">
-        <li>All rule types</li>
-        <li>50K views/mo</li>
-        <li>Themed widget</li>
+        <li>10K checkout sessions/mo</li>
+        <li>All rule types &amp; stacking</li>
+        <li>EMI engine + bank rates</li>
+        <li>Themed checkout page</li>
         <li>Basic analytics</li>
         <li>API access</li>
-        <li>Your branding</li>
       </ul>
       <a data-href="dashboard:signup" class="btn-secondary" style="width:100%; justify-content:center;">Get Starter</a>
     </div>
@@ -277,10 +283,10 @@
       <div class="price-period">per month</div>
       <ul class="price-features">
         <li>Everything in Starter</li>
-        <li>5L views/mo</li>
-        <li>Full analytics</li>
-        <li>Cardless EMI</li>
-        <li>API access</li>
+        <li>1L checkout sessions/mo</li>
+        <li>Full analytics &amp; funnels</li>
+        <li>Bank &amp; brand offers</li>
+        <li>Custom payment gateway</li>
         <li>Your branding</li>
       </ul>
       <a data-href="dashboard:signup" class="btn-primary" style="width:100%; justify-content:center;">Get Growth</a>
@@ -290,10 +296,10 @@
       <div class="price-value">Custom</div>
       <div class="price-period">talk to us</div>
       <ul class="price-features">
-        <li>Unlimited views</li>
-        <li>Custom partnerships</li>
-        <li>Dedicated dashboard</li>
-        <li>SLA + support</li>
+        <li>Unlimited sessions</li>
+        <li>Custom PG integrations</li>
+        <li>Embeddable widget</li>
+        <li>SLA + dedicated support</li>
         <li>Fully white-label</li>
       </ul>
       <a href="mailto:support@offerforge.io" class="btn-secondary" style="width:100%; justify-content:center;">Contact Us</a>
@@ -304,7 +310,7 @@
 <!-- CTA -->
 <section class="cta-section">
   <div class="cta-glow" aria-hidden="true"></div>
-  <h2 class="reveal" data-anim="up">Ready to forge better offers?</h2>
+  <h2 class="reveal" data-anim="up">Ready to launch better checkout?</h2>
   <p class="reveal" data-anim="up">Join the beta — free for the first 100 merchants.</p>
   <a data-href="dashboard:signup" class="btn-primary reveal" data-anim="up">Start Free <span aria-hidden="true">→</span></a>
 </section>
@@ -319,7 +325,7 @@
         </div>
         <span class="nav-logo-text">OfferForge</span>
       </a>
-      <p>A modular offers platform for Indian e-commerce. Coupons, auto-offers, stacking rules, and analytics — without building anything.</p>
+      <p>A hosted checkout platform for Indian e-commerce. Checkout pages, offers, EMI calculation, and payment orchestration — in one API call.</p>
     </div>
     <div class="footer-col">
       <h5>Product</h5>
@@ -331,7 +337,7 @@
       <h5>Developers</h5>
       <a data-href="docs">Documentation</a>
       <a data-href="docs:guides/quickstart">Quickstart</a>
-      <a data-href="docs:api-reference/auth/signup">API Reference</a>
+      <a data-href="docs:api-reference">API Reference</a>
       <a href="https://github.com/ArelliGoutham/OfferForge">GitHub</a>
     </div>
     <div class="footer-col">
