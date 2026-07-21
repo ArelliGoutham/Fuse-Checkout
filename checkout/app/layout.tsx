@@ -1,12 +1,26 @@
 import type { Metadata } from "next";
-import { Sora } from "next/font/google";
+import { Plus_Jakarta_Sans, Fraunces, IBM_Plex_Mono } from "next/font/google";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./globals.css";
 
-const sora = Sora({
-  variable: "--font-sora",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
@@ -21,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${sora.variable} h-full antialiased`}>
+    <html lang="en" className={`${jakarta.variable} ${fraunces.variable} ${plexMono.variable} h-full antialiased`}>
       <body className="min-h-full">{children}</body>
     </html>
   );

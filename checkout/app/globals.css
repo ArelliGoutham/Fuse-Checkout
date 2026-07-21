@@ -1,32 +1,73 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #090A0E;
-  --color-bg-soft: #0E0F14;
-  --color-surface: #131419;
-  --color-surface-2: #191B22;
-  --color-surface-3: #20232C;
-  --color-border: #1C1E26;
-  --color-border-light: #282B36;
-  --color-accent: #F59E0B;
-  --color-accent-light: #FCD34D;
-  --color-accent-dark: #B45309;
-  --color-success: #10B981;
-  --color-danger: #EF4444;
-  --color-info: #3B82F6;
-  --color-purple: #A78BFA;
-  --color-fg: #F4F4F5;
-  --color-fg-soft: #A8A8B3;
-  --color-fg-muted: #6B6B76;
-  --font-sans: var(--font-sora), sans-serif;
+  --color-paper: #F1F3F5;
+  --color-card: #FFFFFF;
+  --color-ink: #12151C;
+  --color-muted: #5C6470;
+  --color-faint: #9AA1AC;
+  --color-navy: #16233F;
+  --color-navy-soft: #223256;
+  --color-gold: #B5842A;
+  --color-gold-soft: #F3E4C4;
+  --color-green: #1F7A54;
+  --color-green-soft: #E4F1EA;
+  --color-line: #E1E4E8;
+  --color-bg: #F1F3F5;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F7F9FC;
+  --color-surface-3: #EDF0F3;
+  --color-border: #E1E4E8;
+  --color-border-light: #EDF0F3;
+  --color-accent: #B5842A;
+  --color-accent-light: #D9A84A;
+  --color-accent-dark: #8F6520;
+  --color-success: #1F7A54;
+  --color-danger: #C53030;
+  --color-fg: #12151C;
+  --color-fg-soft: #5C6470;
+  --color-fg-muted: #9AA1AC;
+  --font-sans: var(--font-jakarta), sans-serif;
+  --font-serif: var(--font-fraunces), serif;
+  --font-mono: var(--font-plex-mono), monospace;
 }
 
 @layer base {
+  html { color-scheme: light; }
   body {
-    background: var(--color-bg);
-    color: var(--color-fg);
+    background:
+      radial-gradient(circle at 15% 8%, #E7EAEE 0%, transparent 45%),
+      var(--color-paper);
+    color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .font-serif-num {
+    font-family: var(--font-serif);
+    font-variant-numeric: tabular-nums;
+    font-optical-sizing: auto;
+  }
+  .font-mono-label {
+    font-family: var(--font-mono);
+    letter-spacing: 0.06em;
+  }
+  .screen-fade {
+    animation: screenFade 0.3s ease;
+  }
+  @keyframes screenFade {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .stamp-rotate {
+    transform: rotate(-9deg);
+  }
+  .stamp-rotate-success {
+    transform: rotate(-6deg);
   }
 }
