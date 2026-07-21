@@ -1,0 +1,1213 @@
+openapi: 3.0.3
+info:
+  title: OfferForge API
+  description: Modular offers platform for Indian e-commerce. Create coupons, auto-applied discounts, EMI offers, and manage checkout.
+  version: 1.0.0
+  contact:
+    name: OfferForge
+    email: support@offerforge.io
+    url: https://offerforge.io
+
+servers:
+  - url: http://localhost:3010
+    description: Local development
+  - url: https://api.offerforge.io
+    description: Production
+
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      x-default: demo-key-123
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - apiKey: []
+
+schemas:
+  Offer:
+    type: object
+    properties:
+      _id:
+        type: string
+      merchant_id:
+        type: string
+      code:
+        type: string
+        nullable: true
+      type:
+        type: string
+        enum: [coupon, auto_offer]
+      title:
+        type: string
+      discount:
+        type: object
+        properties:
+          type:
+            type: string
+            enum: [flat, percentage]
+          value:
+            type: number
+          max_discount:
+            type: number
+            nullable: true
+      status:
+        type: string
+        enum: [active, inactive, expired]
+      usage_count:
+        type: integer
+      created_at:
+        type: string
+        format: date-time
+    required: [_id, merchant_id, type, title, discount, status]
+
+  CreateOffer:
+    type: object
+    properties:
+      code:
+        type: string
+        nullable: true
+      type:
+        type: string
+        enum: [coupon, auto_offer]
+      title:
+        type: string
+      discount:
+        type: object
+        properties:
+          type:
+            type: string
+            enum: [flat, percentage]
+          value:
+            type: number
+          max_discount:
+            type: number
+            nullable: true
+      validity:
+        type: object
+        properties:
+          starts_at:
+            type: string
+            format: date-time
+          ends_at:
+            type: string
+            format: date-time
+      usage_limits:
+        type: object
+        properties:
+          total:
+            type: integer
+            nullable: true
+          per_customer:
+            type: integer
+            nullable: true
+      rules:
+        type: array
+        items:
+          type: object
+          properties:
+            rule_type:
+              type: string
+            config:
+              type: object
+    required: [type, title, discount, validity]
+
+  Cart:
+    type: object
+    properties:
+      amount:
+        type: number
+      items:
+        type: array
+        items:
+          type: object
+          properties:
+            sku_id:
+              type: string
+            name:
+              type: string
+            price:
+              type: number
+            qty:
+              type: integer
+            category:
+              type: string
+            brand:
+              type: string
+    required: [amount, items]
+
+  Customer:
+    type: object
+    properties:
+      customer_id:
+        type: string
+      segments:
+        type: array
+        items:
+          type: string
+      total_orders:
+        type: integer
+      per_customer_used:
+        type: integer
+
+  CheckoutSession:
+    type: object
+    properties:
+      session_id:
+        type: string
+      checkout_url:
+        type: string
+      expires_at:
+        type: string
+        format: date-time
+
+  Error:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+          message:
+            type: string
+
+paths:
+  # === OFFERS ===
+  /api/offers:
+    post:
+      tags: [Offers]
+      summary: Create offer
+      description: Create a new coupon or auto-applied offer.
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOffer'
+            example:
+              code: "FLAT50"
+              type: "coupon"
+              title: "Flat ₹50 off"
+              discount:
+                type: "flat"
+                value: 50
+                max_discount: null
+              validity:
+                starts_at: "2026-01-01T00:00:00.000Z"
+                ends_at: "2026-12-31T23:59:59.000Z"
+              usage_limits:
+                total: null
+                per_customer: null
+              rules:
+                - rule_type: "min_cart_value"
+                  config:
+                    min_amount: 500
+      responses:
+        '201':
+          description: Offer created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offer'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags: [Offers]
+      summary: List offers
+      description: Get all offers for the authenticated merchant.
+      security:
+        - apiKey: []
+      responses:
+        '200':
+          description: List of offers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  offers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Offer'
+
+  /api/offers/{id}:
+    get:
+      tags: [Offers]
+      summary: Get offer by ID
+      security:
+        - apiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Offer details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offer'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags: [Offers]
+      summary: Delete offer
+      security:
+        - apiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+
+  # === CHECKOUT ===
+  /api/offers/available:
+    post:
+      tags: [Checkout]
+      summary: Get available offers
+      description: Returns all applicable offers (coupons + auto-offers) for a given cart and customer.
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cart:
+                  $ref: '#/components/schemas/Cart'
+                customer:
+                  $ref: '#/components/schemas/Customer'
+            example:
+              cart:
+                amount: 5000
+                items:
+                  - sku_id: "SKU-1"
+                    name: "Test Product"
+                    price: 5000
+                    qty: 1
+              customer:
+                customer_id: "c1"
+                segments: ["new"]
+                total_orders: 0
+                per_customer_used: 0
+      responses:
+        '200':
+          description: Available offers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  coupons:
+                    type: array
+                    items:
+                      type: object
+                  auto_offers:
+                    type: array
+                    items:
+                      type: object
+
+  /api/offers/validate:
+    post:
+      tags: [Checkout]
+      summary: Validate coupon code
+      description: Validates a specific coupon code against the cart and customer.
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                cart:
+                  $ref: '#/components/schemas/Cart'
+                customer:
+                  $ref: '#/components/schemas/Customer'
+            example:
+              code: "FLAT50"
+              cart:
+                amount: 5000
+                items:
+                  - sku_id: "SKU-1"
+                    name: "Test Product"
+                    price: 5000
+                    qty: 1
+              customer:
+                customer_id: "c1"
+                segments: ["new"]
+                total_orders: 0
+                per_customer_used: 0
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  offer:
+                    $ref: '#/components/schemas/Offer'
+                  discount_amount:
+                    type: number
+                  final_amount:
+                    type: number
+                  reason:
+                    type: string
+                    nullable: true
+        '404':
+          description: Code not found
+
+  /api/offers/apply:
+    post:
+      tags: [Checkout]
+      summary: Apply offer
+      description: Applies an offer and creates a redemption record. Used at checkout when customer confirms.
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                offer_id:
+                  type: string
+                cart:
+                  $ref: '#/components/schemas/Cart'
+                customer:
+                  $ref: '#/components/schemas/Customer'
+                session_id:
+                  type: string
+      responses:
+        '200':
+          description: Applied successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  applied:
+                    type: boolean
+                  discount_amount:
+                    type: number
+                  final_amount:
+                    type: number
+
+  # === CHECKOUT SESSIONS ===
+  /api/checkout/sessions:
+    post:
+      tags: [Checkout Sessions]
+      summary: Create checkout session
+      description: Creates a hosted checkout session. Returns a URL to redirect the customer.
+      security:
+        - apiKey: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cart:
+                  $ref: '#/components/schemas/Cart'
+                redirect_urls:
+                  type: object
+                  properties:
+                    success:
+                      type: string
+                      format: uri
+                    cancel:
+                      type: string
+                      format: uri
+                customer:
+                  type: object
+                  properties:
+                    email:
+                      type: string
+                    phone:
+                      type: string
+            example:
+              cart:
+                amount: 129999
+                items:
+                  - sku_id: "SKU-IP15"
+                    name: "iPhone 15 Pro"
+                    price: 129999
+                    qty: 1
+                    category: "Electronics"
+                    brand: "Apple"
+              redirect_urls:
+                success: "https://store.in/success"
+                cancel: "https://store.in/cancel"
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutSession'
+
+  /api/checkout/sessions/{id}:
+    get:
+      tags: [Checkout Sessions]
+      summary: Get checkout session
+      description: Retrieve a checkout session by ID (requires merchant API key).
+      security:
+        - apiKey: []
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Checkout session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutSession'
+        '404':
+          description: Session not found
+
+  /api/checkout/{session_id}/cart:
+    get:
+      tags: [Checkout Sessions]
+      summary: Get cart for session
+      description: Retrieve cart, customer, applied offers, and payment status for a checkout session (no auth — used by hosted checkout page).
+      security: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cart and session details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cart:
+                    type: object
+                    properties:
+                      amount:
+                        type: number
+                      items:
+                        type: array
+                        items:
+                          type: object
+                  merchant_id:
+                    type: string
+                  customer:
+                    type: object
+                  applied_offers:
+                    type: array
+                    items:
+                      type: object
+                  payment_status:
+                    type: string
+        '404':
+          description: Session not found
+
+  /api/checkout/{session_id}/customer:
+    post:
+      tags: [Checkout Sessions]
+      summary: Save customer details
+      description: Save customer name, email, phone, and shipping address for a checkout session (no auth).
+      security: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, phone, address]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                address:
+                  type: object
+                  required: [line1, city, state, pincode]
+                  properties:
+                    line1:
+                      type: string
+                    city:
+                      type: string
+                    state:
+                      type: string
+                    pincode:
+                      type: string
+            example:
+              name: "Rahul Sharma"
+              email: "rahul@example.in"
+              phone: "9876543210"
+              address:
+                line1: "123 MG Road"
+                city: "Bengaluru"
+                state: "Karnataka"
+                pincode: "560001"
+      responses:
+        '200':
+          description: Customer saved
+
+  /api/checkout/{session_id}/select-payment:
+    post:
+      tags: [Checkout Sessions]
+      summary: Select payment method & get EMI options
+      description: Select a payment method (card, bank_transfer, upi) for a checkout session. For card payments with a BIN, returns EMI options from bank rates. (no auth)
+      security: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [method]
+              properties:
+                method:
+                  type: string
+                  enum: [card, bank_transfer, upi]
+                bank:
+                  type: string
+                bin:
+                  type: string
+                tenure:
+                  type: integer
+            example:
+              method: "card"
+              bin: "4591"
+              tenure: 6
+      responses:
+        '200':
+          description: Payment method selected, EMI options returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  method:
+                    type: string
+                  emi_options:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        bank:
+                          type: string
+                        tenure:
+                          type: integer
+                        monthly_amount:
+                          type: number
+                        total_amount:
+                          type: number
+                        interest_rate:
+                          type: number
+                        emi_type:
+                          type: string
+                          enum: [standard, no-cost, low-cost]
+
+  /api/checkout/{session_id}/process-payment:
+    post:
+      tags: [Checkout Sessions]
+      summary: Process payment
+      description: Process payment for a checkout session using the selected method. Creates an order and returns redirect URL. (no auth)
+      security: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [method]
+              properties:
+                method:
+                  type: string
+                tenure:
+                  type: integer
+            example:
+              method: "card"
+              tenure: 6
+      responses:
+        '200':
+          description: Payment processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order_id:
+                    type: string
+                  payment_status:
+                    type: string
+                  redirect_url:
+                    type: string
+                    format: uri
+
+  # === TRACKING ===
+  /api/track/conversion:
+    post:
+      tags: [Tracking]
+      summary: Track conversion
+      description: Updates a redemption with order status after payment completes or is abandoned.
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                session_id:
+                  type: string
+                order_id:
+                  type: string
+                order_value:
+                  type: number
+                status:
+                  type: string
+                  enum: [paid, abandoned]
+            example:
+              session_id: "sess_123"
+              order_id: "order_456"
+              order_value: 4950
+              status: "paid"
+      responses:
+        '200':
+          description: Tracked
+
+  # === PRODUCTS ===
+  /api/products:
+    get:
+      tags: [Products]
+      summary: List products
+      security:
+        - apiKey: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products:
+                    type: array
+                    items:
+                      type: object
+
+    post:
+      tags: [Products]
+      summary: Create or update product
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sku_id:
+                  type: string
+                name:
+                  type: string
+                category:
+                  type: string
+                brand:
+                  type: string
+            example:
+              sku_id: "SKU-IP15"
+              name: "iPhone 15 Pro"
+              category: "Electronics"
+              brand: "Apple"
+      responses:
+        '201':
+          description: Product created
+
+  /api/products/{sku_id}:
+    delete:
+      tags: [Products]
+      summary: Delete product
+      security:
+        - apiKey: []
+      parameters:
+        - name: sku_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+
+  # === ANALYTICS ===
+  /api/analytics/overview:
+    get:
+      tags: [Analytics]
+      summary: Analytics overview
+      description: Returns summary metrics for the merchant.
+      security:
+        - apiKey: []
+      responses:
+        '200':
+          description: Overview metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_redemptions:
+                    type: integer
+                  conversions:
+                    type: integer
+                  abandoned:
+                    type: integer
+                  conversion_rate:
+                    type: number
+                  revenue_via_offers:
+                    type: number
+                  total_discount_given:
+                    type: number
+
+  /api/analytics/offers:
+    get:
+      tags: [Analytics]
+      summary: Per-offer analytics
+      security:
+        - apiKey: []
+      responses:
+        '200':
+          description: Per-offer breakdown
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  offers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        offer_id:
+                          type: string
+                        redemptions:
+                          type: integer
+                        conversions:
+                          type: integer
+                        revenue:
+                          type: number
+
+  # === AUTH ===
+  /api/auth/signup:
+    post:
+      tags: [Auth]
+      summary: Sign up
+      description: Creates a merchant + user account with owner role. Returns JWT.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                name:
+                  type: string
+                store_name:
+                  type: string
+            example:
+              email: "owner@store.in"
+              password: "password123"
+              name: "Store Owner"
+              store_name: "TechStore"
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    type: object
+                  merchant:
+                    type: object
+                  role:
+                    type: string
+        '409':
+          description: Email already exists
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      description: Authenticates user and returns JWT.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+            example:
+              email: "owner@store.in"
+              password: "password123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    type: object
+                  merchant:
+                    type: object
+                  role:
+                    type: string
+        '401':
+          description: Invalid credentials
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user
+      description: Returns the authenticated user's profile and merchant info.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                  merchant:
+                    type: object
+                  role:
+                    type: string
+
+  # === TEAM ===
+  /api/team/invite:
+    post:
+      tags: [Team]
+      summary: Invite team member
+      description: Creates an invite code for a new team member. Only owner/admin can invite.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [admin, offer_manager, analytics_viewer]
+            example:
+              email: "team@store.in"
+              role: "offer_manager"
+      responses:
+        '201':
+          description: Invite created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invite_code:
+                    type: string
+                  email:
+                    type: string
+                  role:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date-time
+                  invite_url:
+                    type: string
+
+  /api/team/invites:
+    get:
+      tags: [Team]
+      summary: List invites (paginated)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, active, expired, removed, all]
+      responses:
+        '200':
+          description: Paginated invite list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invites:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  total_pages:
+                    type: integer
+
+  # === ORDERS ===
+  /api/orders:
+    get:
+      tags: [Orders]
+      summary: List orders
+      description: Returns paginated orders for the merchant.
+      security:
+        - apiKey: []
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Order list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orders:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+
+  /api/orders/{id}:
+    get:
+      tags: [Orders]
+      summary: Get order by ID
+      description: Verifies order after checkout redirect.
+      security:
+        - apiKey: []
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                  order_status:
+                    type: string
+                    enum: [created, paid, failed, refunded]
+                  final_amount:
+                    type: number
+                  customer_info:
+                    type: object
+                  applied_offers:
+                    type: array
+                    items:
+                      type: object
+        '404':
+          description: Not found
+
+  # === BANK RATES ===
+  /api/admin/bank-rates:
+    get:
+      tags: [Bank Rates]
+      summary: List bank rates
+      description: Returns all bank EMI interest rates. Admin-managed.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Bank rate list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bank_rates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        bank_name:
+                          type: string
+                        interest_rate:
+                          type: number
+                        tenures:
+                          type: array
+                          items:
+                            type: integer
+
+    post:
+      tags: [Bank Rates]
+      summary: Create bank rate
+      description: Admin only. Creates a new bank interest rate entry.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bank_name:
+                  type: string
+                bank_code:
+                  type: string
+                card_type:
+                  type: string
+                  enum: [credit, debit]
+                interest_rate:
+                  type: number
+                tenures:
+                  type: array
+                  items:
+                    type: integer
+                processing_fee:
+                  type: number
+                  nullable: true
+                min_amount:
+                  type: number
+            example:
+              bank_name: "HDFC"
+              bank_code: "HDFC"
+              card_type: "credit"
+              interest_rate: 18
+              tenures: [3, 6, 9, 12, 18, 24]
+              processing_fee: 199
+              min_amount: 2500
+      responses:
+        '201':
+          description: Bank rate created
