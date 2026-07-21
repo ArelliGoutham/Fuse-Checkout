@@ -341,7 +341,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                     <div className="text-[11px]" style={{ color: '#5C6470' }}>Applied · {formatINR(d.discount)} off</div>
                   </div>
                 </div>
-                <button onClick={() => setAppliedDiscounts(prev => prev.filter(x => x.offerId !== d.offerId))}
+                <button onClick={() => {
+                  setAppliedDiscounts(prev => prev.filter(x => x.offerId !== d.offerId));
+                  setSelectedOffers(prev => { const next = new Set(prev); next.delete(d.offerId); return next; });
+                }}
                   className="text-[12px] font-medium border-none bg-transparent cursor-pointer" style={{ color: '#C53030' }}>Remove</button>
               </div>
             ))}
@@ -509,13 +512,13 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
 
       {/* ====== BOTTOM SHEET MODALS ====== */}
       {modal && (
-        <div className="fixed inset-0 z-50" onClick={() => setModal(null)}>
+        <div className="fixed inset-0 z-50 flex justify-center" onClick={() => setModal(null)}>
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/50" />
 
           {/* Coupons Modal */}
           {modal === 'coupons' && (
-            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[75vh] overflow-y-auto" style={{ animation: 'slideUp 0.3s ease' }}
+            <div className="absolute bottom-0 w-full max-w-[500px] bg-white rounded-t-3xl max-h-[75vh] overflow-y-auto" style={{ animation: 'slideUp 0.3s ease' }}
                  onClick={e => e.stopPropagation()}>
               <div className="sticky top-0 bg-white pt-4 pb-3 px-5 border-b z-10" style={{ borderColor: '#E1E4E8' }}>
                 <div className="w-10 h-1 rounded-full mx-auto mb-3" style={{ background: '#C4C8CE' }} />
@@ -565,7 +568,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
 
           {/* Address Modal */}
           {modal === 'address' && (
-            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[80vh] overflow-y-auto" style={{ animation: 'slideUp 0.3s ease' }}
+            <div className="absolute bottom-0 w-full max-w-[500px] bg-white rounded-t-3xl max-h-[80vh] overflow-y-auto" style={{ animation: 'slideUp 0.3s ease' }}
                  onClick={e => e.stopPropagation()}>
               <div className="sticky top-0 bg-white pt-4 pb-3 px-5 border-b z-10" style={{ borderColor: '#E1E4E8' }}>
                 <div className="w-10 h-1 rounded-full mx-auto mb-3" style={{ background: '#C4C8CE' }} />
@@ -627,7 +630,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
 
           {/* EMI Modal */}
           {modal === 'emi' && (
-            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[65vh] overflow-y-auto" style={{ animation: 'slideUp 0.3s ease' }}
+            <div className="absolute bottom-0 w-full max-w-[500px] bg-white rounded-t-3xl max-h-[65vh] overflow-y-auto" style={{ animation: 'slideUp 0.3s ease' }}
                  onClick={e => e.stopPropagation()}>
               <div className="sticky top-0 bg-white pt-4 pb-3 px-5 border-b z-10" style={{ borderColor: '#E1E4E8' }}>
                 <div className="w-10 h-1 rounded-full mx-auto mb-3" style={{ background: '#C4C8CE' }} />
