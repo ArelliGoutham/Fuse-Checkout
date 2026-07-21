@@ -1,0 +1,201 @@
+---
+title: Hosted Checkout
+description: How OfferForge's hosted checkout works — sessions, the 3-step flow, EMI options, payment methods, and order creation.
+---
+
+# Hosted Checkout
+
+OfferForge's hosted checkout lets you launch a full checkout experience with one API call. No checkout frontend to build, no payment gateway integration to maintain.
+
+## How it works
+
+```
+Your Store                    OfferForge                    Payment Gateway
+   |                              |                              |
+   |  POST /api/checkout/sessions |                              |
+   |----------------------------->|                              |
+   |  checkout_url                |                              |
+   |<-----------------------------|                              |
+   |                              |                              |
+   |  Redirect customer           |                              |
+   |----------------------------->|                              |
+   |                              | Hosted checkout page         |
+   |                              | (cart, offers, EMI, payment) |
+   |                              |----------------------------->|
+   |                              |  Payment processed           |
+   |                              |<-----------------------------|
+   |                              |  Order created               |
+   |  Redirect to success URL     |                              |
+   |<-----------------------------|                              |
+```
+
+## Creating a session
+
+```bash
+curl -X POST https://api.offerforge.io/api/checkout/sessions \
+  -H "x-api-key: of_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cart": {
+      "amount": 8999,
+      "items": [
+        { "sku_id": "SKU-RS999", "name": "Nike Running Shoes", "price": 8999, "qty": 1 }
+      ]
+    },
+    "redirect_urls": {
+      "success": "https://store.in/success",
+      "cancel": "https://store.in/cancel"
+    }
+  }'
+```
+
+The response includes a `checkout_url` — redirect your customer there.
+
+<Note>
+  Sessions expire after 24 hours. If a customer abandons checkout, the session remains accessible until expiry.
+</Note>
+
+## The 3-step checkout flow
+
+### Step 1: Cart review
+
+The customer sees their cart items, subtotal, and any auto-applied offers. They can enter coupon codes to apply additional discounts.
+
+The checkout page calls OfferForge's offer engine to:
+- Fetch available auto-offers based on cart contents
+- Validate entered coupon codes against rules
+- Apply stacking policies (max coupons, exclusive offers)
+- Show updated totals with discounts applied
+
+### Step 2: Customer details
+
+The customer enters their name, email, phone, and shipping address. This data is saved to the session and included in the order.
+
+### Step 3: Payment selection
+
+The customer selects a payment method:
+
+| Method | Description |
+|---|---|
+| `card` | Credit/debit card. BIN lookup detects the bank and shows EMI options. |
+| `upi` | UPI payment (Google Pay, PhonePe, Paytm, etc.) |
+| `bank_transfer` | Direct bank transfer |
+
+#### EMI on cards
+
+When a customer selects card payment and enters their card number, the checkout page:
+
+1. Extracts the **BIN** (first 6 digits)
+2. Looks up the **bank** from our BIN database
+3. Fetches **bank rates** (interest rate, available tenures) from the admin-managed database
+4. Calculates **EMI options** using the reducing balance formula
+
+<CardGroup cols={3}>
+  <Card title="Standard EMI" icon="credit-card">
+    Customer pays interest at the bank's rate. Monthly amount = principal + interest over tenure.
+  </Card>
+  <Card title="No-Cost EMI" icon="gift">
+    Merchant subsidizes the interest. Customer pays only the principal divided by tenure.
+  </Card>
+  <Card title="Low-Cost EMI" icon="tag">
+    Partial subsidy. Customer pays a reduced interest rate (e.g., bank charges 18%, merchant covers 10%).
+  </Card>
+</CardGroup>
+
+**EMI calculation example:**
+
+| Field | Value |
+|---|---|
+| Cart amount | ₹89,999 |
+| Bank | HDFC (18% interest) |
+| Tenure | 6 months |
+| Monthly EMI | ₹15,734 |
+| Total payable | ₹94,404 |
+| Interest paid | ₹4,405 |
+
+For no-cost EMI, the merchant subsidizes ₹4,405 — the customer pays ₹15,000/month (₹89,999 ÷ 6).
+
+## Payment processing
+
+When the customer confirms payment:
+
+1. The checkout page calls `POST /api/checkout/{session_id}/process-payment`
+2. OfferForge processes the payment via the configured payment gateway adapter
+3. On success, an **order** is created with payment details
+4. The customer is redirected to your `success` URL with the order ID
+
+<Callout type="info">
+  In v1, payments are processed via a mock adapter for development. Production integrations with Razorpay and other gateways are on the Phase 2 roadmap.
+</Callout>
+
+## Order verification
+
+After the customer is redirected back to your success URL, verify the order:
+
+```bash
+curl https://api.offerforge.io/api/orders/order_123 \
+  -H "x-api-key: of_live_..."
+```
+
+Response:
+
+```json
+{
+  "order": {
+    "_id": "order_123",
+    "session_id": "sess_abc...",
+    "merchant_id": "merch_...",
+    "cart": { "amount": 8999, "items": [...] },
+    "payment": { "method": "card", "status": "paid", "tenure": 6 },
+    "customer": { "name": "Rahul Sharma", "email": "rahul@example.in" },
+    "applied_offers": [...],
+    "created_at": "2026-07-21T08:00:00.000Z"
+  }
+}
+```
+
+## API endpoints
+
+| Endpoint | Auth | Description |
+|---|---|---|
+| `POST /api/checkout/sessions` | API key | Create a checkout session |
+| `GET /api/checkout/sessions/{id}` | API key | Get session details (merchant side) |
+| `GET /api/checkout/{session_id}/cart` | None | Get cart for hosted page |
+| `POST /api/checkout/{session_id}/customer` | None | Save customer details |
+| `POST /api/checkout/{session_id}/select-payment` | None | Select payment method, get EMI options |
+| `POST /api/checkout/{session_id}/process-payment` | None | Process payment, create order |
+| `GET /api/orders` | API key | List orders |
+| `GET /api/orders/{id}` | API key | Get order by ID |
+
+<Note>
+  Checkout page endpoints (cart, customer, select-payment, process-payment) skip API key auth — they're called from the customer's browser using the session ID. Session creation and order retrieval require merchant API keys.
+</Note>
+
+## Bank rate management
+
+Bank rates are managed by the merchant admin via the API:
+
+```bash
+# List bank rates
+curl https://api.offerforge.io/api/admin/bank-rates \
+  -H "x-api-key: of_live_..."
+
+# Add a bank rate
+curl -X POST https://api.offerforge.io/api/admin/bank-rates \
+  -H "x-api-key: of_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bank_code": "HDFC",
+    "bank_name": "HDFC Bank",
+    "interest_rate": 18,
+    "tenures": [3, 6, 9, 12, 18, 24]
+  }'
+```
+
+The EMI engine uses these rates to calculate monthly amounts. Update rates when banks change their offers.
+
+## Next steps
+
+- [Offers & Rules](/guides/offers) — learn about all 13 rule types
+- [Stacking Policy](/guides/stacking) — configure how offers combine on the checkout page
+- [API Reference](/api-reference) — full endpoint documentation with Try It

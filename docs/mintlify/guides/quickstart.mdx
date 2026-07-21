@@ -1,11 +1,11 @@
 ---
 title: Quickstart
-description: Get your first offer live in 5 minutes — sign up, create a coupon, and validate it at checkout.
+description: Launch your first checkout session in 5 minutes — sign up, create an offer, and launch a hosted checkout page.
 ---
 
 # Quickstart
 
-Get your first offer running in under 5 minutes.
+Launch your first checkout session in under 5 minutes.
 
 ## Step 1: Create an account
 
@@ -39,7 +39,7 @@ For programmatic access (checkout integration), create an API key:
 
 ```bash
 curl -X POST https://api.offerforge.io/api/api-keys \
-  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Authorization: Bearer eyJhbG..." \
   -H "Content-Type: application/json" \
   -d '{
     "label": "Checkout Integration",
@@ -57,7 +57,9 @@ Save the returned `key` — it's shown only once:
 }
 ```
 
-## Step 3: Create a coupon
+## Step 3: Create an offer
+
+Create a coupon that customers can apply at checkout:
 
 ```bash
 curl -X POST https://api.offerforge.io/api/offers \
@@ -79,18 +81,25 @@ curl -X POST https://api.offerforge.io/api/offers \
   }'
 ```
 
-## Step 4: Validate at checkout
+## Step 4: Create a checkout session
 
-When a customer enters a coupon code at checkout, call the validate endpoint:
+When a customer is ready to pay, create a checkout session and redirect them to the hosted checkout page:
 
 ```bash
-curl -X POST https://api.offerforge.io/api/offers/validate \
+curl -X POST https://api.offerforge.io/api/checkout/sessions \
   -H "x-api-key: of_live_a1b2c3d4e5f6..." \
   -H "Content-Type: application/json" \
   -d '{
-    "code": "FLAT50",
-    "cart": { "amount": 5000, "items": [{ "sku_id": "SKU-1", "price": 5000, "qty": 1 }] },
-    "customer": { "customer_id": "c1", "segments": ["new"], "total_orders": 0, "per_customer_used": 0 }
+    "cart": {
+      "amount": 8999,
+      "items": [
+        { "sku_id": "SKU-RS999", "name": "Nike Running Shoes", "price": 8999, "qty": 1, "category": "Footwear", "brand": "Nike" }
+      ]
+    },
+    "redirect_urls": {
+      "success": "https://store.in/success",
+      "cancel": "https://store.in/cancel"
+    }
   }'
 ```
 
@@ -98,47 +107,41 @@ Response:
 
 ```json
 {
-  "valid": true,
-  "offer": { "_id": "offer_...", "code": "FLAT50", ... },
-  "discount_amount": 50,
-  "final_amount": 4950
+  "session_id": "sess_abc123...",
+  "checkout_url": "https://checkout.offerforge.io/sess_abc123...",
+  "expires_at": "2026-07-21T09:00:00.000Z"
 }
 ```
 
-## Step 5: Apply and track
+## Step 5: Redirect to checkout
 
-When the customer confirms the offer, apply it (creates a redemption record):
+Redirect your customer to `checkout_url`. The hosted checkout page handles everything:
+
+1. **Cart review** — customer sees their items and totals
+2. **Apply offers** — customer can enter coupon codes or see auto-applied offers
+3. **Enter details** — name, email, phone, shipping address
+4. **Select payment** — card (with EMI options via BIN lookup), UPI, or bank transfer
+5. **Payment processing** — we process the payment and create an order
+6. **Redirect** — customer lands back on your `success` URL with order details
+
+<Note>
+  The checkout page is hosted by OfferForge — no frontend code needed. For brand customization, contact us about white-label options.
+</Note>
+
+## Step 6: Verify the order
+
+After redirect, verify the order using the order ID returned in the success URL:
 
 ```bash
-curl -X POST https://api.offerforge.io/api/offers/apply \
-  -H "x-api-key: of_live_a1b2c3d4e5f6..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "code": "FLAT50",
-    "cart": { "amount": 5000, "items": [{ "sku_id": "SKU-1", "price": 5000, "qty": 1 }] },
-    "customer": { "customer_id": "c1", "segments": ["new"], "total_orders": 0, "per_customer_used": 0 },
-    "session_id": "checkout_123"
-  }'
+curl https://api.offerforge.io/api/orders/order_123 \
+  -H "x-api-key: of_live_a1b2c3d4e5f6..."
 ```
 
-After payment completes, track the conversion:
-
-```bash
-curl -X POST https://api.offerforge.io/api/track/conversion \
-  -H "x-api-key: of_live_a1b2c3d4e5f6..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "session_id": "checkout_123",
-    "order_id": "order_456",
-    "order_value": 4950,
-    "status": "paid"
-  }'
-```
-
-That's it! You've created a coupon, validated it, applied it, and tracked the conversion. 🎉
+That's it! You've created an offer, launched a hosted checkout, and the customer completed payment. 🎉
 
 ## Next steps
 
+- [Checkout Guide](/guides/checkout) — understand the full checkout flow, EMI options, and payment methods
 - [Authentication](/guides/authentication) — understand JWT vs API keys
 - [Offers & Rules](/guides/offers) — learn about all 13 rule types
 - [Stacking Policy](/guides/stacking) — configure how offers combine

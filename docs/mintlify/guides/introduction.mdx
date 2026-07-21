@@ -1,36 +1,42 @@
 ---
 title: Introduction
-description: OfferForge is a modular offers platform for Indian e-commerce — create coupons, auto-applied offers, and stacking rules without building anything.
+description: OfferForge is a hosted checkout platform for Indian e-commerce — checkout pages, offers, EMI calculation, and payment orchestration in one API call.
 ---
 
 # Introduction
 
-OfferForge is a drop-in offers layer that sits between "customer sees price" and "customer pays" at checkout. It handles coupon validation, auto-applied offers, stacking conflicts, and analytics — so merchants don't have to build any of it.
+OfferForge is a hosted checkout platform that sits between your cart and payment. One API call creates a full checkout page with coupon validation, auto-applied offers, EMI calculation, and payment processing — so merchants don't have to build any of it.
 
 <Tip>
-  New to OfferForge? Check out the [Quickstart](/guides/quickstart) to get your first offer live in 5 minutes.
+  New to OfferForge? Check out the [Quickstart](/guides/quickstart) to launch your first checkout session in 5 minutes.
 </Tip>
 
 ## What OfferForge does
 
 <AccordionGroup>
+  <Accordion title="Hosted Checkout">
+    Create a checkout session via API, redirect your customer to a hosted page, and we handle the entire flow — cart review, offer application, customer details, payment selection, and order creation.
+  </Accordion>
   <Accordion title="Coupon Management">
     Create flat or percentage discounts with codes like `FLAT50`, `SAVE10`. Set min cart values, max discount caps, validity windows, and per-customer usage limits.
   </Accordion>
   <Accordion title="Auto-Applied Offers">
     Show offers automatically based on cart contents — no code needed. e.g., "10% off Electronics" appears when the cart has electronics items.
   </Accordion>
+  <Accordion title="EMI Engine">
+    Calculate standard, no-cost, and low-cost EMI using our bank rate database. BIN lookup detects the card bank and shows applicable EMI options with monthly amounts.
+  </Accordion>
   <Accordion title="Rule Engine">
     13 composable rule types: min cart value, customer segment, first-time buyer, weekend only, category restriction, product combo, date range, and more.
+  </Accordion>
+  <Accordion title="Payment Orchestration">
+    Plug in any payment gateway via our adapter interface. We process the payment, create the order, and redirect back to your success URL.
   </Accordion>
   <Accordion title="Stacking & Conflict Resolution">
     Merchants define how offers combine. The engine resolves conflicts using priority, exclusive flags, and global stacking policies.
   </Accordion>
-  <Accordion title="Product Catalog">
-    Sync SKUs for product/category/brand-based rules. Bulk upsert via API. Define product combos for bundle rules.
-  </Accordion>
   <Accordion title="Analytics">
-    Track redemptions, conversions, abandonment. Measure AOV lift and revenue impact per offer.
+    Track redemptions, conversions, abandonment. Measure AOV lift and revenue impact per offer. Full funnel from checkout session to payment.
   </Accordion>
   <Accordion title="Team Management">
     Invite team members with role-based access (owner, admin, offer_manager, analytics_viewer). Email-bound invite codes with 7-day expiry.
@@ -40,27 +46,33 @@ OfferForge is a drop-in offers layer that sits between "customer sees price" and
 ## What OfferForge is NOT
 
 <Callout type="warning">
-  OfferForge is not a payment gateway, not a checkout page, and not a coupon aggregator. We're the calculation and presentation layer between price and payment.
+  OfferForge is not a lending platform and not a coupon aggregator. We handle checkout, offers, and EMI calculation — we orchestrate payments but don't lend money.
 </Callout>
 
 | Not this | Because |
 |---|---|
-| A payment gateway | We don't process transactions |
-| A checkout page | Merchants already have one |
-| A lending platform | We don't lend money |
+| A lending platform | We calculate EMI but don't lend money |
 | A coupon aggregator | We're embedded in checkout, not a standalone site |
+| Just an offers API | We're a full checkout provider — offers are one part |
 
 ## Architecture
 
-OfferForge is built as a **modular monolith** — a single backend with strict module boundaries. Each offer type is a plugin:
+OfferForge is built as a **modular monolith** — a single backend with strict module boundaries. Each module (offers, checkout, products, analytics) is self-contained and communicates through interfaces only.
 
 ```
+Checkout Flow:
+  Cart → Create Session → Hosted Checkout Page
+                              ├── Offer Engine (coupons, auto-offers, stacking)
+                              ├── EMI Engine (bank rates, BIN lookup, EMI calc)
+                              ├── Payment Orchestrator (PG adapter)
+                              └── Order Creation + Tracking
+
 OfferEvaluatorRegistry
-  ├── CouponEvaluator      (v1 — code-based)
-  ├── AutoOfferEvaluator   (v1 — cart-data-driven)
+  ├── CouponEvaluator      (code-based)
+  ├── AutoOfferEvaluator   (cart-data-driven)
   ├── BankOfferEvaluator   (v2 — card BIN validation)
   ├── BrandOfferEvaluator  (v2 — brand-subsidized)
-  └── EMIOfferEvaluator    (v3 — EMI engine)
+  └── EMIOfferEvaluator    (v2 — EMI-based offers)
 ```
 
 New offer types slot in as new evaluators — no changes to existing code.
@@ -68,17 +80,17 @@ New offer types slot in as new evaluators — no changes to existing code.
 ## Tech Stack
 
 <CardGroup cols={2}>
-  <Card title="Backend" icon="server" href="/api-reference/auth/signup">
-    Node.js + Fastify + MongoDB. Zod for validation. JWT + API key auth.
+  <Card title="Backend" icon="server" href="/api-reference">
+    Node.js + Fastify + MongoDB. Zod for validation. JWT + API key auth. Modular monolith.
+  </Card>
+  <Card title="Checkout" icon="credit-card" href="/guides/checkout">
+    Next.js hosted checkout page. 3-step flow: review → details → payment. EMI options on card BIN.
   </Card>
   <Card title="Dashboard" icon="monitor" href="https://offerforge.io">
     Next.js + Tailwind CSS. Sora font. Dark theme with amber accent.
   </Card>
-  <Card title="Rule Engine" icon="cpu" href="/guides/offers">
-    Pure TypeScript functions. 13 rule types. Strategy pattern for extensibility.
-  </Card>
   <Card title="Database" icon="database">
-    MongoDB Atlas. 8 collections. Tenant isolation on every query.
+    MongoDB Atlas. Collections for offers, products, sessions, orders, bank rates. Tenant isolation on every query.
   </Card>
 </CardGroup>
 
@@ -86,13 +98,13 @@ New offer types slot in as new evaluators — no changes to existing code.
 
 <CardGroup cols={3}>
   <Card title="Quickstart" icon="rocket" href="/guides/quickstart">
-    Get your first offer live in 5 minutes
+    Launch your first checkout session in 5 minutes
+  </Card>
+  <Card title="Checkout" icon="credit-card" href="/guides/checkout">
+    How hosted checkout works — sessions, flow, EMI
   </Card>
   <Card title="Authentication" icon="lock" href="/guides/authentication">
     JWT vs API keys, roles, team invites
-  </Card>
-  <Card title="API Reference" icon="code" href="/api-reference/auth/signup">
-    Full endpoint documentation
   </Card>
   <Card title="Offers & Rules" icon="tag" href="/guides/offers">
     All 13 rule types explained
