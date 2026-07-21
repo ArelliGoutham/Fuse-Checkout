@@ -9,6 +9,8 @@ import { registerAnalyticsRoutes } from './modules/analytics/analytics-routes';
 import { registerCheckoutRoutes } from './modules/checkout/routes/checkout-routes';
 import { registerOrderRoutes } from './modules/checkout/routes/order-routes';
 import { registerBankRateRoutes } from './modules/checkout/routes/bank-rate-routes';
+import { registerEMICampaignRoutes } from './modules/checkout/routes/emi-campaign-routes';
+import { registerIINRangeRoutes } from './modules/checkout/routes/iin-range-routes';
 import { registerAuthRoutes } from './modules/auth/routes/auth-routes';
 import { registerInviteRoutes } from './modules/auth/routes/invite-routes';
 import { registerApiKeyRoutes } from './modules/auth/routes/api-key-routes';
@@ -81,6 +83,8 @@ async function start() {
     registerCheckoutRoutes(server);
     registerOrderRoutes(server);
     registerBankRateRoutes(server);
+    registerEMICampaignRoutes(server);
+    registerIINRangeRoutes(server);
 
     console.log('✓ All routes registered');
 
