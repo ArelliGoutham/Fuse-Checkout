@@ -5,8 +5,12 @@ import { MongoSessionRepository } from '../repositories/mongo-session-repository
 import { MongoOrderRepository } from '../repositories/mongo-order-repository';
 import { calculateEMI } from '../services/emi-engine';
 import { identifyBankFromBIN } from '../services/bin-lookup';
+import { IINLookupService } from '../services/iin-database';
+import { validateCampaignEligibility } from '../services/emi-campaign-engine';
 import { MockPGAdapter } from '../../pg-adapters/mock-adapter';
 import type { Order } from '../schemas/order';
+import type { IINRange } from '../schemas/iin-range';
+import type { EMICampaign } from '../schemas/emi-campaign';
 
 /**
  * Registers checkout session and payment processing routes for a Fastify instance.
@@ -230,13 +234,23 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
           bankCode = identifiedBank;
         }
 
-        // Fetch bank rates
-        let bankRates: any[] = [];
+        // Fetch bank rates (MongoDB returns generic Documents; cast to typed shape)
+        let bankRates: Array<{
+          bank_name: string;
+          interest_rate: number;
+          processing_fee: number | null;
+          tenures: number[];
+        }> = [];
         if (bankCode) {
-          bankRates = await db
+          bankRates = (await db
             .collection('bank_rates')
             .find({ bank_code: bankCode, status: 'active' })
-            .toArray();
+            .toArray()) as unknown as Array<{
+            bank_name: string;
+            interest_rate: number;
+            processing_fee: number | null;
+            tenures: number[];
+          }>;
         }
 
         // Calculate EMI options for each tenure
@@ -288,11 +302,111 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
           }
         }
 
+        // Campaign EMI options
+        let iinInfo: IINRange | null = null;
+        const campaignEmiOptions: Array<{
+          tenure: number;
+          monthly_emi: number;
+          customer_emi: number;
+          total_payment: number;
+          total_interest: number;
+          customer_interest: number;
+          subsidy_amount: number;
+          processing_fee: number | null;
+          emi_type: string;
+          campaign_code: string;
+          campaign_title: string;
+        }> = [];
+
+        if (method === 'card' && bin) {
+          const iinRanges = (await db
+            .collection('iin_ranges')
+            .find({ status: 'active' })
+            .toArray()) as unknown as IINRange[];
+
+          const iinService = new IINLookupService();
+          iinService.loadRanges(iinRanges);
+          iinInfo = iinService.lookup(bin);
+
+          if (iinInfo && session.cart.items.length > 0 && bankCode) {
+            const campaigns = (await db
+              .collection('emi_campaigns')
+              .find({ status: 'active', bank: bankCode })
+              .toArray()) as unknown as EMICampaign[];
+
+            for (const campaign of campaigns) {
+              const totalRedemptions = await db
+                .collection('emi_redemptions')
+                .countDocuments({ campaign_id: campaign._id });
+              const merchantRedemptions = await db
+                .collection('emi_redemptions')
+                .countDocuments({
+                  campaign_id: campaign._id,
+                  merchant_id: session.merchant_id,
+                });
+              const cardRedemptions = await db
+                .collection('emi_redemptions')
+                .countDocuments({
+                  campaign_id: campaign._id,
+                  card_token: bin,
+                });
+
+              const productSkus = session.cart.items.map(i => i.sku_id);
+
+              const campaignResult = validateCampaignEligibility({
+                campaign,
+                cardInfo: iinInfo,
+                cartAmount: session.cart.amount,
+                productSkus,
+                merchantId: session.merchant_id,
+                redemptionCounts: {
+                  total_redemptions: totalRedemptions,
+                  merchant_redemptions: merchantRedemptions,
+                  card_redemptions: cardRedemptions,
+                },
+                now: new Date(),
+              });
+
+              if (campaignResult.eligible && bankRates.length > 0) {
+                const bankRate = bankRates[0];
+                for (const t of bankRate.tenures) {
+                  const campaignEmi = calculateEMI({
+                    principal: session.cart.amount,
+                    bankRate: {
+                      bank_name: bankRate.bank_name,
+                      interest_rate: bankRate.interest_rate,
+                      processing_fee: bankRate.processing_fee,
+                    },
+                    tenure: t,
+                    emiType: campaign.emi_type,
+                    subsidyAmount: campaign.subsidy_amount || 'full',
+                  });
+                  campaignEmiOptions.push({
+                    tenure: t,
+                    monthly_emi: campaignEmi.monthly_emi,
+                    customer_emi: campaignEmi.customer_emi,
+                    total_payment: campaignEmi.total_payment,
+                    total_interest: campaignEmi.total_interest,
+                    customer_interest: campaignEmi.customer_interest,
+                    subsidy_amount: campaignEmi.subsidy_amount,
+                    processing_fee: campaignEmi.processing_fee,
+                    emi_type: campaign.emi_type,
+                    campaign_code: campaign.code,
+                    campaign_title: campaign.title,
+                  });
+                }
+              }
+            }
+          }
+        }
+
         return reply.send({
           method,
           bank: bankCode || null,
           emi_options: emiOptions,
           final_amount: session.cart.amount,
+          iin_info: iinInfo,
+          campaign_emi_options: campaignEmiOptions,
         });
       } catch (error) {
         return reply.code(500).send({
