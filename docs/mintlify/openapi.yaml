@@ -1210,3 +1210,275 @@ paths:
       responses:
         '201':
           description: Bank rate created
+
+  # === EMI CAMPAIGNS ===
+  /api/admin/emi-campaigns:
+    get:
+      tags: [EMI Campaigns]
+      summary: List EMI campaigns
+      description: Returns all EMI campaigns (merchant-scoped and brand-scoped). Admin only.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: EMI campaign list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  campaigns:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                        title:
+                          type: string
+                        scope:
+                          type: string
+                          enum: [merchant, brand]
+                        bank:
+                          type: string
+                        emi_type:
+                          type: string
+                          enum: [no_cost, low_cost]
+                        status:
+                          type: string
+                          enum: [active, inactive]
+
+    post:
+      tags: [EMI Campaigns]
+      summary: Create EMI campaign
+      description: |
+        Creates an EMI campaign for no-cost or low-cost EMI offers.
+        Merchant-scoped campaigns apply to a single merchant.
+        Brand-scoped campaigns apply across all merchants (e.g., Samsung EMI offer).
+        Brand campaigns can require IMEI blocking for subsidy settlement.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, title, scope, bank, iin_prefixes, card_tiers, emi_type, max_total, starts_at, ends_at]
+              properties:
+                code:
+                  type: string
+                title:
+                  type: string
+                scope:
+                  type: string
+                  enum: [merchant, brand]
+                merchant_id:
+                  type: string
+                  nullable: true
+                brand:
+                  type: string
+                  nullable: true
+                bank:
+                  type: string
+                iin_prefixes:
+                  type: array
+                  items:
+                    type: string
+                  description: 6-digit IIN prefixes eligible for this campaign
+                card_tiers:
+                  type: array
+                  items:
+                    type: string
+                  description: Card tiers eligible (platinum, signature, infinite, etc.)
+                emi_type:
+                  type: string
+                  enum: [no_cost, low_cost]
+                products:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                  description: null = all products, or array of SKU IDs
+                max_total:
+                  type: integer
+                  description: Global redemption cap
+                max_per_merchant:
+                  type: integer
+                  nullable: true
+                  description: Per-merchant cap (brand campaigns only)
+                max_per_card:
+                  type: integer
+                  description: Per-card redemption limit
+                subsidy_amount:
+                  type: number
+                  nullable: true
+                requires_imei:
+                  type: boolean
+                  description: true for brand subsidy campaigns needing IMEI blocking
+                starts_at:
+                  type: string
+                  format: date-time
+                ends_at:
+                  type: string
+                  format: date-time
+            example:
+              code: "HDFC-PREMIUM-JULY"
+              title: "HDFC Premium No-Cost EMI"
+              scope: "merchant"
+              merchant_id: "merch_demo"
+              bank: "HDFC"
+              iin_prefixes: ["459130", "459131"]
+              card_tiers: ["platinum", "signature"]
+              emi_type: "no_cost"
+              products: null
+              max_total: 100
+              max_per_card: 2
+              starts_at: "2026-07-01T00:00:00.000Z"
+              ends_at: "2026-12-31T23:59:59.000Z"
+      responses:
+        '201':
+          description: EMI campaign created
+
+  /api/admin/emi-campaigns/{id}:
+    get:
+      tags: [EMI Campaigns]
+      summary: Get EMI campaign
+      description: Retrieve a single EMI campaign by ID.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: EMI campaign
+        '404':
+          description: Campaign not found
+
+    patch:
+      tags: [EMI Campaigns]
+      summary: Update EMI campaign
+      description: Update campaign status, velocity caps, or date range.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [active, inactive]
+                max_total:
+                  type: integer
+                max_per_merchant:
+                  type: integer
+                  nullable: true
+                max_per_card:
+                  type: integer
+                starts_at:
+                  type: string
+                  format: date-time
+                ends_at:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: EMI campaign updated
+        '404':
+          description: Campaign not found
+
+  # === IIN RANGES ===
+  /api/admin/iin-ranges:
+    get:
+      tags: [IIN Ranges]
+      summary: List IIN ranges
+      description: Returns all active IIN (Issuer Identification Number) ranges. Admin only.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: IIN range list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  iin_ranges:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        prefix:
+                          type: string
+                          description: 6-digit IIN prefix
+                        bank_code:
+                          type: string
+                        bank_name:
+                          type: string
+                        card_type:
+                          type: string
+                          enum: [credit, debit]
+                        card_tier:
+                          type: string
+                          description: platinum, signature, infinite, coral, etc.
+                        card_network:
+                          type: string
+                          enum: [visa, mastercard, rupay, amex, diners]
+                        status:
+                          type: string
+                          enum: [active, inactive]
+
+    post:
+      tags: [IIN Ranges]
+      summary: Create IIN range
+      description: Admin only. Adds a new IIN prefix to the database.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prefix, bank_code, bank_name, card_type, card_tier, card_network]
+              properties:
+                prefix:
+                  type: string
+                  description: 6-digit numeric prefix
+                bank_code:
+                  type: string
+                bank_name:
+                  type: string
+                card_type:
+                  type: string
+                  enum: [credit, debit]
+                card_tier:
+                  type: string
+                card_network:
+                  type: string
+                  enum: [visa, mastercard, rupay, amex, diners]
+            example:
+              prefix: "459130"
+              bank_code: "HDFC"
+              bank_name: "HDFC Bank"
+              card_type: "credit"
+              card_tier: "platinum"
+              card_network: "visa"
+      responses:
+        '201':
+          description: IIN range created
+        '409':
+          description: IIN range already exists

@@ -162,10 +162,16 @@ Response:
 | `GET /api/checkout/sessions/{id}` | API key | Get session details (merchant side) |
 | `GET /api/checkout/{session_id}/cart` | None | Get cart for hosted page |
 | `POST /api/checkout/{session_id}/customer` | None | Save customer details |
-| `POST /api/checkout/{session_id}/select-payment` | None | Select payment method, get EMI options |
+| `POST /api/checkout/{session_id}/select-payment` | None | Select payment method, get standard + campaign EMI options |
 | `POST /api/checkout/{session_id}/process-payment` | None | Process payment, create order |
 | `GET /api/orders` | API key | List orders |
 | `GET /api/orders/{id}` | API key | Get order by ID |
+| `GET /api/admin/emi-campaigns` | JWT | List EMI campaigns |
+| `POST /api/admin/emi-campaigns` | JWT | Create EMI campaign |
+| `GET /api/admin/emi-campaigns/{id}` | JWT | Get EMI campaign |
+| `PATCH /api/admin/emi-campaigns/{id}` | JWT | Update EMI campaign |
+| `GET /api/admin/iin-ranges` | JWT | List IIN ranges |
+| `POST /api/admin/iin-ranges` | JWT | Create IIN range |
 
 <Note>
   Checkout page endpoints (cart, customer, select-payment, process-payment) skip API key auth — they're called from the customer's browser using the session ID. Session creation and order retrieval require merchant API keys.
@@ -193,6 +199,108 @@ curl -X POST https://api.offerforge.io/api/admin/bank-rates \
 ```
 
 The EMI engine uses these rates to calculate monthly amounts. Update rates when banks change their offers.
+
+## EMI campaigns
+
+EMI campaigns let you offer no-cost or low-cost EMI based on card IIN, card tier, and product eligibility. The campaign engine validates:
+
+- **IIN prefix match** — only specific card BINs are eligible (e.g., HDFC Platinum cards)
+- **Card tier match** — target premium cards (Platinum, Signature, Infinite)
+- **Product match** — restrict to specific SKUs or null for all products
+- **Campaign cap** — global redemption limit across all merchants
+- **Per-merchant cap** — for brand campaigns, limit redemptions per merchant
+- **Per-card velocity** — max uses per individual card
+- **Date window** — campaign validity period
+
+### Merchant vs Brand campaigns
+
+<AccordionGroup>
+  <Accordion title="Merchant Campaign">
+    Scoped to a single merchant. Only that merchant's checkout sessions can use the campaign. Example: "MyStore's HDFC No-Cost EMI July."
+  </Accordion>
+  <Accordion title="Brand Campaign">
+    Cross-merchant — available to all merchants selling the brand's products. Can require IMEI blocking for subsidy settlement. Example: "Samsung S24 No-Cost EMI across all merchants."
+  </Accordion>
+</AccordionGroup>
+
+### Creating an EMI campaign
+
+```bash
+curl -X POST https://api.offerforge.io/api/admin/emi-campaigns \
+  -H "Authorization: Bearer eyJhbG..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "HDFC-PREMIUM-JULY",
+    "title": "HDFC Premium No-Cost EMI",
+    "scope": "merchant",
+    "merchant_id": "merch_demo",
+    "bank": "HDFC",
+    "iin_prefixes": ["459130", "459131"],
+    "card_tiers": ["platinum", "signature"],
+    "emi_type": "no_cost",
+    "products": null,
+    "max_total": 100,
+    "max_per_card": 2,
+    "starts_at": "2026-07-01T00:00:00.000Z",
+    "ends_at": "2026-12-31T23:59:59.000Z"
+  }'
+```
+
+### Brand campaign with IMEI requirement
+
+```bash
+curl -X POST https://api.offerforge.io/api/admin/emi-campaigns \
+  -H "Authorization: Bearer eyJhbG..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "SAMSUNG-S24-BRAND",
+    "title": "Samsung S24 No-Cost EMI (All Merchants)",
+    "scope": "brand",
+    "brand": "Samsung",
+    "bank": "HDFC",
+    "iin_prefixes": ["459130", "459131"],
+    "card_tiers": ["platinum", "signature", "standard"],
+    "emi_type": "no_cost",
+    "products": ["SKU-S24", "SKU-S24U"],
+    "max_total": 500,
+    "max_per_merchant": 50,
+    "max_per_card": 1,
+    "requires_imei": true,
+    "starts_at": "2026-07-01T00:00:00.000Z",
+    "ends_at": "2026-09-30T23:59:59.000Z"
+  }'
+```
+
+### IIN range management
+
+IIN (Issuer Identification Number) ranges map 6-digit card prefixes to banks, card tiers, and networks. This replaces hardcoded BIN lookups with a database-backed system.
+
+```bash
+# List IIN ranges
+curl https://api.offerforge.io/api/admin/iin-ranges \
+  -H "Authorization: Bearer eyJhbG..."
+
+# Add an IIN range
+curl -X POST https://api.offerforge.io/api/admin/iin-ranges \
+  -H "Authorization: Bearer eyJhbG..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prefix": "459130",
+    "bank_code": "HDFC",
+    "bank_name": "HDFC Bank",
+    "card_type": "credit",
+    "card_tier": "platinum",
+    "card_network": "visa"
+  }'
+```
+
+<Callout type="info">
+  The first 6 digits of a card number (IIN/BIN) are not PCI-sensitive. OfferForge uses them to identify the issuing bank and card tier for EMI campaign eligibility — without ever touching the full card number.
+</Callout>
+
+### Seed script
+
+Run `npx tsx scripts/seed-iin.ts` to seed 25+ premium Indian card IIN ranges and 2 sample campaigns (merchant + brand).
 
 ## Next steps
 
