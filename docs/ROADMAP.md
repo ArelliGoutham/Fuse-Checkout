@@ -86,10 +86,10 @@ This document is the single source of truth for what's built, what's in progress
 
 ### Transaction Logging & Analytics
 - [x] Transaction log schema (every payment attempt logged — success, failure, fallback)
-- [ ] Transaction log storage on every payment attempt (PG request/response, error codes, latency)
-- [ ] PG stats schema + daily aggregation job (per-merchant, per-PG success rates, latency, volume)
+- [x] Transaction log storage on every payment attempt (PG request/response, error codes, latency)
+- [x] PG stats schema + daily aggregation job (per-merchant, per-PG success rates, latency, volume)
 - [x] Smart router service (routes payment to highest success-rate PG with fallback chain)
-- [ ] Fallback chain (auto-retry on next PG if primary fails)
+- [x] Fallback chain (auto-retry on next PG if primary fails)
 - [ ] Transaction list API (`GET /api/transactions` — paginated, filterable by PG/status/date)
 - [ ] Transaction analytics API (`GET /api/transactions/analytics` — success rates, volume, PG breakdown)
 - [x] Webhook log storage (every PG webhook stored for audit)

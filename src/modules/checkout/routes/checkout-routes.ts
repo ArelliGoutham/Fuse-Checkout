@@ -3,15 +3,22 @@ import { z } from 'zod';
 import { CreateSessionSchema } from '../schemas/checkout-session';
 import { MongoSessionRepository } from '../repositories/mongo-session-repository';
 import { MongoOrderRepository } from '../repositories/mongo-order-repository';
+import { MongoPGCredentialsRepository } from '../repositories/mongo-pg-credentials-repository';
 import { calculateEMI } from '../services/emi-engine';
 import { identifyBankFromBIN } from '../services/bin-lookup';
 import { IINLookupService } from '../services/iin-database';
 import { validateCampaignEligibility } from '../services/emi-campaign-engine';
+import { SmartRouter } from '../services/smart-router';
 import { MockPGAdapter } from '../../pg-adapters/mock-adapter';
+import { RazorpayAdapter } from '../../pg-adapters/razorpay-adapter';
+import type { PGAdapter } from '../../pg-adapters/types';
 import type { Order } from '../schemas/order';
 import type { IINRange } from '../schemas/iin-range';
 import type { EMICampaign } from '../schemas/emi-campaign';
 import type { SessionAuditLog } from '../schemas/session-audit-log';
+import type { TransactionLog } from '../schemas/transaction-log';
+import { decrypt } from '../../../lib/encryption';
+import { OrderIdGenerator } from '../services/order-id-generator';
 
 /**
  * Registers checkout session and payment processing routes for a Fastify instance.
@@ -422,7 +429,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
    */
   server.post<{
     Params: { session_id: string };
-    Body: { method: string };
+    Body: { method: string; razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string };
   }>(
     '/api/checkout/:session_id/process-payment',
     { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
@@ -431,6 +438,9 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
 
       const ProcessPaymentSchema = z.object({
         method: z.string(),
+        razorpay_order_id: z.string().optional(),
+        razorpay_payment_id: z.string().optional(),
+        razorpay_signature: z.string().optional(),
       });
 
       const parseResult = ProcessPaymentSchema.safeParse(request.body as Record<string, unknown>);
@@ -443,7 +453,9 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
       const db = server.db!;
       const sessionRepository = new MongoSessionRepository(db);
       const orderRepository = new MongoOrderRepository(db);
-      const pgAdapter = new MockPGAdapter();
+      const pgCredsRepo = new MongoPGCredentialsRepository(db);
+      const orderIdGenerator = new OrderIdGenerator(db);
+      const encryptionKey = process.env.ENCRYPTION_KEY || 'fuse-encryption-key-change-me-32';
 
       try {
         const session = await sessionRepository.findByIdPublic(session_id);
@@ -453,72 +465,222 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
           });
         }
 
-        // Create PG order
-        const pgOrder = await pgAdapter.createOrder({
-          amount: session.cart.amount,
-          payment_method: parseResult.data.method,
-          options: {
-            customer_email: session.customer_info?.email,
-            customer_phone: session.customer_info?.phone,
-          },
-        });
+        // Load merchant's PG credentials
+        const pgCreds = await pgCredsRepo.findActive(session.merchant_id, 'razorpay');
+        const pgAdapters: PGAdapter[] = [];
 
-        // Process payment
-        const paymentResult = await pgAdapter.processPayment({
-          order_id: pgOrder.order_id,
-          payment_data: { method: parseResult.data.method },
-        });
+        if (pgCreds) {
+          const apiKey = decrypt(pgCreds.api_key_encrypted, encryptionKey);
+          const apiSecret = decrypt(pgCreds.api_secret_encrypted, encryptionKey);
+          pgAdapters.push(new RazorpayAdapter(apiKey, apiSecret));
+        }
+        // Always include mock as fallback for development
+        pgAdapters.push(new MockPGAdapter());
 
-        if (paymentResult.status === 'success') {
-          // Create Order record
-          const now = new Date().toISOString();
-          const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-          const order: Order = {
-            _id: orderId,
-            merchant_id: session.merchant_id,
-            session_id,
-            merchant_order_id: session.merchant_order_id ?? null,
-            cart_amount: session.cart.amount,
-            total_discount: session.applied_offers.reduce((sum, offer) => sum + offer.discount_amount, 0),
-            final_amount: session.cart.amount,
-            customer_info: session.customer_info!,
-            applied_offers: session.applied_offers,
-            payment_method: parseResult.data.method,
-            pg_name: 'MockPGAdapter',
-            pg_order_id: pgOrder.order_id,
-            pg_payment_id: paymentResult.transaction_id,
-            pg_raw_response: paymentResult as unknown as Record<string, unknown>,
-            pg_transaction_id: paymentResult.transaction_id,
-            order_status: 'paid' as const,
-            emi_details: null,
-            created_at: now,
-            updated_at: now,
-          };
-          await orderRepository.create(order);
+        // Smart router selects best PG
+        const router = new SmartRouter(pgAdapters, db);
+        const routingDecision = await router.route(session.merchant_id, session.cart.amount);
 
-          // Update session payment status
-          await sessionRepository.updatePaymentStatus(
-            session_id,
-            'success',
-            paymentResult.transaction_id,
-            orderId
-          );
+        // Generate order ID using new FUSE-YYMMDD-NNNNNN format
+        const orderId = await orderIdGenerator.generateId();
+        const now = new Date().toISOString();
+        const initiatedAt = new Date();
 
-          return reply.send({
-            order_id: orderId,
-            status: 'success',
-            redirect_url: session.redirect_urls.success,
-          });
-        } else {
-          // Update session payment status to failed
+        // Try primary PG, fall back on failure
+        let paymentResult = null;
+        let usedAdapter: PGAdapter = routingDecision.primary;
+        let pgOrder = null;
+        let attemptNumber = 1;
+
+        for (const adapter of [routingDecision.primary, ...routingDecision.fallback]) {
+          usedAdapter = adapter;
+          try {
+            // Create PG order
+            pgOrder = await adapter.createOrder({
+              amount: session.cart.amount,
+              payment_method: parseResult.data.method,
+              options: {
+                customer_email: session.customer_info?.email,
+                customer_phone: session.customer_info?.phone,
+              },
+            });
+
+            // For Razorpay, payment is captured client-side — verify signature server-side
+            if (adapter.getName() === 'razorpay' && parseResult.data.razorpay_payment_id) {
+              paymentResult = await adapter.processPayment({
+                order_id: pgOrder.order_id,
+                payment_data: {
+                  razorpay_order_id: parseResult.data.razorpay_order_id,
+                  razorpay_payment_id: parseResult.data.razorpay_payment_id,
+                  razorpay_signature: parseResult.data.razorpay_signature,
+                },
+              });
+            } else {
+              // Mock adapter — process directly
+              paymentResult = await adapter.processPayment({
+                order_id: pgOrder.order_id,
+                payment_data: { method: parseResult.data.method },
+              });
+            }
+
+            if (paymentResult.status === 'success') {
+              break; // Payment succeeded, stop trying
+            }
+
+            // Log failed attempt to transaction_logs
+            const completedAt = new Date();
+            const txLog: TransactionLog = {
+              _id: `txl_${orderId}_${attemptNumber}`,
+              order_id: orderId,
+              session_id,
+              merchant_id: session.merchant_id,
+              merchant_order_id: session.merchant_order_id ?? null,
+              attempt_number: attemptNumber,
+              pg_name: adapter.getName(),
+              pg_order_id: pgOrder?.order_id ?? null,
+              pg_payment_id: paymentResult.transaction_id || null,
+              pg_status: paymentResult.status,
+              pg_error_code: null,
+              pg_error_message: paymentResult.error_message ?? null,
+              pg_raw_request: { method: parseResult.data.method, amount: session.cart.amount },
+              pg_raw_response: paymentResult as unknown as Record<string, unknown>,
+              amount: session.cart.amount,
+              payment_method: parseResult.data.method,
+              payment_status: 'failed',
+              routing_reason: routingDecision.reason,
+              is_fallback: attemptNumber > 1,
+              initiated_at: initiatedAt.toISOString(),
+              completed_at: completedAt.toISOString(),
+              latency_ms: completedAt.getTime() - initiatedAt.getTime(),
+              created_at: now,
+            };
+            await db.collection('transaction_logs').insertOne(txLog as any);
+
+            attemptNumber++;
+          } catch (err) {
+            // Log exception and try next PG
+            const completedAt = new Date();
+            const txLog: TransactionLog = {
+              _id: `txl_${orderId}_${attemptNumber}`,
+              order_id: orderId,
+              session_id,
+              merchant_id: session.merchant_id,
+              merchant_order_id: session.merchant_order_id ?? null,
+              attempt_number: attemptNumber,
+              pg_name: adapter.getName(),
+              pg_order_id: pgOrder?.order_id ?? null,
+              pg_payment_id: null,
+              pg_status: 'error',
+              pg_error_code: null,
+              pg_error_message: err instanceof Error ? err.message : 'Unknown error',
+              pg_raw_request: { method: parseResult.data.method, amount: session.cart.amount },
+              pg_raw_response: {},
+              amount: session.cart.amount,
+              payment_method: parseResult.data.method,
+              payment_status: 'failed',
+              routing_reason: routingDecision.reason,
+              is_fallback: attemptNumber > 1,
+              initiated_at: initiatedAt.toISOString(),
+              completed_at: completedAt.toISOString(),
+              latency_ms: completedAt.getTime() - initiatedAt.getTime(),
+              created_at: now,
+            };
+            await db.collection('transaction_logs').insertOne(txLog as any);
+            attemptNumber++;
+          }
+        }
+
+        if (!paymentResult || paymentResult.status !== 'success') {
+          // All PGs failed
           await sessionRepository.updatePaymentStatus(session_id, 'failed');
           return reply.code(400).send({
             error: {
               code: 'PAYMENT_FAILED',
-              message: paymentResult.error_message || 'Payment processing failed',
+              message: paymentResult?.error_message || 'All payment gateways failed',
             },
           });
         }
+
+        // Log successful transaction
+        const completedAt = new Date();
+        const successTxLog: TransactionLog = {
+          _id: `txl_${orderId}_${attemptNumber}`,
+          order_id: orderId,
+          session_id,
+          merchant_id: session.merchant_id,
+          merchant_order_id: session.merchant_order_id ?? null,
+          attempt_number: attemptNumber,
+          pg_name: usedAdapter.getName(),
+          pg_order_id: pgOrder?.order_id ?? null,
+          pg_payment_id: paymentResult.transaction_id,
+          pg_status: 'captured',
+          pg_error_code: null,
+          pg_error_message: null,
+          pg_raw_request: { method: parseResult.data.method, amount: session.cart.amount },
+          pg_raw_response: paymentResult as unknown as Record<string, unknown>,
+          amount: session.cart.amount,
+          payment_method: parseResult.data.method,
+          payment_status: 'success',
+          routing_reason: routingDecision.reason,
+          is_fallback: attemptNumber > 1,
+          initiated_at: initiatedAt.toISOString(),
+          completed_at: completedAt.toISOString(),
+          latency_ms: completedAt.getTime() - initiatedAt.getTime(),
+          created_at: now,
+        };
+        await db.collection('transaction_logs').insertOne(successTxLog as any);
+
+        // Create Order record
+        const order: Order = {
+          _id: orderId,
+          merchant_id: session.merchant_id,
+          session_id,
+          merchant_order_id: session.merchant_order_id ?? null,
+          cart_amount: session.cart.amount,
+          total_discount: session.applied_offers.reduce((sum, offer) => sum + offer.discount_amount, 0),
+          final_amount: session.cart.amount,
+          customer_info: session.customer_info!,
+          applied_offers: session.applied_offers,
+          payment_method: parseResult.data.method,
+          pg_name: usedAdapter.getName(),
+          pg_order_id: pgOrder?.order_id ?? null,
+          pg_payment_id: paymentResult.transaction_id,
+          pg_raw_response: paymentResult as unknown as Record<string, unknown>,
+          pg_transaction_id: paymentResult.transaction_id,
+          order_status: 'paid' as const,
+          emi_details: null,
+          created_at: now,
+          updated_at: now,
+        };
+        await orderRepository.create(order);
+
+        // Update session payment status
+        await sessionRepository.updatePaymentStatus(
+          session_id,
+          'success',
+          paymentResult.transaction_id,
+          orderId
+        );
+
+        // Audit log
+        await db.collection('session_audit_logs').insertOne({
+          session_id,
+          merchant_id: session.merchant_id,
+          action: 'payment_success',
+          previous_state: 'pending',
+          new_state: 'success',
+          changed_by: 'system',
+          metadata: { order_id: orderId, pg_name: usedAdapter.getName(), pg_payment_id: paymentResult.transaction_id },
+          timestamp: now,
+        } as any);
+
+        return reply.send({
+          order_id: orderId,
+          status: 'success',
+          pg_name: usedAdapter.getName(),
+          pg_order_id: pgOrder?.order_id,
+          redirect_url: session.redirect_urls.success,
+        });
       } catch (error) {
         return reply.code(500).send({
           error: { code: 'INTERNAL_ERROR', message: 'Failed to process payment' },
