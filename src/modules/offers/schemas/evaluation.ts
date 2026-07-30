@@ -22,6 +22,13 @@ export const EvaluationContextSchema = z.object({
     total_used: z.number().int().nonnegative(),
   }),
   now: z.string().datetime(),
+  payment: z.object({
+    method: z.string(),
+    bank: z.string().nullable().optional(),
+    card_tier: z.string().nullable().optional(),
+    iin_prefix: z.string().nullable().optional(),
+    card_network: z.string().nullable().optional(),
+  }).nullable().optional(),
 });
 
 export const ComputedDiscountSchema = DiscountSchema.extend({

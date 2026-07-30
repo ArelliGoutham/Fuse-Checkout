@@ -76,7 +76,7 @@ This document is the single source of truth for what's built, what's in progress
 - [x] Session manual expire endpoint (`POST /api/checkout/sessions/:id/expire`)
 - [x] Session audit log (every state change logged for audit trail)
 - [x] Order lookup by `merchant_order_id` (`GET /api/orders?merchant_order_id=X`)
-- [ ] Session expiry cron job (mark sessions past expires_at as expired)
+- [x] Session expiry cron job (mark sessions past expires_at as expired)
 
 ### Payment Gateway Integration
 - [x] Razorpay adapter (replaces MockPGAdapter with real payment processing)
@@ -96,8 +96,8 @@ This document is the single source of truth for what's built, what's in progress
 - [x] Transaction detail API (`GET /api/transactions/:id` — full PG request/response for debugging)
 
 ### Bank Offers
-- [ ] `BankOfferEvaluator` in OfferEvaluatorRegistry (new evaluator, no changes to existing)
-- [ ] `payment_method_restriction` rule type (checks payment method + bank)
+- [x] `BankOfferEvaluator` in OfferEvaluatorRegistry (new evaluator, no changes to existing)
+- [x] `payment_method_restriction` rule type (checks payment method + bank)
 - [ ] Card BIN → bank offer matching at checkout ("Use HDFC CC → 10% off")
 - [ ] Checkout page: bank offers shown when card is entered
 

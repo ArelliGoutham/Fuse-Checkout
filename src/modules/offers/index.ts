@@ -1,6 +1,7 @@
 import { OfferEvaluatorRegistry } from './evaluators';
 import { CouponEvaluator } from './evaluators/coupon-evaluator';
 import { AutoOfferEvaluator } from './evaluators/auto-offer-evaluator';
+import { BankOfferEvaluator } from './evaluators/bank-offer-evaluator';
 import { RuleEvaluatorRegistry } from './rules';
 import { ComboResolver } from './combo';
 import { minCartValue } from './rules/min-cart-value';
@@ -16,6 +17,7 @@ import { productCombo } from './rules/product-combo';
 import { timeWindow } from './rules/time-window';
 import { weekendOnly } from './rules/weekend-only';
 import { dateRange } from './rules/date-range';
+import { paymentMethodRestriction } from './rules/payment-method-restriction';
 import type { OfferService } from './types';
 import type { Offer } from './schemas/offer';
 import type { EvaluationContext, EvaluationResult, StackingPolicy } from './schemas/evaluation';
@@ -49,10 +51,12 @@ export function createOfferModule(): OfferService {
   ruleRegistry.register('time_window', timeWindow);
   ruleRegistry.register('weekend_only', weekendOnly);
   ruleRegistry.register('date_range', dateRange);
+  ruleRegistry.register('payment_method_restriction', paymentMethodRestriction);
 
   const offerRegistry = new OfferEvaluatorRegistry();
   offerRegistry.register('coupon', new CouponEvaluator(ruleRegistry));
   offerRegistry.register('auto_offer', new AutoOfferEvaluator(ruleRegistry));
+  offerRegistry.register('bank_offer', new BankOfferEvaluator(ruleRegistry));
 
   const comboResolver = new ComboResolver();
 
