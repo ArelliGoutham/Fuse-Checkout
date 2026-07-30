@@ -60,7 +60,7 @@ export class SubsidySettlementEngine {
    * Captures and validates IMEI for a subsidy ledger entry.
    * If IMEI is valid, marks as imei_blocked (ready for brand settlement).
    */
-  async captureIMEI(orderId: string, imeiInput: string): Promise<{
+  async captureIMEI(orderId: string, merchantId: string, imeiInput: string): Promise<{
     success: boolean;
     error?: string;
     oemReferenceId?: string | null;
@@ -73,8 +73,11 @@ export class SubsidySettlementEngine {
 
     const sanitizedIMEI = sanitizeIMEI(imeiInput);
 
-    // Find the ledger entry first to get the brand
-    const existing = await this.db.collection('subsidy_ledger').findOne({ order_id: orderId });
+    // Find the ledger entry with tenant isolation
+    const existing = await this.db.collection('subsidy_ledger').findOne({
+      order_id: orderId,
+      merchant_id: merchantId,
+    });
     if (!existing) {
       return { success: false, error: 'Subsidy ledger entry not found for this order' };
     }
@@ -101,7 +104,7 @@ export class SubsidySettlementEngine {
     const now = new Date().toISOString();
 
     const result = await this.db.collection('subsidy_ledger').findOneAndUpdate(
-      { order_id: orderId },
+      { order_id: orderId, merchant_id: merchantId },
       {
         $set: {
           imei: sanitizedIMEI,
@@ -124,13 +127,13 @@ export class SubsidySettlementEngine {
   /**
    * Marks a ledger entry as settled (brand has transferred the money).
    */
-  async markSettled(orderId: string, settlementRef: string): Promise<{
+  async markSettled(orderId: string, merchantId: string, settlementRef: string): Promise<{
     success: boolean;
     error?: string;
   }> {
     const now = new Date().toISOString();
     const result = await this.db.collection('subsidy_ledger').updateOne(
-      { order_id: orderId, settlement_status: 'imei_blocked' },
+      { order_id: orderId, merchant_id: merchantId, settlement_status: 'imei_blocked' },
       {
         $set: {
           settlement_status: 'settled',
@@ -151,10 +154,10 @@ export class SubsidySettlementEngine {
   /**
    * Marks a settled entry as paid (merchant has received the money).
    */
-  async markPaid(orderId: string): Promise<{ success: boolean; error?: string }> {
+  async markPaid(orderId: string, merchantId: string): Promise<{ success: boolean; error?: string }> {
     const now = new Date().toISOString();
     const result = await this.db.collection('subsidy_ledger').updateOne(
-      { order_id: orderId, settlement_status: 'settled' },
+      { order_id: orderId, merchant_id: merchantId, settlement_status: 'settled' },
       {
         $set: {
           settlement_status: 'paid',

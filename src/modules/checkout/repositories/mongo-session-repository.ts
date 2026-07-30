@@ -30,9 +30,7 @@ export class MongoSessionRepository {
    */
   async create(input: CreateSessionInput, merchantId: string): Promise<CheckoutSession> {
     const now = new Date();
-    const timestamp = now.getTime();
-    const random = Math.random().toString(36).substring(2, 10);
-    const sessionId = `sess_${timestamp}_${random}`;
+    const sessionId = `sess_${crypto.randomUUID()}`;
 
     const expiresAt = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes from now
 
@@ -192,9 +190,7 @@ export class MongoSessionRepository {
    */
   async clone(source: CheckoutSession): Promise<CheckoutSession> {
     const now = new Date();
-    const timestamp = now.getTime();
-    const random = Math.random().toString(36).substring(2, 10);
-    const sessionId = `sess_${timestamp}_${random}`;
+    const sessionId = `sess_${crypto.randomUUID()}`;
 
     const expiresAt = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes from now
 

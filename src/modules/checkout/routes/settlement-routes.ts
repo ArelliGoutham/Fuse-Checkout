@@ -108,7 +108,7 @@ export function registerSettlementRoutes(server: FastifyInstance): void {
       const engine = new SubsidySettlementEngine(server.db!);
 
       try {
-        const result = await engine.captureIMEI(order_id, body.imei);
+        const result = await engine.captureIMEI(order_id, merchantId, body.imei);
         if (!result.success) {
           return reply.code(404).send({
             error: { code: 'LEDGER_NOT_FOUND', message: result.error },
@@ -152,7 +152,7 @@ export function registerSettlementRoutes(server: FastifyInstance): void {
       const engine = new SubsidySettlementEngine(server.db!);
 
       try {
-        const result = await engine.markSettled(order_id, body.settlement_ref);
+        const result = await engine.markSettled(order_id, merchantId, body.settlement_ref);
         if (!result.success) {
           return reply.code(409).send({
             error: { code: 'INVALID_STATE', message: result.error },
@@ -185,7 +185,7 @@ export function registerSettlementRoutes(server: FastifyInstance): void {
       const engine = new SubsidySettlementEngine(server.db!);
 
       try {
-        const result = await engine.markPaid(order_id);
+        const result = await engine.markPaid(order_id, merchantId);
         if (!result.success) {
           return reply.code(409).send({
             error: { code: 'INVALID_STATE', message: result.error },
