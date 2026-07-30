@@ -7,6 +7,7 @@ export const RuleSchema = z.object({
     'per_customer_limit', 'total_usage_limit', 'category_restriction',
     'product_restriction', 'brand_restriction', 'product_combo',
     'time_window', 'weekend_only', 'date_range',
+    'payment_method_restriction',
   ]),
   config: z.record(z.string(), z.unknown()),
 });
@@ -15,7 +16,7 @@ export const OfferSchema = z.object({
   _id: z.string(),
   merchant_id: z.string(),
   code: z.string().nullable(),
-  type: z.enum(['coupon', 'auto_offer']),
+  type: z.enum(['coupon', 'auto_offer', 'bank_offer']),
   title: z.string(),
   description: z.string().optional(),
   discount: DiscountSchema,
