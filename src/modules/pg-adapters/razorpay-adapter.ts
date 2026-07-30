@@ -5,6 +5,8 @@ import type {
   PGOrder,
   PGPaymentResult,
   PGVerification,
+  RefundParams,
+  RefundResult,
   CreateOrderParams,
   ProcessPaymentParams,
 } from './types';
@@ -132,5 +134,36 @@ export class RazorpayAdapter implements PGAdapter, PGWebhookVerifier {
    */
   verifyWebhook(rawBody: string, signature: string, secret: string): boolean {
     return Razorpay.validateWebhookSignature(rawBody, signature, secret);
+  }
+
+  /**
+   * Refunds a payment through Razorpay.
+   * Supports full and partial refunds.
+   *
+   * @param params - Refund parameters (payment_id, amount, reason)
+   * @returns Refund result with PG refund ID
+   */
+  async refundPayment(params: RefundParams): Promise<RefundResult> {
+    try {
+      const refund = await this.client.payments.refund(params.payment_id, {
+        amount: params.amount,
+        notes: params.notes || {},
+        ...(params.reason && { receipt: params.reason }),
+      });
+
+      const status: 'success' | 'pending' = refund.status === 'processed' ? 'success' : 'pending';
+      return {
+        status,
+        refund_id: refund.id,
+        amount: Number(refund.amount),
+      };
+    } catch (err) {
+      return {
+        status: 'failed',
+        refund_id: '',
+        amount: 0,
+        error_message: err instanceof Error ? err.message : 'Razorpay refund failed',
+      };
+    }
   }
 }

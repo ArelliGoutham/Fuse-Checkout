@@ -31,6 +31,7 @@ export const OrderSchema = z.object({
   pg_order_id: z.string().nullable().default(null),
   pg_payment_id: z.string().nullable().default(null),
   pg_raw_response: z.record(z.string(), z.unknown()).nullable().default(null),
+  pg_refund_id: z.string().nullable().optional(),
   pg_transaction_id: z.string().nullable(),
   order_status: z.enum(['created', 'paid', 'failed', 'refunded']),
   emi_details: z
