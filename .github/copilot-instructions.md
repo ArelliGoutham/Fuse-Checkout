@@ -489,10 +489,29 @@ describe('OfferRepository integration', () => {
 - [ ] No duplicated code — DRY
 - [ ] Queries scoped by `merchant_id`
 - [ ] Error handling uses the error envelope
+- [ ] **Roadmap updated** — if a feature was completed, started, or scoped, update `docs/ROADMAP.md`
 - [ ] Lint passes (`npm run lint`)
 - [ ] Type check passes (`npm run typecheck`)
 - [ ] No secrets hardcoded — use environment variables
 - [ ] Types inferred from Zod schemas (`z.infer<typeof Schema>`) — no dual definitions
+
+## Roadmap Maintenance
+
+`docs/ROADMAP.md` is the single source of truth for product progress. **Every agent must update it when:**
+
+- A feature is **completed** — change `[ ]` to `[x]` and update the "Last updated" date
+- A feature is **started** — change the phase status or add a new item under the appropriate phase
+- A new feature is **scoped** — add it under the appropriate phase with a `[ ]` checkbox
+- An architecture **decision is made** — add a row to the "Architecture Decisions" table
+
+The roadmap follows this structure:
+- **Phase 1** — Completed (checkout, offers, EMI engine, auth, frontend, docs)
+- **Phase 2** — In progress (bank offers, brand subsidies, PG integration, dashboard enhancements)
+- **Phase 3** — Planned (Shopify, EMI widget, personalization, multi-currency)
+- **Regulatory** — Planned (RBI PA license, PCI-DSS, VISA BASS)
+- **Deployment** — Planned (Atlas, Vercel, CI/CD)
+
+When in doubt about what phase a feature belongs to, check the spec documents in `docs/superpowers/specs/`.
 
 ---
 
