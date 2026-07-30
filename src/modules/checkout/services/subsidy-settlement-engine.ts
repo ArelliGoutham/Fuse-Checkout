@@ -1,15 +1,23 @@
 import type { Db } from 'mongodb';
 import { sanitizeIMEI, validateIMEI } from '../../../lib/imei';
 import type { SubsidyLedger } from '../schemas/subsidy-ledger';
+import type { OEMService } from '../../oem-adapters/oem-service';
 
 /**
  * Manages brand subsidy settlement lifecycle.
  * Tracks "brand owes merchant ₹X" across orders with IMEI blocking status.
  *
  * Settlement states: pending → imei_blocked → settled → paid
+ *
+ * OEM integration is optional — if an OEMService is injected, IMEI blocking
+ * is delegated to the OEM adapter. If no OEMService is provided, IMEI is
+ * recorded but not blocked (feature-flag behavior for brands without OEM APIs).
  */
 export class SubsidySettlementEngine {
-  constructor(private db: Db) {}
+  constructor(
+    private db: Db,
+    private oemService?: OEMService
+  ) {}
 
   /**
    * Creates a subsidy ledger entry when a brand-subsidized EMI campaign is used.
@@ -55,6 +63,7 @@ export class SubsidySettlementEngine {
   async captureIMEI(orderId: string, imeiInput: string): Promise<{
     success: boolean;
     error?: string;
+    oemReferenceId?: string | null;
     entry?: SubsidyLedger;
   }> {
     const validation = validateIMEI(imeiInput);
@@ -63,6 +72,32 @@ export class SubsidySettlementEngine {
     }
 
     const sanitizedIMEI = sanitizeIMEI(imeiInput);
+
+    // Find the ledger entry first to get the brand
+    const existing = await this.db.collection('subsidy_ledger').findOne({ order_id: orderId });
+    if (!existing) {
+      return { success: false, error: 'Subsidy ledger entry not found for this order' };
+    }
+
+    // Call OEM adapter to block IMEI (if service + adapter configured for this brand)
+    let oemReferenceId: string | null = null;
+    if (this.oemService && existing.brand) {
+      const blockResult = await this.oemService.blockIMEI(existing.brand as string, {
+        imei: sanitizedIMEI,
+        campaignId: existing.campaign_id as string,
+        campaignCode: existing.campaign_code as string,
+        orderId,
+        merchantId: existing.merchant_id as string,
+        brand: existing.brand as string,
+      });
+
+      if (!blockResult.success) {
+        return { success: false, error: `OEM block failed: ${blockResult.error}` };
+      }
+
+      oemReferenceId = blockResult.oemReferenceId;
+    }
+
     const now = new Date().toISOString();
 
     const result = await this.db.collection('subsidy_ledger').findOneAndUpdate(
@@ -83,7 +118,7 @@ export class SubsidySettlementEngine {
       return { success: false, error: 'Subsidy ledger entry not found for this order' };
     }
 
-    return { success: true, entry: result as unknown as SubsidyLedger };
+    return { success: true, entry: result as unknown as SubsidyLedger, oemReferenceId };
   }
 
   /**

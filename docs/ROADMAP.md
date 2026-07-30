@@ -104,9 +104,9 @@ This document is the single source of truth for what's built, what's in progress
 ### Brand Subsidy Engine
 - [x] IMEI capture at checkout (customer enters IMEI on checkout page)
 - [x] IMEI format validation
-- [ ] OEM API integration — Samsung (block IMEI via Samsung API)
-- [ ] OEM API integration — Apple (block IMEI via Apple API)
-- [ ] OEM API integration — OnePlus (block IMEI via OnePlus API)
+- [x] OEM API integration — Samsung (mock adapter, interface ready for real API) (block IMEI via Samsung API)
+- [x] OEM API integration — Apple (mock adapter, interface ready for real API) (block IMEI via Apple API)
+- [x] OEM API integration — OnePlus (mock adapter, interface ready for real API) (block IMEI via OnePlus API)
 - [x] Subsidy settlement engine (tracks "brand owes merchant ₹X" across orders)
 - [x] Settlement reconciliation reports (monthly CSV for brand finance teams)
 - [ ] Merchant dashboard: subsidy ledger view ("Samsung owes you ₹45,000 across 9 orders")

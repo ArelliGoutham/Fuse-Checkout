@@ -16,6 +16,9 @@ import { registerPGWebhook } from './modules/checkout/routes/razorpay-webhook';
 import { registerTransactionRoutes } from './modules/checkout/routes/transaction-routes';
 import { startSessionExpiryCron } from './modules/checkout/services/session-expiry-cron';
 import { registerSettlementRoutes } from './modules/checkout/routes/settlement-routes';
+import { OEMAdapterRegistry } from './modules/oem-adapters/types';
+import { MockOEMAdapter } from './modules/oem-adapters/mock-oem-adapter';
+import { OEMService } from './modules/oem-adapters/oem-service';
 import { RazorpayAdapter } from './modules/pg-adapters/razorpay-adapter';
 import { registerAuthRoutes } from './modules/auth/routes/auth-routes';
 import { registerInviteRoutes } from './modules/auth/routes/invite-routes';
@@ -98,6 +101,17 @@ async function start() {
     registerPGWebhook(server, razorpayVerifier, 'razorpay');
     registerTransactionRoutes(server);
     registerSettlementRoutes(server);
+
+    // OEM adapter registry (composition root — inject dependencies)
+    // New OEMs are registered here. No changes to consuming code (Open/Closed).
+    // To add Samsung: register real SamsungAdapter here, remove mock for samsung brand
+    const oemRegistry = new OEMAdapterRegistry();
+    oemRegistry.register('samsung', new MockOEMAdapter());
+    oemRegistry.register('apple', new MockOEMAdapter());
+    oemRegistry.register('oneplus', new MockOEMAdapter());
+    const oemService = new OEMService(oemRegistry);
+    server.decorate('oemService', oemService);
+    console.log(`✓ OEM adapters registered: ${oemService.getSupportedBrands().join(', ')}`);
 
     // Start session expiry cron (runs every 5 minutes)
     const stopSessionCron = startSessionExpiryCron(db);
