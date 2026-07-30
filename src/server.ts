@@ -13,6 +13,7 @@ import { registerEMICampaignRoutes } from './modules/checkout/routes/emi-campaig
 import { registerIINRangeRoutes } from './modules/checkout/routes/iin-range-routes';
 import { registerPGCredentialsRoutes } from './modules/checkout/routes/pg-credentials-routes';
 import { registerPGWebhook } from './modules/checkout/routes/razorpay-webhook';
+import { registerTransactionRoutes } from './modules/checkout/routes/transaction-routes';
 import { RazorpayAdapter } from './modules/pg-adapters/razorpay-adapter';
 import { registerAuthRoutes } from './modules/auth/routes/auth-routes';
 import { registerInviteRoutes } from './modules/auth/routes/invite-routes';
@@ -93,6 +94,7 @@ async function start() {
     // Register PG webhooks with verifier adapters (dependency injection — route depends on PGWebhookVerifier interface)
     const razorpayVerifier = new RazorpayAdapter('placeholder', 'placeholder');
     registerPGWebhook(server, razorpayVerifier, 'razorpay');
+    registerTransactionRoutes(server);
 
     console.log('✓ All routes registered');
 
