@@ -11,6 +11,7 @@ import { registerOrderRoutes } from './modules/checkout/routes/order-routes';
 import { registerBankRateRoutes } from './modules/checkout/routes/bank-rate-routes';
 import { registerEMICampaignRoutes } from './modules/checkout/routes/emi-campaign-routes';
 import { registerIINRangeRoutes } from './modules/checkout/routes/iin-range-routes';
+import { registerPGCredentialsRoutes } from './modules/checkout/routes/pg-credentials-routes';
 import { registerAuthRoutes } from './modules/auth/routes/auth-routes';
 import { registerInviteRoutes } from './modules/auth/routes/invite-routes';
 import { registerApiKeyRoutes } from './modules/auth/routes/api-key-routes';
@@ -85,6 +86,7 @@ async function start() {
     registerBankRateRoutes(server);
     registerEMICampaignRoutes(server);
     registerIINRangeRoutes(server);
+    registerPGCredentialsRoutes(server);
 
     console.log('✓ All routes registered');
 
