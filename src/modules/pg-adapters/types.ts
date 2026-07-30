@@ -103,3 +103,35 @@ export interface PGAdapter {
    */
   getName(): string;
 }
+
+/**
+ * Interface for verifying PG webhook signatures.
+ * Webhook routes depend on this interface, not concrete adapters.
+ */
+export interface PGWebhookVerifier {
+  /**
+   * Verifies a webhook signature from the PG.
+   * @param rawBody - Raw request body as string
+   * @param signature - Signature header value from PG
+   * @param secret - Webhook secret for this merchant
+   * @returns Whether the webhook is authentic
+   */
+  verifyWebhook(rawBody: string, signature: string, secret: string): boolean;
+}
+
+/**
+ * Interface for providers that load PG credentials for a merchant.
+ * Routes depend on this interface, not concrete repositories.
+ */
+export interface PGCredentialProvider {
+  /**
+   * Finds active PG credentials for a merchant.
+   * Returns decrypted keys or null if not configured.
+   */
+  findActiveCredentials(merchantId: string, pgName: string): Promise<{
+    apiKey: string;
+    apiSecret: string;
+    webhookSecret: string | null;
+    testMode: boolean;
+  } | null>;
+}
