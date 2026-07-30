@@ -22,6 +22,13 @@ export class MockPGAdapter implements PGAdapter {
   }
 
   /**
+   * Returns the name of this PG adapter.
+   */
+  getName(): string {
+    return 'mock';
+  }
+
+  /**
    * Creates a mock payment order.
    * Generates order ID in format: pg_mock_{timestamp}_{random}
    * @param params - Order creation parameters
