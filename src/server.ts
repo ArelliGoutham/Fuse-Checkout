@@ -11,6 +11,9 @@ import { registerOrderRoutes } from './modules/checkout/routes/order-routes';
 import { registerBankRateRoutes } from './modules/checkout/routes/bank-rate-routes';
 import { registerEMICampaignRoutes } from './modules/checkout/routes/emi-campaign-routes';
 import { registerIINRangeRoutes } from './modules/checkout/routes/iin-range-routes';
+import { registerPGCredentialsRoutes } from './modules/checkout/routes/pg-credentials-routes';
+import { registerPGWebhook } from './modules/checkout/routes/razorpay-webhook';
+import { RazorpayAdapter } from './modules/pg-adapters/razorpay-adapter';
 import { registerAuthRoutes } from './modules/auth/routes/auth-routes';
 import { registerInviteRoutes } from './modules/auth/routes/invite-routes';
 import { registerApiKeyRoutes } from './modules/auth/routes/api-key-routes';
@@ -59,6 +62,7 @@ async function start() {
       if (
         request.url === '/health'
         || request.url.startsWith('/api/auth/')
+        || request.url.startsWith('/api/webhooks/')
         || (request.url.startsWith('/api/checkout/') && !request.url.includes('/sessions'))
       ) {
         return;
@@ -85,6 +89,10 @@ async function start() {
     registerBankRateRoutes(server);
     registerEMICampaignRoutes(server);
     registerIINRangeRoutes(server);
+    registerPGCredentialsRoutes(server);
+    // Register PG webhooks with verifier adapters (dependency injection — route depends on PGWebhookVerifier interface)
+    const razorpayVerifier = new RazorpayAdapter('placeholder', 'placeholder');
+    registerPGWebhook(server, razorpayVerifier, 'razorpay');
 
     console.log('✓ All routes registered');
 

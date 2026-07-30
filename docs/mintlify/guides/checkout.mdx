@@ -125,8 +125,46 @@ When the customer confirms payment:
 4. The customer is redirected to your `success` URL with the order ID
 
 <Callout type="info">
-  In v1, payments are processed via a mock adapter for development. Production integrations with Razorpay and other gateways are on the Phase 2 roadmap.
+  Fuse uses the BYOK (Bring Your Own Keys) model. Merchants connect their own Razorpay account via the dashboard — paste API keys, and Fuse encrypts them with AES-256 before storage. Money settles directly to the merchant's Razorpay account. Fuse never touches the money.
 </Callout>
+
+### Connecting a payment gateway
+
+Merchants configure their PG credentials via the API or dashboard:
+
+```bash
+# Save Razorpay credentials (encrypted on storage)
+curl -X POST https://api.fuse.io/api/admin/pg-credentials \
+  -H "Authorization: Bearer eyJhbG..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pg_name": "razorpay",
+    "api_key": "rzp_live_xxx",
+    "api_secret": "xxx",
+    "webhook_secret": "whsec_xxx",
+    "test_mode": false
+  }'
+
+# List connected PGs (metadata only — no keys returned)
+curl https://api.fuse.io/api/admin/pg-credentials \
+  -H "Authorization: Bearer eyJhbG..."
+```
+
+Don't have a Razorpay account? Create one at [razorpay.com](https://razorpay.com) — takes 5 minutes for KYC.
+
+### Webhook configuration
+
+Set your webhook URL in the Razorpay dashboard to:
+
+```
+https://api.fuse.io/api/webhooks/razorpay
+```
+
+Fuse verifies every webhook signature using your stored webhook secret before updating order status. All webhooks are logged for audit in the `webhook_logs` collection.
+
+### Multi-PG routing
+
+When multiple PGs are connected, Fuse's smart router automatically selects the PG with the highest rolling 7-day success rate for each payment. If the primary PG fails, Fuse falls back to the next best PG automatically.
 
 ## Order verification
 
@@ -172,6 +210,10 @@ Response:
 | `PATCH /api/admin/emi-campaigns/{id}` | JWT | Update EMI campaign |
 | `GET /api/admin/iin-ranges` | JWT | List IIN ranges |
 | `POST /api/admin/iin-ranges` | JWT | Create IIN range |
+| `GET /api/admin/pg-credentials` | JWT | List PG connections (metadata only) |
+| `POST /api/admin/pg-credentials` | JWT | Save PG credentials (encrypts keys) |
+| `DELETE /api/admin/pg-credentials/{pg_name}` | JWT | Deactivate PG connection |
+| `POST /api/webhooks/{pg_name}` | None (signature) | PG webhook handler |
 
 <Note>
   Checkout page endpoints (cart, customer, select-payment, process-payment) skip API key auth — they're called from the customer's browser using the session ID. Session creation and order retrieval require merchant API keys.

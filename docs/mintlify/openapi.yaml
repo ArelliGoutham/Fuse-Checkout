@@ -1211,6 +1211,133 @@ paths:
         '201':
           description: Bank rate created
 
+  # === PG CREDENTIALS ===
+  /api/admin/pg-credentials:
+    get:
+      tags: [PG Credentials]
+      summary: List PG connections
+      description: Returns all payment gateway connections for the merchant (metadata only — no encrypted keys).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: PG credential list (safe metadata only)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pg_credentials:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        pg_name:
+                          type: string
+                        status:
+                          type: string
+                          enum: [active, inactive]
+                        test_mode:
+                          type: boolean
+                        connected_at:
+                          type: string
+                          format: date-time
+
+    post:
+      tags: [PG Credentials]
+      summary: Save PG credentials
+      description: |
+        Saves payment gateway API credentials for the merchant (BYOK model).
+        Keys are AES-256 encrypted before storage. Only metadata is returned in responses.
+        For Razorpay, pass api_key (rzp_live_xxx), api_secret, and webhook_secret.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pg_name, api_key, api_secret]
+              properties:
+                pg_name:
+                  type: string
+                  description: "razorpay, cashfree, etc."
+                api_key:
+                  type: string
+                  description: PG API key (encrypted on save)
+                api_secret:
+                  type: string
+                  description: PG API secret (encrypted on save)
+                webhook_secret:
+                  type: string
+                  description: PG webhook signing secret (encrypted on save)
+                test_mode:
+                  type: boolean
+                  default: true
+                  description: true = test keys, false = live keys
+            example:
+              pg_name: "razorpay"
+              api_key: "rzp_test_1DXzB..."
+              api_secret: "••••••••••••"
+              webhook_secret: "whsec_abc123"
+              test_mode: true
+      responses:
+        '201':
+          description: PG credentials saved (metadata only)
+        '500':
+          description: Failed to save credentials
+
+  /api/admin/pg-credentials/{pg_name}:
+    delete:
+      tags: [PG Credentials]
+      summary: Deactivate PG connection
+      description: Deactivates (does not delete) PG credentials for audit purposes.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pg_name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: PG credentials deactivated
+        '404':
+          description: PG credentials not found
+
+  # === PG WEBHOOKS ===
+  /api/webhooks/{pg_name}:
+    post:
+      tags: [PG Webhooks]
+      summary: PG webhook handler
+      description: |
+        Receives payment status webhooks from payment gateways.
+        No auth required — verified by PG webhook signature.
+        Fuse verifies the signature using the merchant's webhook secret,
+        then updates the order and session status.
+      security: []
+      parameters:
+        - name: pg_name
+          in: path
+          required: true
+          schema:
+            type: string
+            description: "razorpay, cashfree, etc."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: PG-specific webhook payload
+      responses:
+        '200':
+          description: Webhook received and processed
+        '401':
+          description: Webhook signature verification failed
+
   # === EMI CAMPAIGNS ===
   /api/admin/emi-campaigns:
     get:

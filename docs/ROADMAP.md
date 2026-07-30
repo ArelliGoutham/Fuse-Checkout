@@ -79,8 +79,8 @@ This document is the single source of truth for what's built, what's in progress
 - [ ] Session expiry cron job (mark sessions past expires_at as expired)
 
 ### Payment Gateway Integration
-- [ ] Razorpay adapter (replaces MockPGAdapter with real payment processing)
-- [ ] Razorpay webhook handling (payment.authenticated → order.created)
+- [x] Razorpay adapter (replaces MockPGAdapter with real payment processing)
+- [x] Razorpay webhook handling (payment.authenticated → order.created)
 - [ ] Card tokenization (PG returns token_id + card metadata, no PAN on our servers)
 - [ ] 3D Secure 2.0 support (RBI mandate for cards > ₹5,000, handled by PG)
 
@@ -92,7 +92,7 @@ This document is the single source of truth for what's built, what's in progress
 - [ ] Fallback chain (auto-retry on next PG if primary fails)
 - [ ] Transaction list API (`GET /api/transactions` — paginated, filterable by PG/status/date)
 - [ ] Transaction analytics API (`GET /api/transactions/analytics` — success rates, volume, PG breakdown)
-- [ ] Webhook log storage (every PG webhook stored for audit)
+- [x] Webhook log storage (every PG webhook stored for audit)
 - [ ] Transaction detail API (`GET /api/transactions/:id` — full PG request/response for debugging)
 
 ### Bank Offers
@@ -201,6 +201,9 @@ This document is the single source of truth for what's built, what's in progress
 | Transaction log on every payment attempt (success, failure, fallback) | 2026-07-30 | Active |
 | Smart router for multi-PG routing (success-rate-based with fallback chain) | 2026-07-30 | Active |
 | PG raw responses stored for audit (7-year retention, RBI mandate) | 2026-07-30 | Active |
+| BYOK model for PG integration (merchant's own keys, Fuse encrypts) | 2026-07-30 | Active |
+| PGWebhookVerifier interface for webhook signature validation (SOLID) | 2026-07-30 | Active |
+| Generic webhook handler (works for any PG via interface) | 2026-07-30 | Active |
 
 ---
 
