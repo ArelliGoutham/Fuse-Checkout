@@ -14,6 +14,7 @@ import { registerIINRangeRoutes } from './modules/checkout/routes/iin-range-rout
 import { registerPGCredentialsRoutes } from './modules/checkout/routes/pg-credentials-routes';
 import { registerPGWebhook } from './modules/checkout/routes/razorpay-webhook';
 import { registerTransactionRoutes } from './modules/checkout/routes/transaction-routes';
+import { startSessionExpiryCron } from './modules/checkout/services/session-expiry-cron';
 import { RazorpayAdapter } from './modules/pg-adapters/razorpay-adapter';
 import { registerAuthRoutes } from './modules/auth/routes/auth-routes';
 import { registerInviteRoutes } from './modules/auth/routes/invite-routes';
@@ -96,6 +97,10 @@ async function start() {
     registerPGWebhook(server, razorpayVerifier, 'razorpay');
     registerTransactionRoutes(server);
 
+    // Start session expiry cron (runs every 5 minutes)
+    const stopSessionCron = startSessionExpiryCron(db);
+    console.log('✓ Session expiry cron started (5 min interval)');
+
     console.log('✓ All routes registered');
 
     // Start server
@@ -106,6 +111,8 @@ async function start() {
     const gracefulShutdown = async (signal: string) => {
       console.log(`\n${signal} signal received. Shutting down gracefully...`);
       try {
+        stopSessionCron();
+        console.log('✓ Session expiry cron stopped');
         await server.close();
         console.log('✓ Server closed');
         await closeDatabase();
