@@ -48,7 +48,7 @@ export const CheckoutSessionSchema = z.object({
     .default([]),
   payment_method: z.string().nullable(),
   payment_status: z
-    .enum(['pending', 'processing', 'success', 'failed'])
+    .enum(['pending', 'processing', 'success', 'failed', 'expired'])
     .default('pending'),
   pg_transaction_id: z.string().nullable(),
   order_id: z.string().nullable(),

@@ -9,9 +9,9 @@ import { MongoOrderRepository } from '../repositories/mongo-order-repository';
  */
 export function registerOrderRoutes(server: FastifyInstance): void {
   /**
-   * GET /api/orders - List orders for merchant with pagination
+   * GET /api/orders - List orders for merchant with pagination + merchant_order_id lookup
    */
-  server.get<{ Querystring: { page?: string; limit?: string } }>(
+  server.get<{ Querystring: { page?: string; limit?: string; merchant_order_id?: string } }>(
     '/api/orders',
     { config: { rateLimit: { max: 120, timeWindow: '1 minute' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
@@ -22,8 +22,27 @@ export function registerOrderRoutes(server: FastifyInstance): void {
         });
       }
 
-      // Parse query parameters
-      const querystring = request.query as { page?: string; limit?: string };
+      const querystring = request.query as { page?: string; limit?: string; merchant_order_id?: string };
+      const db = server.db!;
+      const repository = new MongoOrderRepository(db);
+
+      // If merchant_order_id is provided, look up single order
+      if (querystring.merchant_order_id) {
+        try {
+          const order = await repository.findByMerchantOrderId(querystring.merchant_order_id, merchantId);
+          if (!order) {
+            return reply.code(404).send({
+              error: { code: 'ORDER_NOT_FOUND', message: 'Order not found for this merchant_order_id' },
+            });
+          }
+          return reply.send(order);
+        } catch {
+          return reply.code(500).send({
+            error: { code: 'INTERNAL_ERROR', message: 'Failed to retrieve order' },
+          });
+        }
+      }
+
       const page = parseInt(querystring.page || '1', 10);
       const limit = parseInt(querystring.limit || '10', 10);
 
@@ -32,9 +51,6 @@ export function registerOrderRoutes(server: FastifyInstance): void {
           error: { code: 'VALIDATION_ERROR', message: 'Invalid page or limit' },
         });
       }
-
-      const db = server.db!;
-      const repository = new MongoOrderRepository(db);
 
       try {
         const { orders, total } = await repository.findByMerchant(merchantId, page, limit);
@@ -45,7 +61,7 @@ export function registerOrderRoutes(server: FastifyInstance): void {
           limit,
           pages: Math.ceil(total / limit),
         });
-      } catch (error) {
+      } catch {
         return reply.code(500).send({
           error: { code: 'INTERNAL_ERROR', message: 'Failed to retrieve orders' },
         });
