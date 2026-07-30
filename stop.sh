@@ -56,7 +56,7 @@ else
 fi
 
 # Stop Docker MongoDB
-if docker ps -q --filter name=offerforge-mongo | grep -q .; then
+if docker ps -q --filter name=fuse-mongo | grep -q .; then
   docker compose down 2>/dev/null
   echo "✅ MongoDB stopped"
 else

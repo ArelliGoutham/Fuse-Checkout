@@ -1,8 +1,8 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3010';
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('offerforge_token') : null;
-  const apiKey = typeof window !== 'undefined' ? localStorage.getItem('offerforge_api_key') : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('fuse_token') : null;
+  const apiKey = typeof window !== 'undefined' ? localStorage.getItem('fuse_api_key') : null;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -28,7 +28,7 @@ export async function login(email: string, password: string): Promise<{ token: s
   });
   if (!res.ok) throw new Error('Invalid email or password');
   const data = await res.json();
-  if (typeof window !== 'undefined') localStorage.setItem('offerforge_token', data.token);
+  if (typeof window !== 'undefined') localStorage.setItem('fuse_token', data.token);
   return data;
 }
 
@@ -40,7 +40,7 @@ export async function signup(email: string, password: string, name: string, stor
   });
   if (!res.ok) throw new Error('Signup failed');
   const data = await res.json();
-  if (typeof window !== 'undefined') localStorage.setItem('offerforge_token', data.token);
+  if (typeof window !== 'undefined') localStorage.setItem('fuse_token', data.token);
   return data;
 }
 
@@ -55,21 +55,21 @@ export async function acceptInvite(inviteCode: string, email: string, password: 
     throw new Error(err.error?.message || 'Failed to accept invite');
   }
   const data = await res.json();
-  if (typeof window !== 'undefined') localStorage.setItem('offerforge_token', data.token);
+  if (typeof window !== 'undefined') localStorage.setItem('fuse_token', data.token);
   return data;
 }
 
 export function logout() {
   if (typeof window !== 'undefined') {
-    localStorage.removeItem('offerforge_token');
-    localStorage.removeItem('offerforge_api_key');
+    localStorage.removeItem('fuse_token');
+    localStorage.removeItem('fuse_api_key');
   }
 }
 
 export function getAuthState(): { token: string | null; apiKey: string | null } {
   if (typeof window === 'undefined') return { token: null, apiKey: null };
   return {
-    token: localStorage.getItem('offerforge_token'),
-    apiKey: localStorage.getItem('offerforge_api_key'),
+    token: localStorage.getItem('fuse_token'),
+    apiKey: localStorage.getItem('fuse_api_key'),
   };
 }

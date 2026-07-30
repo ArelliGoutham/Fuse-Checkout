@@ -1036,8 +1036,8 @@ Create `scripts/seed-iin.ts`:
 ```typescript
 import { MongoClient } from 'mongodb';
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/offerforge?authSource=admin';
-const DB_NAME = 'offerforge';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/fuse?authSource=admin';
+const DB_NAME = 'fuse';
 
 const IIN_RANGES = [
   // HDFC

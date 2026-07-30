@@ -1,4 +1,4 @@
-# OfferForge — Product Roadmap & Progress Tracker
+# Fuse — Product Roadmap & Progress Tracker
 
 > **Last updated:** 2026-07-30
 > **Status:** Phase 1 complete, Phase 2 in progress (EMI campaigns done, transaction management next)
@@ -172,13 +172,13 @@ This document is the single source of truth for what's built, what's in progress
 - [ ] MongoDB Atlas (production database)
 - [ ] API deployment (Railway or Render)
 - [ ] Dashboard + Checkout deployment (Vercel)
-- [ ] Mintlify hosted docs (docs.offerforge.io)
+- [ ] Mintlify hosted docs (docs.fuse.io)
 - [ ] CI/CD pipeline (GitHub Actions: test → build → deploy)
 - [ ] Pre-commit hooks (Husky + lint-staged)
 - [ ] Production monitoring (Last9 or similar)
 - [ ] Error tracking (Sentry)
 - [ ] CDN for static assets
-- [ ] Custom domain (offerforge.io)
+- [ ] Custom domain (fuse.io)
 
 ---
 
@@ -192,12 +192,12 @@ This document is the single source of truth for what's built, what's in progress
 | No hardcoded brand name (config.brandName) | 2026-07-18 | Active |
 | No Co-authored-by trailers in commits | 2026-07-18 | Active |
 | Hosted checkout (full-page redirect) as v1 | 2026-07-20 | Active |
-| EMI engine owned by OfferForge (not PG) | 2026-07-20 | Active |
+| EMI engine owned by Fuse (not PG) | 2026-07-20 | Active |
 | IIN database for card tier lookup (no VISA BASS access) | 2026-07-21 | Active |
 | Brand campaigns with cross-merchant velocity + IMEI blocking | 2026-07-21 | Active |
 | Subsidy ledger as revenue model (1-2% of settled brand subsidy) | 2026-07-21 | Active |
 | Order ID format: OF-YYMMDD-NNNNNN (incremental, partitionable, SQL-ready) | 2026-07-30 | Active |
-| merchant_order_id optional (merchants can use OfferForge IDs or their own) | 2026-07-30 | Active |
+| merchant_order_id optional (merchants can use Fuse IDs or their own) | 2026-07-30 | Active |
 | Transaction log on every payment attempt (success, failure, fallback) | 2026-07-30 | Active |
 | Smart router for multi-PG routing (success-rate-based with fallback chain) | 2026-07-30 | Active |
 | PG raw responses stored for audit (7-year retention, RBI mandate) | 2026-07-30 | Active |

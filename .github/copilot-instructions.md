@@ -1,4 +1,4 @@
-# OfferForge — Engineering Practices for Copilot
+# Fuse — Engineering Practices for Copilot
 
 These practices are mandatory for all code in this repository. Follow them on every change.
 
@@ -223,23 +223,23 @@ export function minCartValue(rule: { min_amount: number }, context: EvaluationCo
 ## Branding & Configuration
 
 ### No Hardcoded Brand Name
-- The product name "OfferForge" is **not hardcoded** in any user-facing string, email, dashboard title, API response, or documentation template.
+- The product name "Fuse" is **not hardcoded** in any user-facing string, email, dashboard title, API response, or documentation template.
 - The brand name is a single configuration value: `BRAND_NAME` environment variable (or `config.brandName` in app config).
 - All user-facing strings reference the config value, not a literal string.
 
 ```typescript
 // ✅ CORRECT — brand name from config
-const appName = config.brandName; // "OfferForge" today, could be "OfferHub" tomorrow
+const appName = config.brandName; // "Fuse" today, could be "OfferHub" tomorrow
 res.send({ message: `Welcome to ${appName}` });
 
 // ❌ WRONG — hardcoded brand string
-res.send({ message: 'Welcome to OfferForge' });
+res.send({ message: 'Welcome to Fuse' });
 ```
 
 ### Where Brand Name Appears
 - Dashboard UI (header, login page, emails)
 - API documentation (OpenAPI title, description)
-- Error messages that reference the product ("OfferForge API key required")
+- Error messages that reference the product ("Fuse API key required")
 - Email templates (if any in v1)
 - Future widget branding (white-label-ready by design)
 
@@ -247,13 +247,13 @@ res.send({ message: 'Welcome to OfferForge' });
 ```typescript
 // src/config/index.ts
 export const config = {
-  brandName: process.env.BRAND_NAME || 'OfferForge',
+  brandName: process.env.BRAND_NAME || 'Fuse',
   // ... other config
 };
 ```
 
 - One place to change the brand name: the `BRAND_NAME` env var.
-- Default fallback is "OfferForge" — but every reference reads from config, not from the literal.
+- Default fallback is "Fuse" — but every reference reads from config, not from the literal.
 - When the domain is finalized, set `BRAND_NAME=NewName` in deploy config. Zero code changes.
 
 ### Also Configurable
@@ -270,7 +270,7 @@ All brand-related values live in the config module and are referenced via config
 
 ### Architecture: Modular Monolith
 
-OfferForge is a **modular monolith** — a single deployable unit with strict module boundaries. Each module (offers, products, customers, analytics, tracking) is self-contained with its own routes, services, models, and types. Modules communicate **through interfaces only, never concrete implementations** — because we may extract modules into separate microservices later.
+Fuse is a **modular monolith** — a single deployable unit with strict module boundaries. Each module (offers, products, customers, analytics, tracking) is self-contained with its own routes, services, models, and types. Modules communicate **through interfaces only, never concrete implementations** — because we may extract modules into separate microservices later.
 
 ### Interface-Only Communication
 
@@ -404,8 +404,8 @@ src/
 - `docker-compose.yml` defines a MongoDB 7 container with auth enabled.
 - Start: `npm run docker:up` (or `docker compose up -d`)
 - Stop: `npm run docker:down` (or `docker compose down`)
-- Connection string: `mongodb://offerforge:offerforge@localhost:27017/offerforge?authSource=admin`
-- Data persists in a named Docker volume (`offerforge-mongo-data`).
+- Connection string: `mongodb://fuse:fuse@localhost:27017/fuse?authSource=admin`
+- Data persists in a named Docker volume (`fuse-mongo-data`).
 
 ### Testing with In-Memory MongoDB
 - `mongodb-memory-server` is installed as a dev dependency.
@@ -481,7 +481,7 @@ describe('OfferRepository integration', () => {
 
 - [ ] **Tests written first (TDD)** — failing test → implementation → green
 - [ ] **Zod schemas** for all API inputs and module boundaries
-- [ ] **No hardcoded brand name** — all references use `config.brandName`, not the literal "OfferForge"
+- [ ] **No hardcoded brand name** — all references use `config.brandName`, not the literal "Fuse"
 - [ ] **Modular monolith** — cross-module imports are interfaces only, no concrete classes
 - [ ] No `any` types — all types are explicit
 - [ ] All exported functions have TSDoc comments
@@ -518,7 +518,7 @@ When in doubt about what phase a feature belongs to, check the spec documents in
 ## Don'ts
 
 - **Don't** write implementation before a test (TDD — red first, always)
-- **Don't** hardcode the brand name "OfferForge" in any string — use `config.brandName` (env var `BRAND_NAME`)
+- **Don't** hardcode the brand name "Fuse" in any string — use `config.brandName` (env var `BRAND_NAME`)
 - **Don't** use `any` — use `unknown` and narrow
 - **Don't** define types and Zod schemas separately — use `z.infer<typeof Schema>`
 - **Don't** skip validation because "it's an internal call"

@@ -1,17 +1,17 @@
 openapi: 3.0.3
 info:
-  title: OfferForge API
+  title: Fuse API
   description: Modular offers platform for Indian e-commerce. Create coupons, auto-applied discounts, EMI offers, and manage checkout.
   version: 1.0.0
   contact:
-    name: OfferForge
-    email: support@offerforge.io
-    url: https://offerforge.io
+    name: Fuse
+    email: support@fuse.io
+    url: https://fuse.io
 
 servers:
   - url: http://localhost:3010
     description: Local development
-  - url: https://api.offerforge.io
+  - url: https://api.fuse.io
     description: Production
 
 components:

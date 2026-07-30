@@ -26,7 +26,7 @@ describe('OrderIdGenerator', () => {
 
   it('generates ID with correct format (PREFIX-YYMMDD-NNNNNN)', async () => {
     const id = await generator.generateId();
-    expect(id).toMatch(/^OF-\d{6}-\d{6}$/);
+    expect(id).toMatch(/^FUSE-\d{6}-\d{6}$/);
   });
 
   it('generates sequential IDs (000001, 000002, 000003)', async () => {

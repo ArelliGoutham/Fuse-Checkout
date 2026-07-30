@@ -1,8 +1,8 @@
-# OfferForge Core Engine — Implementation Plan (Part 1 of 3)
+# Fuse Core Engine — Implementation Plan (Part 1 of 3)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the pure-logic rule engine, offer evaluators, and combo resolver for OfferForge's coupons & auto-offers module — no database, no API, just testable TypeScript.
+**Goal:** Build the pure-logic rule engine, offer evaluators, and combo resolver for Fuse's coupons & auto-offers module — no database, no API, just testable TypeScript.
 
 **Architecture:** Modular monolith with interface-only communication. Rule evaluators are pure functions. OfferEvaluatorRegistry routes offers to type-specific evaluators (CouponEvaluator, AutoOfferEvaluator). ComboResolver resolves stacking conflicts using merchant policy + per-offer overrides. All types derived from Zod schemas.
 
@@ -87,7 +87,7 @@ jest.config.ts
 - [ ] **Step 1: Initialize npm project and install dependencies**
 
 ```bash
-cd /Users/arelligoutham/Documents/OfferForge
+cd /Users/arelligoutham/Documents/Fuse
 npm init -y
 npm install zod
 npm install -D typescript @types/node tsx jest @types/jest ts-jest \
@@ -203,11 +203,11 @@ coverage/
  * Brand name is configurable — never hardcode it elsewhere.
  */
 export const config = {
-  brandName: process.env.BRAND_NAME ?? 'OfferForge',
+  brandName: process.env.BRAND_NAME ?? 'Fuse',
   brandLogoUrl: process.env.BRAND_LOGO_URL ?? '',
   brandPrimaryColor: process.env.BRAND_PRIMARY_COLOR ?? '#4F46E5',
-  brandSupportEmail: process.env.BRAND_SUPPORT_EMAIL ?? 'support@offerforge.io',
-  brandDomain: process.env.BRAND_DOMAIN ?? 'offerforge.io',
+  brandSupportEmail: process.env.BRAND_SUPPORT_EMAIL ?? 'support@fuse.io',
+  brandDomain: process.env.BRAND_DOMAIN ?? 'fuse.io',
 } as const;
 ```
 
@@ -1181,7 +1181,7 @@ Expected: FAIL — module not found.
 // src/lib/errors.ts
 
 /**
- * Base class for all OfferForge typed errors.
+ * Base class for all Fuse typed errors.
  * Each error has a machine-readable code and an HTTP status code.
  */
 export class AppError extends Error {

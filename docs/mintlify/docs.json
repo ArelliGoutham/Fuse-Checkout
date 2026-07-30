@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "linden",
-  "name": "OfferForge",
+  "name": "Fuse",
   "colors": {
     "primary": "#F59E0B",
     "light": "#FBBF24",
@@ -54,22 +54,22 @@
     "links": [
       {
         "label": "Dashboard",
-        "href": "https://offerforge.io"
+        "href": "https://fuse.io"
       },
       {
         "label": "GitHub",
-        "href": "https://github.com/ArelliGoutham/OfferForge"
+        "href": "https://github.com/ArelliGoutham/Fuse"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Get API Key",
-      "href": "https://offerforge.io/signup"
+      "href": "https://fuse.io/signup"
     }
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/ArelliGoutham/OfferForge"
+      "github": "https://github.com/ArelliGoutham/Fuse"
     }
   }
 }

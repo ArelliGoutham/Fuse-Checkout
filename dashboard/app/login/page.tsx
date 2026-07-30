@@ -37,7 +37,7 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-surface rounded-2xl border border-border p-8">
-          <h1 className="text-2xl font-bold text-fg text-center mb-2">OfferForge</h1>
+          <h1 className="text-2xl font-bold text-fg text-center mb-2">Fuse</h1>
           <p className="text-fg-muted text-center mb-8 text-sm">Sign in to your merchant dashboard</p>
 
           {error && (
@@ -86,7 +86,7 @@ export default function LoginPage() {
                     type="password" placeholder="of_live_..."
                     onChange={(e) => {
                       if (e.target.value) {
-                        localStorage.setItem('offerforge_api_key', e.target.value);
+                        localStorage.setItem('fuse_api_key', e.target.value);
                         router.push('/');
                       }
                     }}

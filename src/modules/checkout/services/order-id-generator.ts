@@ -23,7 +23,7 @@ export class OrderIdGenerator {
   async generateId(): Promise<string> {
     const now = new Date();
     const datePart = this.formatDate(now);
-    const prefix = process.env.ORDER_ID_PREFIX || 'OF';
+    const prefix = process.env.ORDER_ID_PREFIX || 'FUSE';
 
     const counter = await this.db
       .collection('order_counters')

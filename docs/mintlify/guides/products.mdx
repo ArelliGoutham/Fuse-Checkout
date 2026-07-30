@@ -1,11 +1,11 @@
 ---
 title: Product Catalog
-description: Sync products to OfferForge for category, brand, and product-combo based rules.
+description: Sync products to Fuse for category, brand, and product-combo based rules.
 ---
 
 # Product Catalog
 
-Product metadata is stored in OfferForge so you can create rules that reference specific SKUs, categories, or brands.
+Product metadata is stored in Fuse so you can create rules that reference specific SKUs, categories, or brands.
 
 ## What we store
 
@@ -25,7 +25,7 @@ Product metadata is stored in OfferForge so you can create rules that reference 
 ### Single product
 
 ```bash
-curl -X POST https://api.offerforge.io/api/products \
+curl -X POST https://api.fuse.io/api/products \
   -H "x-api-key: of_live_..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -39,7 +39,7 @@ curl -X POST https://api.offerforge.io/api/products \
 ### Bulk sync (upsert)
 
 ```bash
-curl -X POST https://api.offerforge.io/api/products/bulk \
+curl -X POST https://api.fuse.io/api/products/bulk \
   -H "x-api-key: of_live_..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -66,7 +66,7 @@ Once synced, products power these rule types:
 Define bundles for `product_combo` rules:
 
 ```bash
-curl -X POST https://api.offerforge.io/api/product-combos \
+curl -X POST https://api.fuse.io/api/product-combos \
   -H "x-api-key: of_live_..." \
   -H "Content-Type: application/json" \
   -d '{

@@ -49,7 +49,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
         const session = await repository.create(parseResult.data, merchantId);
         return reply.code(201).send({
           session_id: session._id,
-          checkout_url: `https://checkout.offerforge.io/${session._id}`,
+          checkout_url: `https://checkout.fuse.io/${session._id}`,
           expires_at: session.expires_at,
         });
       } catch (error) {
@@ -680,7 +680,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
 
         return reply.code(201).send({
           session_id: newSession._id,
-          checkout_url: `https://checkout.offerforge.io/${newSession._id}`,
+          checkout_url: `https://checkout.fuse.io/${newSession._id}`,
           original_session_id: id,
           expires_at: newSession.expires_at,
         });

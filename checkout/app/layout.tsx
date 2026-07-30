@@ -11,8 +11,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Checkout — OfferForge",
-  description: "Secure checkout powered by OfferForge",
+  title: "Checkout — Fuse",
+  description: "Secure checkout powered by Fuse",
 };
 
 export default function RootLayout({

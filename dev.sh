@@ -1,10 +1,10 @@
 #!/bin/bash
-# OfferForge — Local Development Setup
+# Fuse — Local Development Setup
 # Starts MongoDB, backend API, seeds data, and dashboard
 
 # Don't use set -e — background processes may return non-zero
 
-echo "🚀 OfferForge Local Development Setup"
+echo "🚀 Fuse Local Development Setup"
 echo "======================================"
 
 # Check if Docker is running
@@ -23,7 +23,7 @@ echo "✅ MongoDB running on localhost:27017"
 echo ""
 echo "⏳ Waiting for MongoDB to accept connections..."
 for i in $(seq 1 15); do
-  if docker exec offerforge-mongo mongosh --quiet --eval "db.runCommand({ping:1}).ok" 2>/dev/null | grep -q 1; then
+  if docker exec fuse-mongo mongosh --quiet --eval "db.runCommand({ping:1}).ok" 2>/dev/null | grep -q 1; then
     echo "✅ MongoDB is ready"
     break
   fi

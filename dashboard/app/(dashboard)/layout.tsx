@@ -49,7 +49,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
               <i className="fa-solid fa-bolt text-bg text-lg"></i>
             </div>
-            {sidebarOpen && <span className="font-bold text-fg">OfferForge</span>}
+            {sidebarOpen && <span className="font-bold text-fg">Fuse</span>}
           </Link>
 
           {/* Navigation */}

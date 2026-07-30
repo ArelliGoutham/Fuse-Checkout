@@ -10,7 +10,7 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "OfferForge — Merchant Dashboard",
+  title: "Fuse — Merchant Dashboard",
   description: "Manage your offers, coupons, and promotions",
 };
 
