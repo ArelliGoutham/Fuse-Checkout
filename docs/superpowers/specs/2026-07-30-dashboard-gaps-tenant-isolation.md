@@ -76,14 +76,18 @@ Add `merchant_id` verification to the `SubsidySettlementEngine` methods:
 **Data source:** `POST /api/orders/:id/refund`
 
 **Refund + IMEI unblock + subsidy reversal flow:**
-When a merchant refunds an order that had brand subsidy (IMEI blocked):
+When a merchant refunds an order that had brand subsidy:
 1. Fuse processes the refund via PG adapter (`refundPayment`)
-2. If order has a subsidy ledger entry with IMEI blocked:
+2. If order has a subsidy ledger entry with IMEI blocked (`imei_blocked === true`):
+   - This only applies if the campaign had `requires_imei === true`
    - Fuse calls OEM adapter to unblock IMEI (`OEMService.unblockIMEI`)
    - Subsidy ledger entry status → `disputed` (brand settlement reversed)
    - Refund ID + IMEI unblock reference stored in ledger
-3. Transaction log records the refund (payment_method: `refund`)
-4. Order status → `refunded` (full) or stays `paid` (partial)
+3. If campaign did NOT require IMEI (`requires_imei === false`):
+   - No IMEI unblock needed
+   - Subsidy ledger entry status → `disputed` with refund reference
+4. Transaction log records the refund (payment_method: `refund`)
+5. Order status → `refunded` (full) or stays `paid` (partial)
 
 **UI Features:**
 - Refund button visible only when `order_status === 'paid'`
@@ -105,7 +109,8 @@ When a merchant refunds an order that had brand subsidy (IMEI blocked):
 - Brand cards: "Samsung — ₹45,000 pending across 9 entries" with status breakdown (pending, imei_blocked, settled, paid, disputed)
 - Ledger table: Order ID, Brand, Campaign, Amount, EMI Type, IMEI, IMEI Blocked, Settlement Status, Date
 - Filter by settlement status
-- "Capture IMEI" button for entries requiring IMEI (status = pending)
+- "Capture IMEI" button only visible for entries where `requires_imei === true` AND status = pending
+  - If campaign doesn't require IMEI (`requires_imei === false`), no IMEI capture UI shown
   - Opens modal with IMEI input (15-digit, auto-validate with Luhn)
   - Calls `POST /api/subsidy/:order_id/imei`
   - IMEI blocking goes through OEM adapter only (no manual override)
