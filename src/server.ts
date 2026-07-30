@@ -15,6 +15,7 @@ import { registerPGCredentialsRoutes } from './modules/checkout/routes/pg-creden
 import { registerPGWebhook } from './modules/checkout/routes/razorpay-webhook';
 import { registerTransactionRoutes } from './modules/checkout/routes/transaction-routes';
 import { startSessionExpiryCron } from './modules/checkout/services/session-expiry-cron';
+import { registerSettlementRoutes } from './modules/checkout/routes/settlement-routes';
 import { RazorpayAdapter } from './modules/pg-adapters/razorpay-adapter';
 import { registerAuthRoutes } from './modules/auth/routes/auth-routes';
 import { registerInviteRoutes } from './modules/auth/routes/invite-routes';
@@ -96,6 +97,7 @@ async function start() {
     const razorpayVerifier = new RazorpayAdapter('placeholder', 'placeholder');
     registerPGWebhook(server, razorpayVerifier, 'razorpay');
     registerTransactionRoutes(server);
+    registerSettlementRoutes(server);
 
     // Start session expiry cron (runs every 5 minutes)
     const stopSessionCron = startSessionExpiryCron(db);

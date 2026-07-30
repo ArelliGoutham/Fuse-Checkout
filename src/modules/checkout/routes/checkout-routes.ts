@@ -408,6 +408,49 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
           }
         }
 
+        // Fetch bank offers for this card (if IIN info available)
+        let bankOffers: Array<{ _id: string; code: string; title: string; discount_type: string; discount_value: number; max_discount: number | null; discount_amount: number }> = [];
+        if (iinInfo && bankCode) {
+          const bankOfferDocs = await db.collection('offers').find({
+            merchant_id: session.merchant_id,
+            type: 'bank_offer',
+            status: 'active',
+          }).toArray();
+
+          for (const offerDoc of bankOfferDocs) {
+            const rules = (offerDoc as any).rules || [];
+            const paymentRule = rules.find((r: any) => r.rule_type === 'payment_method_restriction');
+            if (!paymentRule) continue;
+
+            const cfg = paymentRule.config || {};
+            const matchingTypes = !cfg.payment_types || cfg.payment_types.includes('card');
+            const matchingBanks = !cfg.banks || cfg.banks.includes(bankCode);
+            const matchingTiers = !cfg.card_tiers || cfg.card_tiers.includes(iinInfo.card_tier);
+            const matchingIin = !cfg.iin_prefixes || cfg.iin_prefixes.includes(iinInfo.prefix);
+
+            if (matchingTypes && matchingBanks && matchingTiers && matchingIin) {
+              const discount = (offerDoc as any).discount || {};
+              let discountAmount = 0;
+              if (discount.type === 'flat') {
+                discountAmount = Math.min(discount.value, session.cart.amount);
+              } else if (discount.type === 'percentage') {
+                const pct = Math.round((session.cart.amount * discount.value) / 100);
+                discountAmount = discount.max_discount ? Math.min(pct, discount.max_discount) : pct;
+              }
+
+              bankOffers.push({
+                _id: (offerDoc as any)._id,
+                code: (offerDoc as any).code || (offerDoc as any).title,
+                title: (offerDoc as any).title,
+                discount_type: discount.type,
+                discount_value: discount.value,
+                max_discount: discount.max_discount || null,
+                discount_amount: discountAmount,
+              });
+            }
+          }
+        }
+
         return reply.send({
           method,
           bank: bankCode || null,
@@ -415,6 +458,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
           final_amount: session.cart.amount,
           iin_info: iinInfo,
           campaign_emi_options: campaignEmiOptions,
+          bank_offers: bankOffers,
         });
       } catch (error) {
         return reply.code(500).send({
