@@ -90,10 +90,10 @@ This document is the single source of truth for what's built, what's in progress
 - [x] PG stats schema + daily aggregation job (per-merchant, per-PG success rates, latency, volume)
 - [x] Smart router service (routes payment to highest success-rate PG with fallback chain)
 - [x] Fallback chain (auto-retry on next PG if primary fails)
-- [ ] Transaction list API (`GET /api/transactions` — paginated, filterable by PG/status/date)
-- [ ] Transaction analytics API (`GET /api/transactions/analytics` — success rates, volume, PG breakdown)
+- [x] Transaction list API (`GET /api/transactions` — paginated, filterable by PG/status/date)
+- [x] Transaction analytics API (`GET /api/transactions/analytics` — success rates, volume, PG breakdown)
 - [x] Webhook log storage (every PG webhook stored for audit)
-- [ ] Transaction detail API (`GET /api/transactions/:id` — full PG request/response for debugging)
+- [x] Transaction detail API (`GET /api/transactions/:id` — full PG request/response for debugging)
 
 ### Bank Offers
 - [ ] `BankOfferEvaluator` in OfferEvaluatorRegistry (new evaluator, no changes to existing)
