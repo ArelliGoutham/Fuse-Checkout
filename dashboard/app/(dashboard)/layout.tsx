@@ -11,6 +11,7 @@ const NAV_GROUPS = [
     items: [
       { href: '/', label: 'Dashboard', icon: 'fa-gauge-high' },
       { href: '/analytics', label: 'Analytics', icon: 'fa-chart-line' },
+      { href: '/transactions', label: 'Transactions', icon: 'fa-receipt' },
     ],
   },
   {
@@ -31,6 +32,7 @@ const NAV_GROUPS = [
     label: 'Settings',
     items: [
       { href: '/api-keys', label: 'API Keys', icon: 'fa-key' },
+      { href: '/settings', label: 'Payment Gateway', icon: 'fa-plug' },
     ],
   },
 ];

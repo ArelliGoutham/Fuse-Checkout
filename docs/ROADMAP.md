@@ -113,9 +113,9 @@ This document is the single source of truth for what's built, what's in progress
 - [ ] Brand dashboard: campaign performance + IMEI block status
 
 ### Dashboard Enhancements
-- [ ] Orders list page (paginated, filterable by status/date/PG)
-- [ ] Transaction list page (every payment attempt with PG details, status, latency)
-- [ ] PG performance dashboard (per-PG success rates, latency, failure reasons)
+- [x] Orders list page (transactions page built) (paginated, filterable by status/date/PG)
+- [x] Transaction list page (every payment attempt with PG details, status, latency)
+- [x] PG performance dashboard (per-PG success rates, latency, failure reasons)
 - [ ] Checkout funnel analytics (session → cart → details → payment → success)
 - [ ] EMI campaign management UI (create/edit campaigns in dashboard)
 - [ ] IIN range management UI (add/edit IIN ranges in dashboard)
