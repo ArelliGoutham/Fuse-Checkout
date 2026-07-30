@@ -1,7 +1,7 @@
 # OfferForge — Product Roadmap & Progress Tracker
 
 > **Last updated:** 2026-07-30
-> **Status:** Phase 1 complete, Phase 2 in progress
+> **Status:** Phase 1 complete, Phase 2 in progress (EMI campaigns done, transaction management next)
 
 This document is the single source of truth for what's built, what's in progress, and what's planned. **Update this file whenever a feature is completed, started, or scoped.**
 
@@ -67,11 +67,33 @@ This document is the single source of truth for what's built, what's in progress
 
 ## Phase 2 — Bank & Brand Offers (🔄 In Progress)
 
+### Transaction Management & Order Correlation
+- [ ] Order ID generator (`OF-YYMMDD-NNNNNN` format — incremental, human-readable, partitionable, SQL-ready)
+- [ ] `merchant_order_id` in session creation (optional — merchants can use our IDs or their own)
+- [ ] Updated order schema with PG correlation fields (pg_order_id, pg_payment_id, pg_raw_response)
+- [ ] Session update endpoint (`PATCH /api/checkout/sessions/:id` — update cart in pending state)
+- [ ] Session retry endpoint (`POST /api/checkout/sessions/:id/retry` — clone for failed/expired)
+- [ ] Session manual expire endpoint (`POST /api/checkout/sessions/:id/expire`)
+- [ ] Session audit log (every state change logged for audit trail)
+- [ ] Order lookup by `merchant_order_id` (`GET /api/orders?merchant_order_id=X`)
+- [ ] Session expiry cron job (mark sessions past expires_at as expired)
+
 ### Payment Gateway Integration
 - [ ] Razorpay adapter (replaces MockPGAdapter with real payment processing)
 - [ ] Razorpay webhook handling (payment.authenticated → order.created)
 - [ ] Card tokenization (PG returns token_id + card metadata, no PAN on our servers)
 - [ ] 3D Secure 2.0 support (RBI mandate for cards > ₹5,000, handled by PG)
+
+### Transaction Logging & Analytics
+- [ ] Transaction log schema (every payment attempt logged — success, failure, fallback)
+- [ ] Transaction log storage on every payment attempt (PG request/response, error codes, latency)
+- [ ] PG stats schema + daily aggregation job (per-merchant, per-PG success rates, latency, volume)
+- [ ] Smart router service (routes payment to highest success-rate PG with fallback chain)
+- [ ] Fallback chain (auto-retry on next PG if primary fails)
+- [ ] Transaction list API (`GET /api/transactions` — paginated, filterable by PG/status/date)
+- [ ] Transaction analytics API (`GET /api/transactions/analytics` — success rates, volume, PG breakdown)
+- [ ] Webhook log storage (every PG webhook stored for audit)
+- [ ] Transaction detail API (`GET /api/transactions/:id` — full PG request/response for debugging)
 
 ### Bank Offers
 - [ ] `BankOfferEvaluator` in OfferEvaluatorRegistry (new evaluator, no changes to existing)
@@ -91,10 +113,14 @@ This document is the single source of truth for what's built, what's in progress
 - [ ] Brand dashboard: campaign performance + IMEI block status
 
 ### Dashboard Enhancements
-- [ ] Orders list page (paginated, filterable by status/date)
+- [ ] Orders list page (paginated, filterable by status/date/PG)
+- [ ] Transaction list page (every payment attempt with PG details, status, latency)
+- [ ] PG performance dashboard (per-PG success rates, latency, failure reasons)
 - [ ] Checkout funnel analytics (session → cart → details → payment → success)
 - [ ] EMI campaign management UI (create/edit campaigns in dashboard)
 - [ ] IIN range management UI (add/edit IIN ranges in dashboard)
+- [ ] Subsidy ledger view ("Samsung owes you ₹45,000 across 9 orders")
+- [ ] Admin: PG health monitor (all merchants, anomaly alerts)
 
 ### Checkout Enhancements
 - [ ] Embeddable checkout widget (slide-over/inline instead of full-page redirect)
@@ -170,6 +196,11 @@ This document is the single source of truth for what's built, what's in progress
 | IIN database for card tier lookup (no VISA BASS access) | 2026-07-21 | Active |
 | Brand campaigns with cross-merchant velocity + IMEI blocking | 2026-07-21 | Active |
 | Subsidy ledger as revenue model (1-2% of settled brand subsidy) | 2026-07-21 | Active |
+| Order ID format: OF-YYMMDD-NNNNNN (incremental, partitionable, SQL-ready) | 2026-07-30 | Active |
+| merchant_order_id optional (merchants can use OfferForge IDs or their own) | 2026-07-30 | Active |
+| Transaction log on every payment attempt (success, failure, fallback) | 2026-07-30 | Active |
+| Smart router for multi-PG routing (success-rate-based with fallback chain) | 2026-07-30 | Active |
+| PG raw responses stored for audit (7-year retention, RBI mandate) | 2026-07-30 | Active |
 
 ---
 
@@ -179,6 +210,7 @@ This document is the single source of truth for what's built, what's in progress
 |---|---|
 | `docs/superpowers/specs/2026-07-18-coupons-module-design.md` | Original PRD for offers engine |
 | `docs/superpowers/specs/2026-07-20-checkout-provider-design.md` | Checkout provider design spec |
+| `docs/superpowers/specs/2026-07-30-transaction-management.md` | Transaction management, order IDs, multi-PG routing, analytics |
 | `docs/superpowers/plans/2026-07-18-core-engine.md` | Core engine implementation plan |
 | `docs/superpowers/plans/2026-07-18-api-layer.md` | API layer implementation plan |
 | `docs/superpowers/plans/2026-07-19-auth-team-module.md` | Auth module implementation plan |
