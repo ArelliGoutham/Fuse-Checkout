@@ -68,14 +68,14 @@ This document is the single source of truth for what's built, what's in progress
 ## Phase 2 — Bank & Brand Offers (🔄 In Progress)
 
 ### Transaction Management & Order Correlation
-- [ ] Order ID generator (`OF-YYMMDD-NNNNNN` format — incremental, human-readable, partitionable, SQL-ready)
-- [ ] `merchant_order_id` in session creation (optional — merchants can use our IDs or their own)
-- [ ] Updated order schema with PG correlation fields (pg_order_id, pg_payment_id, pg_raw_response)
-- [ ] Session update endpoint (`PATCH /api/checkout/sessions/:id` — update cart in pending state)
-- [ ] Session retry endpoint (`POST /api/checkout/sessions/:id/retry` — clone for failed/expired)
-- [ ] Session manual expire endpoint (`POST /api/checkout/sessions/:id/expire`)
-- [ ] Session audit log (every state change logged for audit trail)
-- [ ] Order lookup by `merchant_order_id` (`GET /api/orders?merchant_order_id=X`)
+- [x] Order ID generator (`OF-YYMMDD-NNNNNN` format — incremental, human-readable, partitionable, SQL-ready)
+- [x] `merchant_order_id` in session creation (optional — merchants can use our IDs or their own)
+- [x] Updated order schema with PG correlation fields (pg_order_id, pg_payment_id, pg_raw_response)
+- [x] Session update endpoint (`PATCH /api/checkout/sessions/:id` — update cart in pending state)
+- [x] Session retry endpoint (`POST /api/checkout/sessions/:id/retry` — clone for failed/expired)
+- [x] Session manual expire endpoint (`POST /api/checkout/sessions/:id/expire`)
+- [x] Session audit log (every state change logged for audit trail)
+- [x] Order lookup by `merchant_order_id` (`GET /api/orders?merchant_order_id=X`)
 - [ ] Session expiry cron job (mark sessions past expires_at as expired)
 
 ### Payment Gateway Integration
@@ -85,10 +85,10 @@ This document is the single source of truth for what's built, what's in progress
 - [ ] 3D Secure 2.0 support (RBI mandate for cards > ₹5,000, handled by PG)
 
 ### Transaction Logging & Analytics
-- [ ] Transaction log schema (every payment attempt logged — success, failure, fallback)
+- [x] Transaction log schema (every payment attempt logged — success, failure, fallback)
 - [ ] Transaction log storage on every payment attempt (PG request/response, error codes, latency)
 - [ ] PG stats schema + daily aggregation job (per-merchant, per-PG success rates, latency, volume)
-- [ ] Smart router service (routes payment to highest success-rate PG with fallback chain)
+- [x] Smart router service (routes payment to highest success-rate PG with fallback chain)
 - [ ] Fallback chain (auto-retry on next PG if primary fails)
 - [ ] Transaction list API (`GET /api/transactions` — paginated, filterable by PG/status/date)
 - [ ] Transaction analytics API (`GET /api/transactions/analytics` — success rates, volume, PG breakdown)
