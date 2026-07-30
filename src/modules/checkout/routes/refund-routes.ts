@@ -157,13 +157,30 @@ export function registerRefundRoutes(server: FastifyInstance): void {
         );
 
         // Reverse subsidy ledger entry if this was a brand-subsidized order
-        const subsidyEntry = await db.collection('subsidy_ledger').findOne({ order_id: orderId });
+        const subsidyEntry = await db.collection('subsidy_ledger').findOne({
+          order_id: orderId,
+          merchant_id: merchantId,
+        });
         if (subsidyEntry) {
+          // If IMEI was blocked and campaign required IMEI, unblock via OEM adapter
+          let imeiUnblocked = false;
+          if (subsidyEntry.imei_blocked && subsidyEntry.imei) {
+            const oemService = (server as any).oemService;
+            if (oemService && subsidyEntry.brand) {
+              const unblockResult = await oemService.unblockIMEI(
+                subsidyEntry.brand as string,
+                subsidyEntry.imei as string
+              );
+              imeiUnblocked = unblockResult.success;
+            }
+          }
+
           await db.collection('subsidy_ledger').updateOne(
-            { order_id: orderId },
+            { order_id: orderId, merchant_id: merchantId },
             {
               $set: {
                 settlement_status: 'disputed',
+                imei_blocked: subsidyEntry.imei_blocked && !imeiUnblocked ? true : false,
                 updated_at: now,
               },
             }

@@ -116,10 +116,10 @@ This document is the single source of truth for what's built, what's in progress
 - [x] Orders list page (transactions page built) (paginated, filterable by status/date/PG)
 - [x] Transaction list page (every payment attempt with PG details, status, latency)
 - [x] PG performance dashboard (per-PG success rates, latency, failure reasons)
-- [ ] Checkout funnel analytics (session → cart → details → payment → success)
-- [ ] EMI campaign management UI (create/edit campaigns in dashboard)
-- [ ] IIN range management UI (add/edit IIN ranges in dashboard)
-- [ ] Subsidy ledger view ("Samsung owes you ₹45,000 across 9 orders")
+- [x] Checkout funnel analytics (transactions page) (session → cart → details → payment → success)
+- [x] EMI campaign management UI (create/edit campaigns in dashboard)
+- [x] IIN range management UI (add/edit IIN ranges in dashboard)
+- [x] Subsidy ledger view ("Samsung owes you ₹45,000 across 9 orders")
 - [ ] Admin: PG health monitor (all merchants, anomaly alerts)
 
 ### Checkout Enhancements

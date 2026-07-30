@@ -68,6 +68,74 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
   );
 
   /**
+   * GET /api/checkout/sessions - List sessions for merchant (Merchant API)
+   */
+  server.get<{
+    Querystring: { page?: string; limit?: string; status?: string };
+  }>(
+    '/api/checkout/sessions',
+    { config: { rateLimit: { max: 120, timeWindow: '1 minute' } } },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const merchantId = request.merchantId;
+      if (!merchantId) {
+        return reply.code(401).send({
+          error: { code: 'AUTH_INVALID', message: 'Missing merchant context' },
+        });
+      }
+
+      const query = request.query as { page?: string; limit?: string; status?: string };
+      const page = parseInt(query.page || '1', 10);
+      const limit = parseInt(query.limit || '20', 10);
+
+      if (page < 1 || limit < 1 || limit > 100) {
+        return reply.code(400).send({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid page or limit' },
+        });
+      }
+
+      const db = server.db!;
+      const filter: Record<string, unknown> = { merchant_id: merchantId };
+      if (query.status) filter.payment_status = query.status;
+
+      const skip = (page - 1) * limit;
+      try {
+        const [docs, total] = await Promise.all([
+          db.collection('checkout_sessions')
+            .find(filter)
+            .sort({ created_at: -1 })
+            .skip(skip)
+            .limit(limit)
+            .toArray(),
+          db.collection('checkout_sessions').countDocuments(filter),
+        ]);
+
+        const sessions = docs.map((s: any) => ({
+          session_id: s._id,
+          merchant_order_id: s.merchant_order_id || null,
+          cart_amount: s.cart?.amount || 0,
+          item_count: s.cart?.items?.length || 0,
+          payment_status: s.payment_status,
+          payment_method: s.payment_method,
+          created_at: s.created_at,
+          expires_at: s.expires_at,
+        }));
+
+        return reply.send({
+          sessions,
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit),
+        });
+      } catch {
+        return reply.code(500).send({
+          error: { code: 'INTERNAL_ERROR', message: 'Failed to retrieve sessions' },
+        });
+      }
+    }
+  );
+
+  /**
    * GET /api/checkout/sessions/:id - Get session for merchant (Merchant API)
    */
   server.get<{ Params: { id: string } }>(
