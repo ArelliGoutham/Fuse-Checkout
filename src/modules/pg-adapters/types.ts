@@ -98,10 +98,45 @@ export interface PGAdapter {
   verifyPayment(transactionId: string): Promise<PGVerification>;
 
   /**
+   * Refunds a payment through the PG.
+   * @param params - Refund parameters
+   * @returns Refund result
+   */
+  refundPayment(params: RefundParams): Promise<RefundResult>;
+
+  /**
    * Returns the name of this PG adapter (e.g., "razorpay", "cashfree").
    * Used by the smart router for logging and stats.
    */
   getName(): string;
+}
+
+/**
+ * Parameters for creating a refund.
+ */
+export interface RefundParams {
+  /** PG payment ID to refund */
+  payment_id: string;
+  /** Refund amount in paise (full or partial) */
+  amount?: number;
+  /** Reason for refund */
+  reason?: string;
+  /** Merchant notes for audit */
+  notes?: Record<string, string>;
+}
+
+/**
+ * Result of a refund request.
+ */
+export interface RefundResult {
+  /** Refund status */
+  status: 'success' | 'failed' | 'pending';
+  /** PG refund ID */
+  refund_id: string;
+  /** Refunded amount in paise */
+  amount: number;
+  /** Error message if refund failed */
+  error_message?: string;
 }
 
 /**

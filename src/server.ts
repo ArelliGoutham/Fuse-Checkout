@@ -16,6 +16,7 @@ import { registerPGWebhook } from './modules/checkout/routes/razorpay-webhook';
 import { registerTransactionRoutes } from './modules/checkout/routes/transaction-routes';
 import { startSessionExpiryCron } from './modules/checkout/services/session-expiry-cron';
 import { registerSettlementRoutes } from './modules/checkout/routes/settlement-routes';
+import { registerRefundRoutes } from './modules/checkout/routes/refund-routes';
 import { OEMAdapterRegistry } from './modules/oem-adapters/types';
 import { MockOEMAdapter } from './modules/oem-adapters/mock-oem-adapter';
 import { OEMService } from './modules/oem-adapters/oem-service';
@@ -101,6 +102,7 @@ async function start() {
     registerPGWebhook(server, razorpayVerifier, 'razorpay');
     registerTransactionRoutes(server);
     registerSettlementRoutes(server);
+    registerRefundRoutes(server);
 
     // OEM adapter registry (composition root — inject dependencies)
     // New OEMs are registered here. No changes to consuming code (Open/Closed).

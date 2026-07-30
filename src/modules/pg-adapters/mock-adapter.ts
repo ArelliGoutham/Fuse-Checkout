@@ -3,6 +3,8 @@ import {
   PGOrder,
   PGPaymentResult,
   PGVerification,
+  RefundParams,
+  RefundResult,
   CreateOrderParams,
   ProcessPaymentParams,
 } from './types';
@@ -96,6 +98,30 @@ export class MockPGAdapter implements PGAdapter {
       verified: true,
       amount: 1000,
       status: 'success',
+    };
+  }
+
+  /**
+   * Processes a mock refund.
+   * Succeeds if payment_id is non-empty.
+   * @param params - Refund parameters
+   * @returns Refund result
+   */
+  async refundPayment(params: RefundParams): Promise<RefundResult> {
+    if (!params.payment_id) {
+      return {
+        status: 'failed',
+        refund_id: '',
+        amount: 0,
+        error_message: 'Payment ID is required for refund',
+      };
+    }
+
+    const refundId = `rfd_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    return {
+      status: 'success',
+      refund_id: refundId,
+      amount: params.amount || 1000,
     };
   }
 }

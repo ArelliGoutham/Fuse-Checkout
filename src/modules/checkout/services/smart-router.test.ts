@@ -1,17 +1,18 @@
 import { SmartRouter } from './smart-router';
-import { PGAdapter, PGPaymentResult } from '../../pg-adapters/types';
+import { PGAdapter, PGPaymentResult, RefundParams, RefundResult, PGVerification, PGOrder, CreateOrderParams, ProcessPaymentParams } from '../../pg-adapters/types';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, Db } from 'mongodb';
 
 class MockPG implements PGAdapter {
   constructor(private name: string, private shouldFail: boolean = false) {}
   getName() { return this.name; }
-  async createOrder() { return { order_id: `ord_${this.name}`, amount: 1000, currency: 'INR', status: 'created' as const }; }
-  async processPayment(): Promise<PGPaymentResult> {
+  async createOrder(_params: CreateOrderParams): Promise<PGOrder> { return { order_id: `ord_${this.name}`, amount: 1000, currency: 'INR', status: 'created' as const }; }
+  async processPayment(_params: ProcessPaymentParams): Promise<PGPaymentResult> {
     if (this.shouldFail) return { status: 'failed', transaction_id: '', error_message: 'Simulated failure' };
     return { status: 'success', transaction_id: `txn_${this.name}` };
   }
-  async verifyPayment() { return { verified: true, amount: 1000, status: 'success' }; }
+  async verifyPayment(_transactionId: string): Promise<PGVerification> { return { verified: true, amount: 1000, status: 'success' }; }
+  async refundPayment(_params: RefundParams): Promise<RefundResult> { return { status: 'success', refund_id: 'rfd_mock', amount: 1000 }; }
 }
 
 let mongoServer: MongoMemoryServer;
