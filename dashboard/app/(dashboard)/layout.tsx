@@ -12,6 +12,8 @@ const NAV_GROUPS = [
       { href: '/', label: 'Dashboard', icon: 'fa-gauge-high' },
       { href: '/analytics', label: 'Analytics', icon: 'fa-chart-line' },
       { href: '/transactions', label: 'Transactions', icon: 'fa-receipt' },
+      { href: '/orders', label: 'Orders', icon: 'fa-shopping-bag' },
+      { href: '/sessions', label: 'Sessions', icon: 'fa-clock' },
     ],
   },
   {
@@ -19,6 +21,7 @@ const NAV_GROUPS = [
     items: [
       { href: '/create', label: 'Create Offer', icon: 'fa-plus-circle' },
       { href: '/rules', label: 'Stacking Policy', icon: 'fa-layer-group' },
+      { href: '/emi-campaigns', label: 'EMI Campaigns', icon: 'fa-percent' },
     ],
   },
   {
@@ -26,6 +29,12 @@ const NAV_GROUPS = [
     items: [
       { href: '/products', label: 'Products', icon: 'fa-cube' },
       { href: '/combos', label: 'Combos', icon: 'fa-box' },
+    ],
+  },
+  {
+    label: 'Settlements',
+    items: [
+      { href: '/subsidy', label: 'Subsidy Ledger', icon: 'fa-handshake' },
     ],
   },
   {
