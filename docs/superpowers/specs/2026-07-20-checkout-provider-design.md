@@ -1,4 +1,4 @@
-# OfferForge Checkout Provider — Design Spec
+# Fuse Checkout Provider — Design Spec
 
 > **Date:** 2026-07-20
 > **Status:** Draft
@@ -8,15 +8,15 @@
 
 ## 1. Product Vision
 
-OfferForge evolves from an offers API into a **hosted checkout provider** with a superior offers and EMI engine. Merchants create a checkout session via API → customers are redirected to our hosted checkout page → we handle cart display, customer info, offers (coupons + auto + EMI + payment-method offers), and payment via the merchant's configured PG → redirect back with order verification.
+Fuse evolves from an offers API into a **hosted checkout provider** with a superior offers and EMI engine. Merchants create a checkout session via API → customers are redirected to our hosted checkout page → we handle cart display, customer info, offers (coupons + auto + EMI + payment-method offers), and payment via the merchant's configured PG → redirect back with order verification.
 
 ### 1.1 Positioning
 
-"The checkout that sells more." OfferForge is a PG-agnostic checkout layer with a built-in offers engine that no standalone PG can match. We are not a payment gateway — we orchestrate the checkout experience and pass payment to the merchant's existing PG.
+"The checkout that sells more." Fuse is a PG-agnostic checkout layer with a built-in offers engine that no standalone PG can match. We are not a payment gateway — we orchestrate the checkout experience and pass payment to the merchant's existing PG.
 
-### 1.2 What OfferForge Owns
+### 1.2 What Fuse Owns
 
-| Layer | OfferForge | PG (Razorpay/PineLabs/Cashfree) |
+| Layer | Fuse | PG (Razorpay/PineLabs/Cashfree) |
 |---|---|---|
 | Checkout UI | ✅ | ❌ |
 | Customer info collection | ✅ | ❌ |
@@ -59,11 +59,11 @@ Merchant's Store
     │     → Returns { session_id, checkout_url }
     │
     ▼
-checkout.offerforge.io/:session_id  (hosted by us)
+checkout.fuse.io/:session_id  (hosted by us)
     │
     │  2. Customer sees: cart + offers + customer form + payment methods
-    │  3. OfferForge engine evaluates ALL applicable offers dynamically
-    │  4. Customer pays → OfferForge calls PG with minimal payload
+    │  3. Fuse engine evaluates ALL applicable offers dynamically
+    │  4. Customer pays → Fuse calls PG with minimal payload
     │  5. Redirect → merchant's success URL → merchant verifies via API
     │
     ▼
@@ -72,7 +72,7 @@ Merchant's Store (success page)
 
 ### 2.2 Embedding Model
 
-- **v1: Full-page redirect** — customer goes to `checkout.offerforge.io/:session_id`
+- **v1: Full-page redirect** — customer goes to `checkout.fuse.io/:session_id`
 - **v2 (future): Slide-over widget** — checkout opens as overlay on merchant's site
 - **v3 (future): Inline embed** — checkout renders inside merchant's page
 - Architecture supports all three — the checkout UI is a standalone web app that can be embedded in different ways
@@ -93,7 +93,7 @@ interface PGAdapter {
 }
 ```
 
-The merchant configures which PG to use in their dashboard. OfferForge calls the PG adapter internally — the merchant never interacts with the PG directly from the checkout.
+The merchant configures which PG to use in their dashboard. Fuse calls the PG adapter internally — the merchant never interacts with the PG directly from the checkout.
 
 ---
 
@@ -198,7 +198,7 @@ GET    /api/checkout/sessions/:id
        Auth: API key or JWT (merchant-scoped)
 ```
 
-### 4.2 Checkout Page Endpoints (called by checkout.offerforge.io)
+### 4.2 Checkout Page Endpoints (called by checkout.fuse.io)
 
 ```
 GET    /api/checkout/:session_id/cart
@@ -292,12 +292,12 @@ n = Tenure in months
 ### 5.3 Calculation Flow
 
 1. Customer enters card → BIN lookup → bank identified (e.g., "HDFC")
-2. OfferForge looks up BankRates for HDFC CC → { rate: 18%, tenures: [3,6,9,12] }
-3. OfferForge finds matching EMIOffers for merchant + HDFC + cart products
+2. Fuse looks up BankRates for HDFC CC → { rate: 18%, tenures: [3,6,9,12] }
+3. Fuse finds matching EMIOffers for merchant + HDFC + cart products
 4. For each tenure, calculate EMI using our formula + apply subsidy config
 5. Display: monthly EMI, interest, total, processing fee, subsidy (hidden from customer)
-6. Customer selects plan → OfferForge stores selection
-7. Payment: OfferForge sends minimal payload to PG → `{ amount, payment_method: "CREDIT_EMI", bank, tenure }`
+6. Customer selects plan → Fuse stores selection
+7. Payment: Fuse sends minimal payload to PG → `{ amount, payment_method: "CREDIT_EMI", bank, tenure }`
 8. PG processes standard EMI on principal → customer's card statement shows EMI installments
 
 ### 5.4 What PG Receives
@@ -360,7 +360,7 @@ merchant.pg_config = {
 }
 ```
 
-OfferForge uses these credentials to call the PG on behalf of the merchant. The merchant's existing PG account handles all bank relationships, settlements, and compliance.
+Fuse uses these credentials to call the PG on behalf of the merchant. The merchant's existing PG account handles all bank relationships, settlements, and compliance.
 
 ---
 

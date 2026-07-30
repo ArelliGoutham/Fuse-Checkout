@@ -14,7 +14,7 @@ describe('createAuthMiddleware', () => {
     const uri = memServer.getUri();
     const client = new MongoClient(uri);
     await client.connect();
-    const db = client.db('offerforge-test');
+    const db = client.db('fuse-test');
     await db.collection('merchants').insertOne({
       _id: new ObjectId('000000000000000000000001'),
       name: 'Test Merchant',
@@ -29,7 +29,7 @@ describe('createAuthMiddleware', () => {
       created_at: new Date().toISOString(),
     });
     await client.close();
-    await connectDatabase(uri, 'offerforge-test');
+    await connectDatabase(uri, 'fuse-test');
   }, 60000);
 
   afterAll(async () => {

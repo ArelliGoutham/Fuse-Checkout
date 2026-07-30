@@ -69,4 +69,23 @@ export class MongoOrderRepository {
     const orders = docs.map((doc) => OrderSchema.parse(doc));
     return { orders, total };
   }
+
+  /**
+   * Finds an order by merchant's own order ID with tenant isolation.
+   * @param merchantOrderId - Merchant's order ID
+   * @param merchantId - Merchant ID (tenant isolation)
+   * @returns The order or null if not found
+   */
+  async findByMerchantOrderId(
+    merchantOrderId: string,
+    merchantId: string
+  ): Promise<Order | null> {
+    const doc = await this.collection.findOne({
+      merchant_order_id: merchantOrderId,
+      merchant_id: merchantId,
+    });
+
+    if (!doc) return null;
+    return OrderSchema.parse(doc);
+  }
 }

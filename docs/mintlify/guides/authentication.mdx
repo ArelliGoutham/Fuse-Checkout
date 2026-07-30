@@ -1,11 +1,11 @@
 ---
 title: Authentication
-description: How to authenticate with the OfferForge API — JWT for dashboard, API keys for programmatic access.
+description: How to authenticate with the Fuse API — JWT for dashboard, API keys for programmatic access.
 ---
 
 # Authentication
 
-OfferForge supports two authentication methods that coexist:
+Fuse supports two authentication methods that coexist:
 
 ## 1. JWT Tokens (Dashboard)
 
@@ -13,7 +13,7 @@ Used by the merchant dashboard. Obtained via login or signup:
 
 ```bash
 # Login
-curl -X POST https://api.offerforge.io/api/auth/login \
+curl -X POST https://api.fuse.io/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{ "email": "owner@store.in", "password": "password123" }'
 ```
@@ -21,7 +21,7 @@ curl -X POST https://api.offerforge.io/api/auth/login \
 Returns a JWT token valid for 7 days. Send it in the `Authorization` header:
 
 ```bash
-curl https://api.offerforge.io/api/offers \
+curl https://api.fuse.io/api/offers \
   -H "Authorization: Bearer <jwt-token>"
 ```
 
@@ -30,7 +30,7 @@ curl https://api.offerforge.io/api/offers \
 Used for checkout integrations, scripts, and server-to-server calls. Create keys from the dashboard or API:
 
 ```bash
-curl -X POST https://api.offerforge.io/api/api-keys \
+curl -X POST https://api.fuse.io/api/api-keys \
   -H "Authorization: Bearer <jwt-token>" \
   -H "Content-Type: application/json" \
   -d '{ "label": "Production", "scopes": ["offers:read", "checkout", "tracking"] }'
@@ -39,7 +39,7 @@ curl -X POST https://api.offerforge.io/api/api-keys \
 Send the API key in the `x-api-key` header:
 
 ```bash
-curl https://api.offerforge.io/api/offers \
+curl https://api.fuse.io/api/offers \
   -H "x-api-key: of_live_..."
 ```
 

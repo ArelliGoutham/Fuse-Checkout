@@ -1,15 +1,15 @@
-# OfferForge — Coupons Module PRD
+# Fuse — Coupons Module PRD
 
 > **Date:** 2026-07-18  
 > **Status:** Draft  
 > **Author:** @ArelliGoutham 
-> **Module:** Coupons & Auto-Applied Offers (Module 1 of OfferForge platform)
+> **Module:** Coupons & Auto-Applied Offers (Module 1 of Fuse platform)
 
 ---
 
 ## 1. Product Vision
 
-OfferForge is a modular offers platform for Indian e-commerce. It sits between "customer sees price" and "customer pays" — showing applicable offers at checkout, validating them, and resolving stacking conflicts.
+Fuse is a modular offers platform for Indian e-commerce. It sits between "customer sees price" and "customer pays" — showing applicable offers at checkout, validating them, and resolving stacking conflicts.
 
 The platform is designed as a modular system where each offer type (coupons, bank offers, brand offers, EMI offers) is an independent plugin. **Module 1** delivers merchant-created coupons and auto-applied offers with combo/conflict resolution.
 
@@ -17,7 +17,7 @@ The platform is designed as a modular system where each offer type (coupons, ban
 
 A drop-in offers layer that lets merchants create coupons and auto-applied discounts, handles all the rule logic and stacking conflicts, and exposes a clean API for checkout integration — without the merchant building anything.
 
-### 1.2 What OfferForge Is NOT
+### 1.2 What Fuse Is NOT
 
 | Not this | Because |
 |---|---|
@@ -30,7 +30,7 @@ A drop-in offers layer that lets merchants create coupons and auto-applied disco
 ### 1.3 Long-Term Platform Vision
 
 ```
-OfferForge Platform
+Fuse Platform
   ├── Module 1: Coupons & Auto-Applied Offers        ← THIS SPEC
   ├── Module 2: Bank Offers (card BIN validation)
   ├── Module 3: Brand Offers (brand-subsidized discounts, e.g., Apple on iPhones)
@@ -93,7 +93,7 @@ Nobody owns the offers layer between "customer sees price" and "customer pays" w
 - Revenue: ₹5L–5Cr/month
 - Wants to create coupons and auto-offers without engineering effort
 - Needs analytics to understand which offers convert
-- Integrates OfferForge API into their checkout flow
+- Integrates Fuse API into their checkout flow
 
 ### 3.2 Secondary: Merchant's Customer (Shopper)
 
@@ -104,7 +104,7 @@ Nobody owns the offers layer between "customer sees price" and "customer pays" w
 
 ### 3.3 Tertiary: Merchant's Developer
 
-- Integrates OfferForge API into the merchant's checkout
+- Integrates Fuse API into the merchant's checkout
 - Needs clear API docs, predictable responses, and webhooks
 - Wants minimal integration effort (a few API calls)
 

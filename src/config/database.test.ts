@@ -21,17 +21,17 @@ describe('database connection', () => {
   it('connects to MongoDB and returns a Db instance', async () => {
     const uri = memServer?.getUri();
     if (!uri) throw new Error('MongoMemoryServer URI not available');
-    const db = await connectDatabase(uri, 'offerforge-test');
+    const db = await connectDatabase(uri, 'fuse-test');
     expect(db).toBeDefined();
-    expect(db.databaseName).toBe('offerforge-test');
+    expect(db.databaseName).toBe('fuse-test');
   }, 30000);
 
   it('getDatabase returns the connected Db instance', async () => {
     const uri = memServer?.getUri();
     if (!uri) throw new Error('MongoMemoryServer URI not available');
-    await connectDatabase(uri, 'offerforge-test');
+    await connectDatabase(uri, 'fuse-test');
     const db = getDatabase();
-    expect(db.databaseName).toBe('offerforge-test');
+    expect(db.databaseName).toBe('fuse-test');
   }, 30000);
 
   it('throws when getDatabase called before connect', () => {

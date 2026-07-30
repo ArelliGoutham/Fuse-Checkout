@@ -1,7 +1,7 @@
 import { MongoClient } from 'mongodb';
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://offerforge:offerforge@localhost:27017/offerforge?authSource=admin';
-const DB_NAME = 'offerforge';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://fuse:fuse@localhost:27017/fuse?authSource=admin';
+const DB_NAME = 'fuse';
 
 async function seed() {
   const client = new MongoClient(MONGO_URI);

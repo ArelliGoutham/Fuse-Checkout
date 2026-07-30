@@ -36,7 +36,7 @@ describe('Golden Path Integration Test', () => {
 
   beforeAll(async () => {
     memServer = await MongoMemoryServer.create();
-    await connectDatabase(memServer.getUri(), 'offerforge_test');
+    await connectDatabase(memServer.getUri(), 'fuse_test');
     db = getDatabase();
   });
 

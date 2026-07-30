@@ -96,4 +96,10 @@ export interface PGAdapter {
    * @returns Verification result
    */
   verifyPayment(transactionId: string): Promise<PGVerification>;
+
+  /**
+   * Returns the name of this PG adapter (e.g., "razorpay", "cashfree").
+   * Used by the smart router for logging and stats.
+   */
+  getName(): string;
 }

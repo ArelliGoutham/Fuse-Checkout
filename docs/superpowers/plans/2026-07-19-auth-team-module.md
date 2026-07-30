@@ -385,7 +385,7 @@ describe('auth routes', () => {
     const client = new MongoClient(uri);
     await client.connect();
     await client.close();
-    await connectDatabase(uri, 'offerforge-test');
+    await connectDatabase(uri, 'fuse-test');
   });
 
   afterAll(async () => {
@@ -806,7 +806,7 @@ describe('invite routes', () => {
     const client = new MongoClient(uri);
     await client.connect();
     await client.close();
-    await connectDatabase(uri, 'offerforge-test');
+    await connectDatabase(uri, 'fuse-test');
   });
 
   afterAll(async () => {
@@ -1312,7 +1312,7 @@ This task updates the dashboard to use the new auth system.
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3010';
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('offerforge_token') : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('fuse_token') : null;
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: { 'Content-Type': 'application/json', Authorization: token ? `Bearer ${token}` : '', ...options.headers },
@@ -1349,7 +1349,7 @@ export async function signup(email: string, password: string, name: string, stor
 export function AuthGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
   useEffect(() => {
-    const token = localStorage.getItem('offerforge_token');
+    const token = localStorage.getItem('fuse_token');
     if (!token) router.push('/login');
   }, [router]);
   return <>{children}</>;

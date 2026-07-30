@@ -3,6 +3,8 @@ import { z } from 'zod';
 export const CheckoutSessionSchema = z.object({
   _id: z.string(),
   merchant_id: z.string(),
+  merchant_order_id: z.string().nullable().default(null),
+  original_session_id: z.string().nullable().default(null),
   cart: z.object({
     amount: z.number().positive(),
     items: z.array(
@@ -46,7 +48,7 @@ export const CheckoutSessionSchema = z.object({
     .default([]),
   payment_method: z.string().nullable(),
   payment_status: z
-    .enum(['pending', 'processing', 'success', 'failed'])
+    .enum(['pending', 'processing', 'success', 'failed', 'expired'])
     .default('pending'),
   pg_transaction_id: z.string().nullable(),
   order_id: z.string().nullable(),
@@ -82,6 +84,7 @@ export const CreateSessionSchema = z.object({
       phone: z.string().optional(),
     })
     .optional(),
+  merchant_order_id: z.string().optional(),
 });
 
 export type CheckoutSession = z.infer<typeof CheckoutSessionSchema>;

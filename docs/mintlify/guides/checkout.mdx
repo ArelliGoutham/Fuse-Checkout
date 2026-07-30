@@ -1,16 +1,16 @@
 ---
 title: Hosted Checkout
-description: How OfferForge's hosted checkout works — sessions, the 3-step flow, EMI options, payment methods, and order creation.
+description: How Fuse's hosted checkout works — sessions, the 3-step flow, EMI options, payment methods, and order creation.
 ---
 
 # Hosted Checkout
 
-OfferForge's hosted checkout lets you launch a full checkout experience with one API call. No checkout frontend to build, no payment gateway integration to maintain.
+Fuse's hosted checkout lets you launch a full checkout experience with one API call. No checkout frontend to build, no payment gateway integration to maintain.
 
 ## How it works
 
 ```
-Your Store                    OfferForge                    Payment Gateway
+Your Store                    Fuse                    Payment Gateway
    |                              |                              |
    |  POST /api/checkout/sessions |                              |
    |----------------------------->|                              |
@@ -32,7 +32,7 @@ Your Store                    OfferForge                    Payment Gateway
 ## Creating a session
 
 ```bash
-curl -X POST https://api.offerforge.io/api/checkout/sessions \
+curl -X POST https://api.fuse.io/api/checkout/sessions \
   -H "x-api-key: of_live_..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -61,7 +61,7 @@ The response includes a `checkout_url` — redirect your customer there.
 
 The customer sees their cart items, subtotal, and any auto-applied offers. They can enter coupon codes to apply additional discounts.
 
-The checkout page calls OfferForge's offer engine to:
+The checkout page calls Fuse's offer engine to:
 - Fetch available auto-offers based on cart contents
 - Validate entered coupon codes against rules
 - Apply stacking policies (max coupons, exclusive offers)
@@ -120,7 +120,7 @@ For no-cost EMI, the merchant subsidizes ₹4,405 — the customer pays ₹15,00
 When the customer confirms payment:
 
 1. The checkout page calls `POST /api/checkout/{session_id}/process-payment`
-2. OfferForge processes the payment via the configured payment gateway adapter
+2. Fuse processes the payment via the configured payment gateway adapter
 3. On success, an **order** is created with payment details
 4. The customer is redirected to your `success` URL with the order ID
 
@@ -133,7 +133,7 @@ When the customer confirms payment:
 After the customer is redirected back to your success URL, verify the order:
 
 ```bash
-curl https://api.offerforge.io/api/orders/order_123 \
+curl https://api.fuse.io/api/orders/order_123 \
   -H "x-api-key: of_live_..."
 ```
 
@@ -183,11 +183,11 @@ Bank rates are managed by the merchant admin via the API:
 
 ```bash
 # List bank rates
-curl https://api.offerforge.io/api/admin/bank-rates \
+curl https://api.fuse.io/api/admin/bank-rates \
   -H "x-api-key: of_live_..."
 
 # Add a bank rate
-curl -X POST https://api.offerforge.io/api/admin/bank-rates \
+curl -X POST https://api.fuse.io/api/admin/bank-rates \
   -H "x-api-key: of_live_..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -226,7 +226,7 @@ EMI campaigns let you offer no-cost or low-cost EMI based on card IIN, card tier
 ### Creating an EMI campaign
 
 ```bash
-curl -X POST https://api.offerforge.io/api/admin/emi-campaigns \
+curl -X POST https://api.fuse.io/api/admin/emi-campaigns \
   -H "Authorization: Bearer eyJhbG..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -249,7 +249,7 @@ curl -X POST https://api.offerforge.io/api/admin/emi-campaigns \
 ### Brand campaign with IMEI requirement
 
 ```bash
-curl -X POST https://api.offerforge.io/api/admin/emi-campaigns \
+curl -X POST https://api.fuse.io/api/admin/emi-campaigns \
   -H "Authorization: Bearer eyJhbG..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -277,11 +277,11 @@ IIN (Issuer Identification Number) ranges map 6-digit card prefixes to banks, ca
 
 ```bash
 # List IIN ranges
-curl https://api.offerforge.io/api/admin/iin-ranges \
+curl https://api.fuse.io/api/admin/iin-ranges \
   -H "Authorization: Bearer eyJhbG..."
 
 # Add an IIN range
-curl -X POST https://api.offerforge.io/api/admin/iin-ranges \
+curl -X POST https://api.fuse.io/api/admin/iin-ranges \
   -H "Authorization: Bearer eyJhbG..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -295,7 +295,7 @@ curl -X POST https://api.offerforge.io/api/admin/iin-ranges \
 ```
 
 <Callout type="info">
-  The first 6 digits of a card number (IIN/BIN) are not PCI-sensitive. OfferForge uses them to identify the issuing bank and card tier for EMI campaign eligibility — without ever touching the full card number.
+  The first 6 digits of a card number (IIN/BIN) are not PCI-sensitive. Fuse uses them to identify the issuing bank and card tier for EMI campaign eligibility — without ever touching the full card number.
 </Callout>
 
 ### Seed script

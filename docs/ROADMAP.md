@@ -1,4 +1,4 @@
-# OfferForge — Product Roadmap & Progress Tracker
+# Fuse — Product Roadmap & Progress Tracker
 
 > **Last updated:** 2026-07-30
 > **Status:** Phase 1 complete, Phase 2 in progress (EMI campaigns done, transaction management next)
@@ -68,14 +68,14 @@ This document is the single source of truth for what's built, what's in progress
 ## Phase 2 — Bank & Brand Offers (🔄 In Progress)
 
 ### Transaction Management & Order Correlation
-- [ ] Order ID generator (`OF-YYMMDD-NNNNNN` format — incremental, human-readable, partitionable, SQL-ready)
-- [ ] `merchant_order_id` in session creation (optional — merchants can use our IDs or their own)
-- [ ] Updated order schema with PG correlation fields (pg_order_id, pg_payment_id, pg_raw_response)
-- [ ] Session update endpoint (`PATCH /api/checkout/sessions/:id` — update cart in pending state)
-- [ ] Session retry endpoint (`POST /api/checkout/sessions/:id/retry` — clone for failed/expired)
-- [ ] Session manual expire endpoint (`POST /api/checkout/sessions/:id/expire`)
-- [ ] Session audit log (every state change logged for audit trail)
-- [ ] Order lookup by `merchant_order_id` (`GET /api/orders?merchant_order_id=X`)
+- [x] Order ID generator (`OF-YYMMDD-NNNNNN` format — incremental, human-readable, partitionable, SQL-ready)
+- [x] `merchant_order_id` in session creation (optional — merchants can use our IDs or their own)
+- [x] Updated order schema with PG correlation fields (pg_order_id, pg_payment_id, pg_raw_response)
+- [x] Session update endpoint (`PATCH /api/checkout/sessions/:id` — update cart in pending state)
+- [x] Session retry endpoint (`POST /api/checkout/sessions/:id/retry` — clone for failed/expired)
+- [x] Session manual expire endpoint (`POST /api/checkout/sessions/:id/expire`)
+- [x] Session audit log (every state change logged for audit trail)
+- [x] Order lookup by `merchant_order_id` (`GET /api/orders?merchant_order_id=X`)
 - [ ] Session expiry cron job (mark sessions past expires_at as expired)
 
 ### Payment Gateway Integration
@@ -85,10 +85,10 @@ This document is the single source of truth for what's built, what's in progress
 - [ ] 3D Secure 2.0 support (RBI mandate for cards > ₹5,000, handled by PG)
 
 ### Transaction Logging & Analytics
-- [ ] Transaction log schema (every payment attempt logged — success, failure, fallback)
+- [x] Transaction log schema (every payment attempt logged — success, failure, fallback)
 - [ ] Transaction log storage on every payment attempt (PG request/response, error codes, latency)
 - [ ] PG stats schema + daily aggregation job (per-merchant, per-PG success rates, latency, volume)
-- [ ] Smart router service (routes payment to highest success-rate PG with fallback chain)
+- [x] Smart router service (routes payment to highest success-rate PG with fallback chain)
 - [ ] Fallback chain (auto-retry on next PG if primary fails)
 - [ ] Transaction list API (`GET /api/transactions` — paginated, filterable by PG/status/date)
 - [ ] Transaction analytics API (`GET /api/transactions/analytics` — success rates, volume, PG breakdown)
@@ -172,13 +172,13 @@ This document is the single source of truth for what's built, what's in progress
 - [ ] MongoDB Atlas (production database)
 - [ ] API deployment (Railway or Render)
 - [ ] Dashboard + Checkout deployment (Vercel)
-- [ ] Mintlify hosted docs (docs.offerforge.io)
+- [ ] Mintlify hosted docs (docs.fuse.io)
 - [ ] CI/CD pipeline (GitHub Actions: test → build → deploy)
 - [ ] Pre-commit hooks (Husky + lint-staged)
 - [ ] Production monitoring (Last9 or similar)
 - [ ] Error tracking (Sentry)
 - [ ] CDN for static assets
-- [ ] Custom domain (offerforge.io)
+- [ ] Custom domain (fuse.io)
 
 ---
 
@@ -192,12 +192,12 @@ This document is the single source of truth for what's built, what's in progress
 | No hardcoded brand name (config.brandName) | 2026-07-18 | Active |
 | No Co-authored-by trailers in commits | 2026-07-18 | Active |
 | Hosted checkout (full-page redirect) as v1 | 2026-07-20 | Active |
-| EMI engine owned by OfferForge (not PG) | 2026-07-20 | Active |
+| EMI engine owned by Fuse (not PG) | 2026-07-20 | Active |
 | IIN database for card tier lookup (no VISA BASS access) | 2026-07-21 | Active |
 | Brand campaigns with cross-merchant velocity + IMEI blocking | 2026-07-21 | Active |
 | Subsidy ledger as revenue model (1-2% of settled brand subsidy) | 2026-07-21 | Active |
 | Order ID format: OF-YYMMDD-NNNNNN (incremental, partitionable, SQL-ready) | 2026-07-30 | Active |
-| merchant_order_id optional (merchants can use OfferForge IDs or their own) | 2026-07-30 | Active |
+| merchant_order_id optional (merchants can use Fuse IDs or their own) | 2026-07-30 | Active |
 | Transaction log on every payment attempt (success, failure, fallback) | 2026-07-30 | Active |
 | Smart router for multi-PG routing (success-rate-based with fallback chain) | 2026-07-30 | Active |
 | PG raw responses stored for audit (7-year retention, RBI mandate) | 2026-07-30 | Active |

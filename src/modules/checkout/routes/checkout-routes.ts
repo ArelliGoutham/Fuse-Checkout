@@ -11,6 +11,7 @@ import { MockPGAdapter } from '../../pg-adapters/mock-adapter';
 import type { Order } from '../schemas/order';
 import type { IINRange } from '../schemas/iin-range';
 import type { EMICampaign } from '../schemas/emi-campaign';
+import type { SessionAuditLog } from '../schemas/session-audit-log';
 
 /**
  * Registers checkout session and payment processing routes for a Fastify instance.
@@ -48,7 +49,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
         const session = await repository.create(parseResult.data, merchantId);
         return reply.code(201).send({
           session_id: session._id,
-          checkout_url: `https://checkout.offerforge.io/${session._id}`,
+          checkout_url: `https://checkout.fuse.io/${session._id}`,
           expires_at: session.expires_at,
         });
       } catch (error) {
@@ -476,17 +477,22 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
             _id: orderId,
             merchant_id: session.merchant_id,
             session_id,
+            merchant_order_id: session.merchant_order_id ?? null,
             cart_amount: session.cart.amount,
             total_discount: session.applied_offers.reduce((sum, offer) => sum + offer.discount_amount, 0),
             final_amount: session.cart.amount,
             customer_info: session.customer_info!,
             applied_offers: session.applied_offers,
             payment_method: parseResult.data.method,
-            pg_transaction_id: paymentResult.transaction_id,
             pg_name: 'MockPGAdapter',
+            pg_order_id: pgOrder.order_id,
+            pg_payment_id: paymentResult.transaction_id,
+            pg_raw_response: paymentResult as unknown as Record<string, unknown>,
+            pg_transaction_id: paymentResult.transaction_id,
             order_status: 'paid' as const,
             emi_details: null,
             created_at: now,
+            updated_at: now,
           };
           await orderRepository.create(order);
 
@@ -516,6 +522,241 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
       } catch (error) {
         return reply.code(500).send({
           error: { code: 'INTERNAL_ERROR', message: 'Failed to process payment' },
+        });
+      }
+    }
+  );
+
+  /**
+   * PATCH /api/checkout/sessions/:id - Update session cart (Merchant API)
+   * Only allowed when session payment_status is 'pending'.
+   * Logs the change to session_audit_logs.
+   */
+  server.patch<{ Params: { id: string } }>(
+    '/api/checkout/sessions/:id',
+    { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const merchantId = request.merchantId;
+      if (!merchantId) {
+        return reply.code(401).send({
+          error: { code: 'AUTH_INVALID', message: 'Missing merchant context' },
+        });
+      }
+
+      const UpdateCartSchema = z.object({
+        cart: z.object({
+          amount: z.number().positive(),
+          items: z.array(
+            z.object({
+              sku_id: z.string(),
+              name: z.string(),
+              price: z.number().positive(),
+              qty: z.number().int().positive(),
+              category: z.string().optional(),
+              brand: z.string().optional(),
+            })
+          ),
+        }),
+      });
+
+      const parseResult = UpdateCartSchema.safeParse(
+        request.body as Record<string, unknown>
+      );
+      if (!parseResult.success) {
+        return reply.code(400).send({
+          error: { code: 'VALIDATION_ERROR', message: parseResult.error.message },
+        });
+      }
+
+      const { id } = request.params as { id: string };
+      const db = server.db!;
+      const repository = new MongoSessionRepository(db);
+
+      try {
+        const session = await repository.findById(id, merchantId);
+        if (!session) {
+          return reply.code(404).send({
+            error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' },
+          });
+        }
+
+        if (session.payment_status !== 'pending') {
+          return reply.code(409).send({
+            error: {
+              code: 'SESSION_NOT_PENDING',
+              message: `Session is in '${session.payment_status}' state, only pending sessions can be updated`,
+            },
+          });
+        }
+
+        const previousState = session.payment_status;
+        const updated = await repository.updateCart(id, merchantId, parseResult.data.cart);
+        if (!updated) {
+          return reply.code(404).send({
+            error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' },
+          });
+        }
+
+        const auditLog: SessionAuditLog = {
+          _id: `audit_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+          session_id: id,
+          merchant_id: merchantId,
+          action: 'cart_updated',
+          previous_state: previousState,
+          new_state: updated.payment_status,
+          changed_by: 'merchant',
+          metadata: { cart: parseResult.data.cart },
+          timestamp: new Date().toISOString(),
+        };
+        await db.collection('session_audit_logs').insertOne(auditLog as any);
+
+        return reply.send(updated);
+      } catch (error) {
+        return reply.code(500).send({
+          error: { code: 'INTERNAL_ERROR', message: 'Failed to update session cart' },
+        });
+      }
+    }
+  );
+
+  /**
+   * POST /api/checkout/sessions/:id/retry - Clone a failed/expired session for retry (Merchant API)
+   * Only allowed when the source session is 'failed' or 'expired'.
+   * Creates a new pending session with original_session_id set.
+   */
+  server.post<{ Params: { id: string } }>(
+    '/api/checkout/sessions/:id/retry',
+    { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const merchantId = request.merchantId;
+      if (!merchantId) {
+        return reply.code(401).send({
+          error: { code: 'AUTH_INVALID', message: 'Missing merchant context' },
+        });
+      }
+
+      const { id } = request.params as { id: string };
+      const db = server.db!;
+      const repository = new MongoSessionRepository(db);
+
+      try {
+        const session = await repository.findById(id, merchantId);
+        if (!session) {
+          return reply.code(404).send({
+            error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' },
+          });
+        }
+
+        const isExpired =
+          session.payment_status === 'expired' ||
+          new Date(session.expires_at).getTime() < Date.now();
+        const isFailed = session.payment_status === 'failed';
+
+        if (!isFailed && !isExpired) {
+          return reply.code(409).send({
+            error: {
+              code: 'SESSION_NOT_RETRYABLE',
+              message:
+                'Only failed or expired sessions can be retried',
+            },
+          });
+        }
+
+        const previousState = session.payment_status;
+        const newSession = await repository.clone(session);
+
+        const auditLog: SessionAuditLog = {
+          _id: `audit_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+          session_id: newSession._id,
+          merchant_id: merchantId,
+          action: 'retried',
+          previous_state: previousState,
+          new_state: newSession.payment_status,
+          changed_by: 'merchant',
+          metadata: { original_session_id: id },
+          timestamp: new Date().toISOString(),
+        };
+        await db.collection('session_audit_logs').insertOne(auditLog as any);
+
+        return reply.code(201).send({
+          session_id: newSession._id,
+          checkout_url: `https://checkout.fuse.io/${newSession._id}`,
+          original_session_id: id,
+          expires_at: newSession.expires_at,
+        });
+      } catch (error) {
+        return reply.code(500).send({
+          error: { code: 'INTERNAL_ERROR', message: 'Failed to retry session' },
+        });
+      }
+    }
+  );
+
+  /**
+   * POST /api/checkout/sessions/:id/expire - Manually expire a session (Merchant API)
+   * Only allowed when session payment_status is 'pending'.
+   */
+  server.post<{ Params: { id: string } }>(
+    '/api/checkout/sessions/:id/expire',
+    { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const merchantId = request.merchantId;
+      if (!merchantId) {
+        return reply.code(401).send({
+          error: { code: 'AUTH_INVALID', message: 'Missing merchant context' },
+        });
+      }
+
+      const { id } = request.params as { id: string };
+      const db = server.db!;
+      const repository = new MongoSessionRepository(db);
+
+      try {
+        const session = await repository.findById(id, merchantId);
+        if (!session) {
+          return reply.code(404).send({
+            error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' },
+          });
+        }
+
+        if (session.payment_status !== 'pending') {
+          return reply.code(409).send({
+            error: {
+              code: 'SESSION_NOT_PENDING',
+              message: `Session is in '${session.payment_status}' state, only pending sessions can be expired`,
+            },
+          });
+        }
+
+        const previousState = session.payment_status;
+        const updated = await repository.updatePaymentStatusById(
+          id,
+          merchantId,
+          'expired'
+        );
+        if (!updated) {
+          return reply.code(404).send({
+            error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' },
+          });
+        }
+
+        const auditLog: SessionAuditLog = {
+          _id: `audit_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+          session_id: id,
+          merchant_id: merchantId,
+          action: 'expired',
+          previous_state: previousState,
+          new_state: 'expired',
+          changed_by: 'merchant',
+          metadata: {},
+          timestamp: new Date().toISOString(),
+        };
+        await db.collection('session_audit_logs').insertOne(auditLog as any);
+
+        return reply.send({ session_id: id, payment_status: 'expired' });
+      } catch (error) {
+        return reply.code(500).send({
+          error: { code: 'INTERNAL_ERROR', message: 'Failed to expire session' },
         });
       }
     }

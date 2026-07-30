@@ -429,7 +429,7 @@ describe('MongoSessionRepository', () => {
     memServer = await MongoMemoryServer.create();
     client = new MongoClient(memServer.getUri());
     await client.connect();
-    db = client.db('offerforge-test');
+    db = client.db('fuse-test');
     repo = new MongoSessionRepository(db);
   });
 
@@ -869,7 +869,7 @@ describe('checkout routes', () => {
     const client = new MongoClient(uri);
     await client.connect();
     await client.close();
-    await connectDatabase(uri, 'offerforge-test');
+    await connectDatabase(uri, 'fuse-test');
   });
 
   afterAll(async () => {
@@ -946,7 +946,7 @@ import { MongoSessionRepository } from '../repositories/mongo-session-repository
 import { identifyBankFromBIN } from '../services/bin-lookup';
 import { calculateEMI } from '../services/emi-engine';
 
-const SESSION_BASE = 'https://checkout.offerforge.io';
+const SESSION_BASE = 'https://checkout.fuse.io';
 const SESSION_EXPIRY_MINUTES = 30;
 
 export function registerCheckoutRoutes(server: FastifyInstance): void {
@@ -1291,8 +1291,8 @@ const API_BASE = 'http://localhost:3010';
 
 ```bash
 # Step 9: Start checkout page on port 8082
-cd /Users/arelligoutham/Documents/OfferForge/website/checkout
-python3 -m http.server 8082 > /tmp/offerforge-checkout.log 2>&1 &
+cd /Users/arelligoutham/Documents/Fuse/website/checkout
+python3 -m http.server 8082 > /tmp/fuse-checkout.log 2>&1 &
 CHECKOUT_PID=$!
 ```
 

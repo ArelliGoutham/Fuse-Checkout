@@ -1,4 +1,4 @@
-/** Base class for all OfferForge typed errors. */
+/** Base class for all Fuse typed errors. */
 export class AppError extends Error {
   constructor(
     message: string,

@@ -21,8 +21,8 @@ import { errorHandler } from './middleware/error-handler';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
 async function start() {
-  const mongoUri = process.env.MONGO_URI || 'mongodb://offerforge:offerforge@localhost:27017/offerforge?authSource=admin';
-  const mongoDbName = process.env.MONGO_DB_NAME || 'offerforge';
+  const mongoUri = process.env.MONGO_URI || 'mongodb://fuse:fuse@localhost:27017/fuse?authSource=admin';
+  const mongoDbName = process.env.MONGO_DB_NAME || 'fuse';
   const port = parseInt(process.env.PORT || '3000', 10);
 
   try {

@@ -23,7 +23,7 @@ OF-260730-000123
 │  │      │
 │  │      └── 6-digit daily sequence (resets each day, zero-padded)
 │  └── YYMMDD date (partition + sort + human readable)
-└── Platform prefix (configurable, "OF" = OfferForge)
+└── Platform prefix (configurable, "OF" = Fuse)
 ```
 
 **Properties:**
@@ -143,7 +143,7 @@ Error: 409 if session is not pending
 ```json
 Response: 201 {
   "session_id": "sess_new123",
-  "checkout_url": "https://checkout.offerforge.io/sess_new123",
+  "checkout_url": "https://checkout.fuse.io/sess_new123",
   "original_session_id": "sess_abc"
 }
 ```
@@ -175,7 +175,7 @@ Every state change is logged:
 
 ---
 
-## 3. Order Correlation (Merchant ↔ OfferForge ↔ PG)
+## 3. Order Correlation (Merchant ↔ Fuse ↔ PG)
 
 ### Updated session creation
 
@@ -189,13 +189,13 @@ export const CreateSessionSchema = z.object({
 });
 ```
 
-If merchant passes `merchant_order_id`, it flows through to the order. If not, OfferForge's generated order ID (`OF-YYMMDD-NNNNNN`) is the only order ID.
+If merchant passes `merchant_order_id`, it flows through to the order. If not, Fuse's generated order ID (`OF-YYMMDD-NNNNNN`) is the only order ID.
 
 ### Updated order schema
 
 ```typescript
 export const OrderSchema = z.object({
-  _id: z.string(),                        // OF-260730-000123 (OfferForge generated)
+  _id: z.string(),                        // OF-260730-000123 (Fuse generated)
   merchant_id: z.string(),
   session_id: z.string(),
   merchant_order_id: z.string().nullable(), // ← NEW: merchant's own ID (null if not provided)
@@ -234,8 +234,8 @@ GET /api/orders?merchant_order_id=ORD-12345
 | Field | Who sets it | When | Example |
 |---|---|---|---|
 | `merchant_order_id` | Merchant | At session creation | `ORD-12345` |
-| `_id` (order ID) | OfferForge | At order creation | `OF-260730-000123` |
-| `session_id` | OfferForge | At session creation | `sess_abc123` |
+| `_id` (order ID) | Fuse | At order creation | `OF-260730-000123` |
+| `session_id` | Fuse | At session creation | `sess_abc123` |
 | `pg_order_id` | PG | At PG order creation | `order_NK8x2` |
 | `pg_payment_id` | PG | At payment capture | `pay_NK8x3` |
 
@@ -249,7 +249,7 @@ Every payment attempt (including failures and fallbacks) is logged:
 // src/modules/checkout/schemas/transaction-log.ts
 export const TransactionLogSchema = z.object({
   _id: z.string(),
-  order_id: z.string(),              // OfferForge order ID
+  order_id: z.string(),              // Fuse order ID
   session_id: z.string(),
   merchant_id: string,
   merchant_order_id: z.string().nullable(),

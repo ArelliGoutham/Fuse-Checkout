@@ -12,7 +12,7 @@ Launch your first checkout session in under 5 minutes.
 Sign up via the dashboard or API to create your merchant account:
 
 ```bash
-curl -X POST https://api.offerforge.io/api/auth/signup \
+curl -X POST https://api.fuse.io/api/auth/signup \
   -H "Content-Type: application/json" \
   -d '{
     "email": "owner@mystore.in",
@@ -38,7 +38,7 @@ This returns a JWT token and creates your merchant with the `owner` role:
 For programmatic access (checkout integration), create an API key:
 
 ```bash
-curl -X POST https://api.offerforge.io/api/api-keys \
+curl -X POST https://api.fuse.io/api/api-keys \
   -H "Authorization: Bearer eyJhbG..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -62,7 +62,7 @@ Save the returned `key` — it's shown only once:
 Create a coupon that customers can apply at checkout:
 
 ```bash
-curl -X POST https://api.offerforge.io/api/offers \
+curl -X POST https://api.fuse.io/api/offers \
   -H "x-api-key: of_live_a1b2c3d4e5f6..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -86,7 +86,7 @@ curl -X POST https://api.offerforge.io/api/offers \
 When a customer is ready to pay, create a checkout session and redirect them to the hosted checkout page:
 
 ```bash
-curl -X POST https://api.offerforge.io/api/checkout/sessions \
+curl -X POST https://api.fuse.io/api/checkout/sessions \
   -H "x-api-key: of_live_a1b2c3d4e5f6..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -108,7 +108,7 @@ Response:
 ```json
 {
   "session_id": "sess_abc123...",
-  "checkout_url": "https://checkout.offerforge.io/sess_abc123...",
+  "checkout_url": "https://checkout.fuse.io/sess_abc123...",
   "expires_at": "2026-07-21T09:00:00.000Z"
 }
 ```
@@ -125,7 +125,7 @@ Redirect your customer to `checkout_url`. The hosted checkout page handles every
 6. **Redirect** — customer lands back on your `success` URL with order details
 
 <Note>
-  The checkout page is hosted by OfferForge — no frontend code needed. For brand customization, contact us about white-label options.
+  The checkout page is hosted by Fuse — no frontend code needed. For brand customization, contact us about white-label options.
 </Note>
 
 ## Step 6: Verify the order
@@ -133,7 +133,7 @@ Redirect your customer to `checkout_url`. The hosted checkout page handles every
 After redirect, verify the order using the order ID returned in the success URL:
 
 ```bash
-curl https://api.offerforge.io/api/orders/order_123 \
+curl https://api.fuse.io/api/orders/order_123 \
   -H "x-api-key: of_live_a1b2c3d4e5f6..."
 ```
 

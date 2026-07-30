@@ -16,7 +16,7 @@ export async function startTestDatabase(): Promise<Db> {
   const uri = mongoServer.getUri();
   mongoClient = new MongoClient(uri);
   await mongoClient.connect();
-  db = mongoClient.db('offerforge-test');
+  db = mongoClient.db('fuse-test');
   return db;
 }
 
