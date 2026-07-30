@@ -39,6 +39,8 @@ export class MongoSessionRepository {
     const session: CheckoutSession = {
       _id: sessionId,
       merchant_id: merchantId,
+      merchant_order_id: input.merchant_order_id ?? null,
+      original_session_id: null,
       cart: input.cart,
       customer: input.customer ?? null,
       customer_info: null,

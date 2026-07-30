@@ -476,17 +476,22 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
             _id: orderId,
             merchant_id: session.merchant_id,
             session_id,
+            merchant_order_id: session.merchant_order_id ?? null,
             cart_amount: session.cart.amount,
             total_discount: session.applied_offers.reduce((sum, offer) => sum + offer.discount_amount, 0),
             final_amount: session.cart.amount,
             customer_info: session.customer_info!,
             applied_offers: session.applied_offers,
             payment_method: parseResult.data.method,
-            pg_transaction_id: paymentResult.transaction_id,
             pg_name: 'MockPGAdapter',
+            pg_order_id: pgOrder.order_id,
+            pg_payment_id: paymentResult.transaction_id,
+            pg_raw_response: paymentResult as unknown as Record<string, unknown>,
+            pg_transaction_id: paymentResult.transaction_id,
             order_status: 'paid' as const,
             emi_details: null,
             created_at: now,
+            updated_at: now,
           };
           await orderRepository.create(order);
 

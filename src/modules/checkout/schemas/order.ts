@@ -4,6 +4,7 @@ export const OrderSchema = z.object({
   _id: z.string(),
   merchant_id: z.string(),
   session_id: z.string(),
+  merchant_order_id: z.string().nullable().default(null),
   cart_amount: z.number(),
   total_discount: z.number(),
   final_amount: z.number(),
@@ -26,8 +27,11 @@ export const OrderSchema = z.object({
     })
   ),
   payment_method: z.string(),
+  pg_name: z.string().default('mock'),
+  pg_order_id: z.string().nullable().default(null),
+  pg_payment_id: z.string().nullable().default(null),
+  pg_raw_response: z.record(z.string(), z.unknown()).nullable().default(null),
   pg_transaction_id: z.string().nullable(),
-  pg_name: z.string(),
   order_status: z.enum(['created', 'paid', 'failed', 'refunded']),
   emi_details: z
     .object({
@@ -39,6 +43,7 @@ export const OrderSchema = z.object({
     })
     .nullable(),
   created_at: z.string().datetime(),
+  updated_at: z.string().datetime().optional(),
 });
 
 export type Order = z.infer<typeof OrderSchema>;
