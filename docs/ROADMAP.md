@@ -120,7 +120,7 @@ This document is the single source of truth for what's built, what's in progress
 - [x] EMI campaign management UI (create/edit campaigns in dashboard)
 - [x] IIN range management UI (add/edit IIN ranges in dashboard)
 - [x] Subsidy ledger view ("Samsung owes you ₹45,000 across 9 orders")
-- [ ] Admin: PG health monitor (all merchants, anomaly alerts)
+- [x] Admin: PG health monitor (all merchants, anomaly alerts)
 
 ### Checkout Enhancements
 - [ ] Embeddable checkout widget (slide-over/inline instead of full-page redirect)
