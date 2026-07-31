@@ -15,8 +15,11 @@ import { registerPGCredentialsRoutes } from './modules/checkout/routes/pg-creden
 import { registerPGWebhook } from './modules/checkout/routes/razorpay-webhook';
 import { registerTransactionRoutes } from './modules/checkout/routes/transaction-routes';
 import { startSessionExpiryCron } from './modules/checkout/services/session-expiry-cron';
+import { startAnomalyDetectionCron } from './modules/checkout/services/anomaly-detection-engine';
+import { startAlertCleanupCron } from './modules/checkout/services/alert-cleanup-cron';
 import { registerSettlementRoutes } from './modules/checkout/routes/settlement-routes';
 import { registerRefundRoutes } from './modules/checkout/routes/refund-routes';
+import { registerAlertRoutes } from './modules/checkout/routes/alert-routes';
 import { OEMAdapterRegistry } from './modules/oem-adapters/types';
 import { MockOEMAdapter } from './modules/oem-adapters/mock-oem-adapter';
 import { OEMService } from './modules/oem-adapters/oem-service';
@@ -103,6 +106,7 @@ async function start() {
     registerTransactionRoutes(server);
     registerSettlementRoutes(server);
     registerRefundRoutes(server);
+    registerAlertRoutes(server);
 
     // OEM adapter registry (composition root — inject dependencies)
     // New OEMs are registered here. No changes to consuming code (Open/Closed).
@@ -119,6 +123,12 @@ async function start() {
     const stopSessionCron = startSessionExpiryCron(db);
     console.log('✓ Session expiry cron started (5 min interval)');
 
+    const stopAnomalyCron = startAnomalyDetectionCron(db);
+    console.log('✓ Anomaly detection cron started (5 min interval)');
+
+    const stopAlertCleanup = startAlertCleanupCron(db);
+    console.log('✓ Alert cleanup cron started (daily)');
+
     console.log('✓ All routes registered');
 
     // Start server
@@ -130,7 +140,9 @@ async function start() {
       console.log(`\n${signal} signal received. Shutting down gracefully...`);
       try {
         stopSessionCron();
-        console.log('✓ Session expiry cron stopped');
+        stopAnomalyCron();
+        stopAlertCleanup();
+        console.log('✓ All cron jobs stopped');
         await server.close();
         console.log('✓ Server closed');
         await closeDatabase();

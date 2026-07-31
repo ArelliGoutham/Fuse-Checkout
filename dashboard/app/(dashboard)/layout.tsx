@@ -12,6 +12,7 @@ const NAV_GROUPS = [
       { href: '/', label: 'Dashboard', icon: 'fa-gauge-high' },
       { href: '/analytics', label: 'Analytics', icon: 'fa-chart-line' },
       { href: '/transactions', label: 'Transactions', icon: 'fa-receipt' },
+      { href: '/pg-health', label: 'PG Health', icon: 'fa-heart-pulse' },
       { href: '/orders', label: 'Orders', icon: 'fa-shopping-bag' },
       { href: '/sessions', label: 'Sessions', icon: 'fa-clock' },
     ],
