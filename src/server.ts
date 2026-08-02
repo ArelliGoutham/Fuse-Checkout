@@ -20,6 +20,7 @@ import { startAlertCleanupCron } from './modules/checkout/services/alert-cleanup
 import { registerSettlementRoutes } from './modules/checkout/routes/settlement-routes';
 import { registerRefundRoutes } from './modules/checkout/routes/refund-routes';
 import { registerAlertRoutes } from './modules/checkout/routes/alert-routes';
+import { registerDashboardRoutes } from './modules/dashboard/routes/dashboard-routes';
 import { OEMAdapterRegistry } from './modules/oem-adapters/types';
 import { MockOEMAdapter } from './modules/oem-adapters/mock-oem-adapter';
 import { OEMService } from './modules/oem-adapters/oem-service';
@@ -107,6 +108,7 @@ async function start() {
     registerSettlementRoutes(server);
     registerRefundRoutes(server);
     registerAlertRoutes(server);
+    registerDashboardRoutes(server);
 
     // OEM adapter registry (composition root — inject dependencies)
     // New OEMs are registered here. No changes to consuming code (Open/Closed).
