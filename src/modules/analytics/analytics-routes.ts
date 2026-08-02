@@ -1,4 +1,15 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { z } from 'zod';
+
+const PeriodSchema = z.enum(['7d', '30d', '90d']).optional();
+
+function redemptionPeriodFilter(period: z.infer<typeof PeriodSchema>): Record<string, unknown> {
+  if (!period) return {};
+
+  const to = new Date();
+  const from = new Date(to.getTime() - Number.parseInt(period, 10) * 24 * 60 * 60 * 1000);
+  return { applied_at: { $gte: from.toISOString(), $lte: to.toISOString() } };
+}
 
 /**
  * Registers analytics routes for a Fastify instance.
@@ -24,11 +35,16 @@ export function registerAnalyticsRoutes(server: FastifyInstance): void {
         return reply.code(500).send({ error: { code: 'INTERNAL_ERROR', message: 'Database not available' } });
       }
 
+      const parsedPeriod = PeriodSchema.safeParse((request.query as { period?: string }).period);
+      if (!parsedPeriod.success) {
+        return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: 'period must be 7d, 30d, or 90d' } });
+      }
+
       const redemptions = db.collection('redemptions');
 
       const result = await redemptions
         .aggregate([
-          { $match: { merchant_id: merchantId } },
+          { $match: { merchant_id: merchantId, ...redemptionPeriodFilter(parsedPeriod.data) } },
           {
             $group: {
               _id: null,
@@ -90,11 +106,16 @@ export function registerAnalyticsRoutes(server: FastifyInstance): void {
         return reply.code(500).send({ error: { code: 'INTERNAL_ERROR', message: 'Database not available' } });
       }
 
+      const parsedPeriod = PeriodSchema.safeParse((request.query as { period?: string }).period);
+      if (!parsedPeriod.success) {
+        return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: 'period must be 7d, 30d, or 90d' } });
+      }
+
       const redemptions = db.collection('redemptions');
 
       const result = await redemptions
         .aggregate([
-          { $match: { merchant_id: merchantId } },
+          { $match: { merchant_id: merchantId, ...redemptionPeriodFilter(parsedPeriod.data) } },
           {
             $group: {
               _id: '$offer_id',

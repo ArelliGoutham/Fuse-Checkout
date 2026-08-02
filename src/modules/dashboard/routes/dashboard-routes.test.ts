@@ -193,4 +193,42 @@ describe('Dashboard overview routes', () => {
     }));
     expect(body.recent_activity.map((activity: { id: string }) => activity.id)).not.toContain('live-refund');
   });
+
+  it('returns a daily GMV series and successful payment mix for the dashboard', async () => {
+    await testCollection('orders').insertMany([
+      { _id: 'daily-order-one', merchant_id: 'merchant-one', final_amount: 300, order_status: 'paid', created_at: isoDaysAgo(1), paid_at: isoDaysAgo(1) },
+      { _id: 'daily-order-two', merchant_id: 'merchant-one', final_amount: 700, order_status: 'paid', created_at: isoDaysAgo(1), paid_at: isoDaysAgo(1) },
+      { _id: 'daily-order-three', merchant_id: 'merchant-one', final_amount: 200, order_status: 'paid', created_at: isoDaysAgo(2), paid_at: isoDaysAgo(2) },
+      { _id: 'other-merchant-daily-order', merchant_id: 'merchant-two', final_amount: 99999, order_status: 'paid', created_at: isoDaysAgo(1), paid_at: isoDaysAgo(1) },
+    ]);
+
+    await testCollection('transaction_logs').insertMany([
+      { _id: 'daily-upi-success', merchant_id: 'merchant-one', pg_name: 'razorpay', amount: 300, payment_method: 'upi', payment_status: 'success', initiated_at: isoDaysAgo(1) },
+      { _id: 'daily-card-success', merchant_id: 'merchant-one', pg_name: 'cashfree', amount: 700, payment_method: 'card', payment_status: 'success', initiated_at: isoDaysAgo(1) },
+      { _id: 'daily-card-failure', merchant_id: 'merchant-one', pg_name: 'cashfree', amount: 200, payment_method: 'card', payment_status: 'failed', initiated_at: isoDaysAgo(1) },
+      { _id: 'daily-refund', merchant_id: 'merchant-one', pg_name: 'razorpay', amount: 300, payment_method: 'refund', payment_status: 'success', initiated_at: isoDaysAgo(1) },
+    ]);
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/dashboard/overview?period=7d',
+      headers: { 'x-api-key': 'merchant-one-key' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
+    expect(body.daily_gmv).toContainEqual(expect.objectContaining({
+      date: isoDaysAgo(1).slice(0, 10),
+      gross_payment_volume: 1000,
+      paid_orders: 2,
+    }));
+    expect(body.payment_methods).toEqual(expect.arrayContaining([
+      expect.objectContaining({ payment_method: 'upi', successful_payments: 1, payment_volume: 300 }),
+      expect.objectContaining({ payment_method: 'card', successful_payments: 1, payment_volume: 700 }),
+    ]));
+    expect(body.payment_gateways).toEqual(expect.arrayContaining([
+      expect.objectContaining({ pg_name: 'razorpay', successful_payments: 1, payment_volume: 300 }),
+      expect.objectContaining({ pg_name: 'cashfree', successful_payments: 1, payment_volume: 700 }),
+    ]));
+  });
 });

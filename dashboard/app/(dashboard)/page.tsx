@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 
 type Period = '7d' | '30d' | '90d';
@@ -11,46 +11,30 @@ interface DashboardOverview {
     gross_payment_volume: number;
     paid_orders: number;
     average_order_value: number;
-    checkout_sessions: number;
-    session_to_paid_conversion_rate: number;
     payment_attempt_success_rate: number;
   };
-  funnel: {
-    sessions_created: number;
-    payment_attempts: number;
-    paid: number;
-    failed: number;
-    expired: number;
-  };
-  gateways: Array<{
-    pg_name: string;
-    status: 'healthy' | 'degraded' | 'critical' | 'no_data';
-    attempts_1h: number;
-    success_rate_1h: number;
-    avg_latency_ms_1h: number;
-  }>;
   attention: {
-    active_alerts: number;
     critical_alerts: number;
     failed_payments: number;
     expired_sessions: number;
-    pending_subsidy_entries: number;
     imei_actions_required: number;
   };
-  offers: {
-    active_offers: number;
-    redemptions: number;
-    paid_redemptions: number;
-    conversion_rate: number;
-    discounts_granted: number;
-  };
-  finance: {
-    pending_subsidy_amount: number;
-    pending_subsidy_entries: number;
-    brands_with_open_subsidy: number;
-  };
+  daily_gmv: Array<{
+    date: string;
+    gross_payment_volume: number;
+    paid_orders: number;
+  }>;
+  payment_methods: Array<{
+    payment_method: string;
+    successful_payments: number;
+    payment_volume: number;
+  }>;
+  payment_gateways: Array<{
+    pg_name: string;
+    successful_payments: number;
+    payment_volume: number;
+  }>;
   recent_activity: Array<{
-    type: 'payment' | 'order' | 'alert';
     id: string;
     status: string;
     amount?: number;
@@ -70,10 +54,41 @@ function formatINR(amount: number): string {
 }
 
 function statusClass(status: string): string {
-  if (status === 'healthy' || status === 'success' || status === 'paid') return 'bg-success/10 text-success';
-  if (status === 'critical' || status === 'failed') return 'bg-danger/10 text-danger';
-  if (status === 'degraded' || status === 'expired') return 'bg-accent/10 text-accent';
+  if (status === 'success' || status === 'paid') return 'bg-success/10 text-success';
+  if (status === 'failed') return 'bg-danger/10 text-danger';
   return 'bg-info/10 text-info';
+}
+
+function dayLabel(date: string): string {
+  return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`));
+}
+
+function changeLabel(current: number, previous: number): { label: string; tone: string } {
+  if (previous === 0 && current === 0) return { label: 'No change from yesterday', tone: 'text-fg-muted' };
+  if (previous === 0) return { label: 'First payment activity today', tone: 'text-success' };
+  const change = Math.round(((current - previous) / previous) * 100);
+  return {
+    label: `${change >= 0 ? '+' : ''}${change}% vs yesterday`,
+    tone: change >= 0 ? 'text-success' : 'text-danger',
+  };
+}
+
+function MetricCard({ label, value, note, icon, tone = 'accent' }: { label: string; value: string; note: string; icon: string; tone?: 'accent' | 'success' | 'info' | 'danger' }) {
+  const tones = {
+    accent: 'bg-accent/10 text-accent',
+    success: 'bg-success/10 text-success',
+    info: 'bg-info/10 text-info',
+    danger: 'bg-danger/10 text-danger',
+  };
+
+  return (
+    <div className="bg-surface rounded-2xl border border-border p-5">
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-5 ${tones[tone]}`}><i className={`fa-solid ${icon}`}></i></div>
+      <p className="text-fg-muted text-xs font-semibold uppercase tracking-wide mb-1">{label}</p>
+      <p className="text-2xl font-bold text-fg tracking-tight">{value}</p>
+      <p className="text-xs text-fg-muted mt-2">{note}</p>
+    </div>
+  );
 }
 
 export default function DashboardPage() {
@@ -91,8 +106,8 @@ export default function DashboardPage() {
       .then((data) => {
         if (active) setOverview(data as DashboardOverview);
       })
-      .catch((err) => {
-        if (active) setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+      .catch((requestError) => {
+        if (active) setError(requestError instanceof Error ? requestError.message : 'Failed to load dashboard data');
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -115,14 +130,26 @@ export default function DashboardPage() {
     );
   }
 
-  const metrics = [
-    { label: 'Gross payment volume', value: formatINR(overview.performance.gross_payment_volume), icon: 'fa-indian-rupee-sign', color: 'text-accent', bg: 'bg-accent/10' },
-    { label: 'Paid orders', value: overview.performance.paid_orders.toLocaleString(), icon: 'fa-bag-shopping', color: 'text-success', bg: 'bg-success/10' },
-    { label: 'Checkout conversion', value: `${overview.performance.session_to_paid_conversion_rate}%`, icon: 'fa-arrow-trend-up', color: 'text-info', bg: 'bg-info/10' },
-    { label: 'Payment success rate', value: `${overview.performance.payment_attempt_success_rate}%`, icon: 'fa-circle-check', color: 'text-success', bg: 'bg-success/10' },
-    { label: 'Average order value', value: formatINR(overview.performance.average_order_value), icon: 'fa-chart-simple', color: 'text-accent', bg: 'bg-accent/10' },
-  ];
-
+  const dailyGMV = overview.daily_gmv;
+  const today = dailyGMV[dailyGMV.length - 1] || { date: new Date().toISOString().slice(0, 10), gross_payment_volume: 0, paid_orders: 0 };
+  const yesterday = dailyGMV[dailyGMV.length - 2] || { gross_payment_volume: 0, paid_orders: 0 };
+  const gmvChange = changeLabel(today.gross_payment_volume, yesterday.gross_payment_volume);
+  const orderChange = changeLabel(today.paid_orders, yesterday.paid_orders);
+  const maxGMV = Math.max(...dailyGMV.map((day) => day.gross_payment_volume), 1);
+  const activeGMVDays = dailyGMV.filter((day) => day.gross_payment_volume > 0);
+  const chartWidth = 880;
+  const chartHeight = 190;
+  const chartBaseline = 164;
+  const chartPoints = dailyGMV.map((day, index) => ({
+    ...day,
+    x: 28 + (index / Math.max(dailyGMV.length - 1, 1)) * (chartWidth - 56),
+    y: chartBaseline - (day.gross_payment_volume / maxGMV) * 124,
+  }));
+  const linePath = chartPoints.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+  const areaPath = chartPoints.length > 0
+    ? `${linePath} L ${chartPoints[chartPoints.length - 1].x} ${chartBaseline} L ${chartPoints[0].x} ${chartBaseline} Z`
+    : '';
+  const paymentVolume = overview.payment_methods.reduce((total, method) => total + method.payment_volume, 0);
   const attentionItems = [
     { label: 'Critical gateway alerts', value: overview.attention.critical_alerts, href: '/pg-health', icon: 'fa-triangle-exclamation', tone: 'text-danger' },
     { label: 'Failed payment attempts', value: overview.attention.failed_payments, href: '/transactions', icon: 'fa-circle-xmark', tone: 'text-danger' },
@@ -131,154 +158,105 @@ export default function DashboardPage() {
   ].filter((item) => item.value > 0);
 
   return (
-    <div className="space-y-8 max-w-[1500px]">
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+    <div className="space-y-7 max-w-[1500px]">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-xs font-semibold text-accent uppercase tracking-wider mb-2">Business performance</p>
-          <h2 className="text-2xl font-bold text-fg">Your checkout, at a glance</h2>
-          <p className="text-fg-muted text-sm mt-1">Revenue outcomes first. Operational exceptions when they need attention.</p>
+          <p className="text-xs font-semibold text-accent uppercase tracking-wider mb-2">Checkout command center</p>
+          <h2 className="text-2xl font-bold text-fg">Today&apos;s payment pulse</h2>
+          <p className="text-fg-muted text-sm mt-1">Daily GMV, payment mix, and exceptions that need action.</p>
         </div>
         <div className="flex items-center gap-3">
-          <select
-            value={period}
-            onChange={(event) => setPeriod(event.target.value as Period)}
-            className="bg-surface border border-border rounded-lg px-3 py-2 text-sm text-fg outline-none focus:border-accent"
-            aria-label="Performance period"
-          >
+          <select value={period} onChange={(event) => setPeriod(event.target.value as Period)} className="bg-surface border border-border rounded-lg px-3 py-2 text-sm text-fg outline-none focus:border-accent" aria-label="Dashboard period">
             {PERIODS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
-          <Link href="/orders" className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-bg font-semibold px-4 py-2 rounded-lg transition text-sm">
-            <i className="fa-solid fa-link text-xs"></i>
-            Create payment link
-          </Link>
+          <Link href="/analytics" className="flex items-center gap-2 bg-surface border border-border hover:bg-surface-2 text-fg font-semibold px-4 py-2 rounded-lg transition text-sm"><i className="fa-solid fa-chart-line text-xs"></i>Explore analytics</Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-        {metrics.map((metric) => (
-          <div key={metric.label} className="bg-surface rounded-2xl border border-border p-5">
-            <div className={`w-10 h-10 ${metric.bg} rounded-lg flex items-center justify-center mb-4`}>
-              <i className={`fa-solid ${metric.icon} ${metric.color}`}></i>
-            </div>
-            <p className="text-fg-muted text-xs mb-1">{metric.label}</p>
-            <p className="text-2xl font-bold text-fg tracking-tight">{metric.value}</p>
-          </div>
-        ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <MetricCard label="Today&apos;s GMV" value={formatINR(today.gross_payment_volume)} note={gmvChange.label} icon="fa-indian-rupee-sign" tone="accent" />
+        <MetricCard label="Paid orders today" value={today.paid_orders.toLocaleString()} note={orderChange.label} icon="fa-bag-shopping" tone="success" />
+        <MetricCard label="Payment success" value={`${overview.performance.payment_attempt_success_rate}%`} note={`Across the selected ${period.replace('d', '-day')} period`} icon="fa-circle-check" tone="success" />
+        <MetricCard label="Average order value" value={formatINR(overview.performance.average_order_value)} note={`${overview.performance.paid_orders.toLocaleString()} paid orders in period`} icon="fa-chart-simple" tone="info" />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <section className="xl:col-span-2 bg-surface rounded-2xl border border-border p-6">
-          <div className="flex items-center justify-between mb-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.55fr_0.85fr] gap-6">
+        <section className="bg-surface rounded-2xl border border-border p-6 overflow-hidden">
+          <div className="flex items-start justify-between gap-4 mb-7">
             <div>
-              <h3 className="text-lg font-bold text-fg">Checkout funnel</h3>
-              <p className="text-sm text-fg-muted mt-1">Where customer sessions progress or fall away.</p>
+              <h3 className="text-lg font-bold text-fg">Daily GMV</h3>
+              <p className="text-sm text-fg-muted mt-1">Paid order value settled through your checkout.</p>
             </div>
-            <Link href="/sessions" className="text-accent hover:text-accent-hover text-sm font-semibold">View sessions <i className="fa-solid fa-arrow-right text-xs ml-1"></i></Link>
+            <div className="text-right shrink-0"><p className="text-xl font-bold text-fg">{formatINR(overview.performance.gross_payment_volume)}</p><p className="text-xs text-fg-muted mt-1">selected period</p></div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 divide-x divide-border">
-            {[
-              { label: 'Sessions', value: overview.funnel.sessions_created, tone: 'text-fg' },
-              { label: 'Attempts', value: overview.funnel.payment_attempts, tone: 'text-info' },
-              { label: 'Paid', value: overview.funnel.paid, tone: 'text-success' },
-              { label: 'Failed', value: overview.funnel.failed, tone: overview.funnel.failed > 0 ? 'text-danger' : 'text-fg' },
-              { label: 'Expired', value: overview.funnel.expired, tone: overview.funnel.expired > 0 ? 'text-accent' : 'text-fg' },
-            ].map((stage) => (
-              <div key={stage.label} className="px-4 py-2 first:pl-0 max-md:odd:border-b max-md:py-4">
-                <p className="text-xs text-fg-muted">{stage.label}</p>
-                <p className={`text-2xl font-bold mt-1 ${stage.tone}`}>{stage.value.toLocaleString()}</p>
-              </div>
-            ))}
-          </div>
+          {activeGMVDays.length < 2 ? (
+            <div className="h-56 rounded-xl border border-dashed border-border bg-surface-2/50 flex flex-col items-center justify-center text-center px-6" style={{ backgroundImage: 'linear-gradient(to right, rgb(255 255 255 / 0.025) 1px, transparent 1px), linear-gradient(to bottom, rgb(255 255 255 / 0.025) 1px, transparent 1px)', backgroundSize: '28px 28px' }}>
+              <div className="w-11 h-11 rounded-xl bg-accent/10 text-accent flex items-center justify-center mb-4"><i className="fa-solid fa-chart-area"></i></div>
+              <p className="font-semibold text-fg">Your GMV trend is just getting started</p>
+              <p className="text-sm text-fg-muted mt-1">The chart will appear after payments are recorded on two separate days.</p>
+              <p className="text-sm text-accent font-semibold mt-4">Today: {formatINR(today.gross_payment_volume)} across {today.paid_orders} paid order{today.paid_orders === 1 ? '' : 's'}</p>
+            </div>
+          ) : (
+            <div className="h-56" aria-label="Daily GMV area chart">
+              <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" className="w-full h-full overflow-visible" role="img" aria-label="Daily gross payment volume">
+                <defs>
+                  <linearGradient id="gmv-area" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.32" />
+                    <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                {[40, 102, 164].map((y) => <line key={y} x1="28" x2={chartWidth - 28} y1={y} y2={y} stroke="currentColor" strokeOpacity="0.12" strokeDasharray="3 4" />)}
+                <text x="0" y="43" fill="#71809a" fontSize="10">{formatINR(maxGMV)}</text>
+                <text x="12" y="168" fill="#71809a" fontSize="10">₹0</text>
+                <path d={areaPath} className="text-accent" fill="url(#gmv-area)" />
+                <path d={linePath} className="text-accent" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                {chartPoints.filter((point) => point.gross_payment_volume > 0).map((point) => (
+                  <g key={point.date} className="text-accent">
+                    <circle cx={point.x} cy={point.y} r="5" fill="currentColor" stroke="#121722" strokeWidth="3"><title>{`${dayLabel(point.date)}: ${formatINR(point.gross_payment_volume)} from ${point.paid_orders} paid orders`}</title></circle>
+                  </g>
+                ))}
+                {[0, Math.floor(chartPoints.length / 2), chartPoints.length - 1].map((index) => {
+                  const point = chartPoints[index];
+                  return <text key={point.date} x={point.x} y="187" textAnchor="middle" fill="#71809a" fontSize="10">{dayLabel(point.date)}</text>;
+                })}
+              </svg>
+            </div>
+          )}
         </section>
 
         <section className="bg-surface rounded-2xl border border-border p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className="text-lg font-bold text-fg">Needs attention</h3>
-              <p className="text-sm text-fg-muted mt-1">Only items that can affect revenue.</p>
-            </div>
-            <span className={`w-2.5 h-2.5 rounded-full ${attentionItems.length > 0 ? 'bg-accent' : 'bg-success'}`}></span>
-          </div>
+          <div className="flex items-center justify-between mb-5"><div><h3 className="text-lg font-bold text-fg">Needs attention</h3><p className="text-sm text-fg-muted mt-1">Exceptions that can affect today&apos;s GMV.</p></div><span className={`w-2.5 h-2.5 rounded-full ${attentionItems.length ? 'bg-accent' : 'bg-success'}`}></span></div>
           {attentionItems.length === 0 ? (
-            <div className="flex items-center gap-3 py-5 text-success">
-              <i className="fa-solid fa-circle-check text-xl"></i>
-              <div><p className="font-semibold text-sm">All clear</p><p className="text-xs text-fg-muted mt-0.5">No checkout actions require attention.</p></div>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {attentionItems.map((item) => (
-                <Link key={item.label} href={item.href} className="flex items-center gap-3 p-3 -mx-3 rounded-lg hover:bg-surface-2 transition">
-                  <i className={`fa-solid ${item.icon} w-4 text-center ${item.tone}`}></i>
-                  <span className="flex-1 text-sm text-fg-soft">{item.label}</span>
-                  <span className="font-bold text-fg">{item.value}</span>
-                  <i className="fa-solid fa-chevron-right text-[10px] text-fg-muted"></i>
-                </Link>
-              ))}
-            </div>
-          )}
+            <div className="flex items-center gap-3 py-7 text-success"><i className="fa-solid fa-circle-check text-xl"></i><div><p className="font-semibold text-sm">All clear</p><p className="text-xs text-fg-muted mt-0.5">No revenue-impacting exceptions.</p></div></div>
+          ) : <div className="space-y-1">{attentionItems.map((item) => (
+            <Link key={item.label} href={item.href} className="flex items-center gap-3 p-3 -mx-3 rounded-lg hover:bg-surface-2 transition"><i className={`fa-solid ${item.icon} w-4 text-center ${item.tone}`}></i><span className="flex-1 text-sm text-fg-soft">{item.label}</span><span className="font-bold text-fg">{item.value}</span><i className="fa-solid fa-chevron-right text-[10px] text-fg-muted"></i></Link>
+          ))}</div>}
         </section>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <section className="xl:col-span-2 bg-surface rounded-2xl border border-border p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className="text-lg font-bold text-fg">Payment gateway health</h3>
-              <p className="text-sm text-fg-muted mt-1">Live gateway performance over the last hour.</p>
-            </div>
-            <Link href="/pg-health" className="text-accent hover:text-accent-hover text-sm font-semibold">Open monitor <i className="fa-solid fa-arrow-right text-xs ml-1"></i></Link>
-          </div>
-          {overview.gateways.length === 0 ? (
-            <p className="py-8 text-center text-sm text-fg-muted">No payment attempts in the last hour.</p>
-          ) : (
-            <div className="space-y-3">
-              {overview.gateways.map((gateway) => (
-                <div key={gateway.pg_name} className="flex items-center gap-4 py-3 border-b border-border last:border-0">
-                  <div className="w-10 h-10 bg-surface-2 rounded-lg flex items-center justify-center"><i className="fa-solid fa-server text-fg-muted text-sm"></i></div>
-                  <div className="flex-1"><p className="font-semibold text-fg capitalize">{gateway.pg_name}</p><p className="text-xs text-fg-muted mt-0.5">{gateway.attempts_1h} attempts · {gateway.avg_latency_ms_1h}ms average</p></div>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusClass(gateway.status)}`}>{gateway.status}</span>
-                  <div className="w-24 text-right"><p className="font-bold text-fg">{gateway.success_rate_1h}%</p><p className="text-[11px] text-fg-muted">success</p></div>
-                </div>
-              ))}
-            </div>
-          )}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <section className="bg-surface rounded-2xl border border-border p-6">
+          <div className="flex items-center justify-between mb-5"><div><h3 className="text-lg font-bold text-fg">Payment method mix</h3><p className="text-sm text-fg-muted mt-1">Successful checkout payments in the selected period.</p></div><Link href="/analytics" className="text-accent text-sm font-semibold hover:opacity-75">Deep dive</Link></div>
+          {!overview.payment_methods.length ? <p className="py-8 text-center text-sm text-fg-muted">No successful payments in this period.</p> : <div className="space-y-4">{overview.payment_methods.map((method) => {
+            const share = paymentVolume > 0 ? Math.round((method.payment_volume / paymentVolume) * 100) : 0;
+            return <div key={method.payment_method}><div className="flex justify-between gap-4 text-sm mb-2"><span className="font-semibold text-fg capitalize">{method.payment_method}</span><span className="text-fg-muted">{formatINR(method.payment_volume)} <span className="text-fg">{share}%</span></span></div><div className="h-2 bg-surface-2 rounded-full overflow-hidden"><div className="h-full bg-info rounded-full" style={{ width: `${share}%` }}></div></div><p className="text-xs text-fg-muted mt-1.5">{method.successful_payments} successful payments</p></div>;
+          })}</div>}
         </section>
 
         <section className="bg-surface rounded-2xl border border-border p-6">
-          <div className="flex items-center justify-between mb-5"><h3 className="text-lg font-bold text-fg">Commercial impact</h3><Link href="/analytics" className="text-accent text-sm font-semibold">Analytics</Link></div>
-          <div className="space-y-4">
-            <div className="flex justify-between items-baseline border-b border-border pb-4"><span className="text-sm text-fg-muted">Active offers</span><span className="text-xl font-bold text-fg">{overview.offers.active_offers}</span></div>
-            <div className="flex justify-between items-baseline border-b border-border pb-4"><span className="text-sm text-fg-muted">Offer conversion</span><span className="text-xl font-bold text-success">{overview.offers.conversion_rate}%</span></div>
-            <div className="flex justify-between items-baseline"><span className="text-sm text-fg-muted">Discounts granted</span><span className="text-xl font-bold text-fg">{formatINR(overview.offers.discounts_granted)}</span></div>
-          </div>
-          <Link href="/create" className="flex justify-center items-center gap-2 mt-6 py-2.5 rounded-lg bg-surface-2 hover:bg-surface-3 text-sm font-semibold text-fg transition"><i className="fa-solid fa-plus text-xs"></i>Create offer</Link>
+          <div className="flex items-center justify-between mb-5"><div><h3 className="text-lg font-bold text-fg">Gateway routing</h3><p className="text-sm text-fg-muted mt-1">Where successful checkout payments were processed.</p></div><Link href="/pg-health" className="text-accent text-sm font-semibold hover:opacity-75">PG health</Link></div>
+          {!overview.payment_gateways.length ? <p className="py-8 text-center text-sm text-fg-muted">No gateway payments in this period.</p> : <div className="space-y-3">{overview.payment_gateways.map((gateway) => (
+            <div key={gateway.pg_name} className="flex items-center gap-4 rounded-xl bg-surface-2 px-4 py-3"><div className="w-9 h-9 rounded-lg bg-bg flex items-center justify-center"><i className="fa-solid fa-server text-info text-sm"></i></div><div className="flex-1"><p className="font-semibold text-fg capitalize">{gateway.pg_name}</p><p className="text-xs text-fg-muted mt-1">{gateway.successful_payments} successful payments</p></div><p className="font-bold text-fg">{formatINR(gateway.payment_volume)}</p></div>
+          ))}</div>}
         </section>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <section className="xl:col-span-2 bg-surface rounded-2xl border border-border overflow-hidden">
-          <div className="flex items-center justify-between p-6 border-b border-border"><div><h3 className="text-lg font-bold text-fg">Recent payment activity</h3><p className="text-sm text-fg-muted mt-1">The latest outcomes from your checkout.</p></div><Link href="/transactions" className="text-accent text-sm font-semibold">View all</Link></div>
-          {overview.recent_activity.length === 0 ? <p className="p-8 text-center text-sm text-fg-muted">No payment activity in this period.</p> : (
-            <div className="divide-y divide-border">
-              {overview.recent_activity.map((activity) => (
-                <Link key={activity.id} href={activity.destination} className="flex items-center gap-4 px-6 py-4 hover:bg-surface-2 transition">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center ${statusClass(activity.status)}`}><i className={`fa-solid ${activity.status === 'success' ? 'fa-check' : activity.status === 'failed' ? 'fa-xmark' : 'fa-clock'} text-xs`}></i></div>
-                  <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-fg capitalize">Payment {activity.status}</p><p className="text-xs text-fg-muted mt-0.5 font-mono truncate">{activity.id}</p></div>
-                  <div className="text-right"><p className="text-sm font-semibold text-fg">{activity.amount !== undefined ? formatINR(activity.amount) : '—'}</p><p className="text-xs text-fg-muted mt-0.5">{new Date(activity.occurred_at).toLocaleDateString('en-IN')}</p></div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="bg-surface rounded-2xl border border-border p-6">
-          <div className="flex items-center justify-between mb-5"><div><h3 className="text-lg font-bold text-fg">Subsidy exposure</h3><p className="text-sm text-fg-muted mt-1">Outstanding brand settlements.</p></div><i className="fa-solid fa-handshake text-accent"></i></div>
-          <p className="text-3xl font-bold text-fg">{formatINR(overview.finance.pending_subsidy_amount)}</p>
-          <p className="text-sm text-fg-muted mt-1">across {overview.finance.pending_subsidy_entries} open entries</p>
-          <div className="grid grid-cols-2 gap-3 mt-6 pt-5 border-t border-border"><div><p className="text-xl font-bold text-info">{overview.finance.brands_with_open_subsidy}</p><p className="text-xs text-fg-muted mt-1">Brands</p></div><div><p className="text-xl font-bold text-accent">{overview.attention.imei_actions_required}</p><p className="text-xs text-fg-muted mt-1">IMEI actions</p></div></div>
-          <Link href="/subsidy" className="flex justify-center items-center mt-6 py-2.5 rounded-lg bg-surface-2 hover:bg-surface-3 text-sm font-semibold text-fg transition">Open subsidy ledger</Link>
-        </section>
-      </div>
+      <section className="bg-surface rounded-2xl border border-border overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b border-border"><div><h3 className="text-lg font-bold text-fg">Recent payment outcomes</h3><p className="text-sm text-fg-muted mt-1">Latest activity across your checkout.</p></div><Link href="/transactions" className="text-accent text-sm font-semibold hover:opacity-75">View all</Link></div>
+        {overview.recent_activity.length === 0 ? <p className="p-8 text-center text-sm text-fg-muted">No payment activity in this period.</p> : <div className="divide-y divide-border">{overview.recent_activity.map((activity) => (
+          <Link key={activity.id} href={activity.destination} className="flex items-center gap-4 px-6 py-4 hover:bg-surface-2 transition"><div className={`w-9 h-9 rounded-full flex items-center justify-center ${statusClass(activity.status)}`}><i className={`fa-solid ${activity.status === 'success' ? 'fa-check' : activity.status === 'failed' ? 'fa-xmark' : 'fa-clock'} text-xs`}></i></div><div className="flex-1 min-w-0"><p className="text-sm font-semibold text-fg capitalize">Payment {activity.status}</p><p className="text-xs text-fg-muted mt-0.5 font-mono truncate">{activity.id}</p></div><div className="text-right"><p className="text-sm font-semibold text-fg">{activity.amount !== undefined ? formatINR(activity.amount) : '—'}</p><p className="text-xs text-fg-muted mt-0.5">{new Date(activity.occurred_at).toLocaleDateString('en-IN')}</p></div></Link>
+        ))}</div>}
+      </section>
     </div>
   );
 }

@@ -20,6 +20,18 @@ interface RecentTransaction {
   initiated_at: string;
 }
 
+interface DailyGMV {
+  _id: string;
+  gross_payment_volume: number;
+  paid_orders: number;
+}
+
+interface PaymentBreakdown {
+  _id: string | null;
+  successful_payments: number;
+  payment_volume: number;
+}
+
 function round(value: number): number {
   return Math.round(value * 100) / 100;
 }
@@ -27,9 +39,23 @@ function round(value: number): number {
 function getPeriod(period: z.infer<typeof PeriodSchema>) {
   const now = new Date();
   const days = Number.parseInt(period, 10);
-  const from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  const from = new Date(now);
+  from.setUTCHours(0, 0, 0, 0);
+  from.setUTCDate(from.getUTCDate() - (days - 1));
 
   return { key: period, from: from.toISOString(), to: now.toISOString() };
+}
+
+function dailyBuckets(period: z.infer<typeof PeriodSchema>): string[] {
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const days = Number.parseInt(period, 10);
+
+  return Array.from({ length: days }, (_, index) => {
+    const date = new Date(today);
+    date.setUTCDate(today.getUTCDate() - (days - index - 1));
+    return date.toISOString().slice(0, 10);
+  });
 }
 
 export function registerDashboardRoutes(server: FastifyInstance): void {
@@ -61,20 +87,19 @@ export function registerDashboardRoutes(server: FastifyInstance): void {
       const periodFilter = { $gte: period.from, $lte: period.to };
       const merchantFilter = { merchant_id: merchantId };
       const paymentAttemptFilter = { ...merchantFilter, payment_method: { $ne: 'refund' } };
+      const paidOrderFilter = {
+        ...merchantFilter,
+        order_status: 'paid',
+        $or: [
+          { paid_at: periodFilter },
+          { paid_at: { $exists: false }, created_at: periodFilter },
+        ],
+      };
 
       try {
-        const [orders, sessions, transactions, gatewayPerformance, alerts, activeOffers, redemptions, subsidies, recentTransactions] = await Promise.all([
+        const [orders, sessions, transactions, gatewayPerformance, alerts, activeOffers, redemptions, subsidies, recentTransactions, dailyGMV, paymentMethods, paymentGateways] = await Promise.all([
           db.collection('orders').aggregate([
-            {
-              $match: {
-                ...merchantFilter,
-                order_status: 'paid',
-                $or: [
-                  { paid_at: periodFilter },
-                  { paid_at: { $exists: false }, created_at: periodFilter },
-                ],
-              },
-            },
+            { $match: paidOrderFilter },
             { $group: { _id: null, paid_orders: { $sum: 1 }, gross_payment_volume: { $sum: '$final_amount' } } },
           ]).toArray(),
           db.collection('checkout_sessions').aggregate([
@@ -157,6 +182,27 @@ export function registerDashboardRoutes(server: FastifyInstance): void {
             .sort({ initiated_at: -1 })
             .limit(8)
             .toArray(),
+          db.collection('orders').aggregate<DailyGMV>([
+            { $match: paidOrderFilter },
+            { $project: { final_amount: 1, paid_date: { $ifNull: ['$paid_at', '$created_at'] } } },
+            {
+              $group: {
+                _id: { $substrBytes: ['$paid_date', 0, 10] },
+                gross_payment_volume: { $sum: '$final_amount' },
+                paid_orders: { $sum: 1 },
+              },
+            },
+          ]).toArray(),
+          db.collection('transaction_logs').aggregate<PaymentBreakdown>([
+            { $match: { ...paymentAttemptFilter, initiated_at: periodFilter, payment_status: 'success' } },
+            { $group: { _id: '$payment_method', successful_payments: { $sum: 1 }, payment_volume: { $sum: '$amount' } } },
+            { $sort: { payment_volume: -1 } },
+          ]).toArray(),
+          db.collection('transaction_logs').aggregate<PaymentBreakdown>([
+            { $match: { ...paymentAttemptFilter, initiated_at: periodFilter, payment_status: 'success' } },
+            { $group: { _id: '$pg_name', successful_payments: { $sum: 1 }, payment_volume: { $sum: '$amount' } } },
+            { $sort: { payment_volume: -1 } },
+          ]).toArray(),
         ]);
 
         const orderStats = orders[0] || { paid_orders: 0, gross_payment_volume: 0 };
@@ -166,6 +212,7 @@ export function registerDashboardRoutes(server: FastifyInstance): void {
         const offerStats = redemptions[0] || { redemptions: 0, paid_redemptions: 0, discounts_granted: 0 };
         const subsidyStats = subsidies[0] || { pending_subsidy_amount: 0, pending_subsidy_entries: 0, brands: [], imei_actions_required: 0 };
         const completedAttempts = transactionStats.successful + transactionStats.failed;
+        const dailyGMVByDate = new Map(dailyGMV.map((day) => [day._id, day]));
 
         return reply.send({
           period,
@@ -220,6 +267,24 @@ export function registerDashboardRoutes(server: FastifyInstance): void {
             pending_subsidy_entries: subsidyStats.pending_subsidy_entries,
             brands_with_open_subsidy: subsidyStats.brands.filter(Boolean).length,
           },
+          daily_gmv: dailyBuckets(parsedPeriod.data).map((date) => {
+            const day = dailyGMVByDate.get(date);
+            return {
+              date,
+              gross_payment_volume: day?.gross_payment_volume || 0,
+              paid_orders: day?.paid_orders || 0,
+            };
+          }),
+          payment_methods: paymentMethods.map((method) => ({
+            payment_method: method._id || 'unknown',
+            successful_payments: method.successful_payments,
+            payment_volume: method.payment_volume,
+          })),
+          payment_gateways: paymentGateways.map((gateway) => ({
+            pg_name: gateway._id || 'unknown',
+            successful_payments: gateway.successful_payments,
+            payment_volume: gateway.payment_volume,
+          })),
           recent_activity: recentTransactions.map((transaction) => ({
             type: 'payment',
             id: transaction._id,
