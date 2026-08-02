@@ -38,7 +38,7 @@ describe('createAuthMiddleware', () => {
   });
 
   beforeEach(async () => {
-    server = createServer();
+    server = await createServer();
     server.register(async (fastify) => {
       fastify.addHook('preHandler', createAuthMiddleware());
       fastify.get('/protected', async () => ({ message: 'success' }));
@@ -69,7 +69,7 @@ describe('createAuthMiddleware', () => {
 
   it('sets merchantId on request when api key is valid', async () => {
     let capturedMerchantId: string | undefined;
-    server = createServer();
+    server = await createServer();
     server.register(async (fastify) => {
       fastify.addHook('preHandler', createAuthMiddleware());
       fastify.get('/protected', async (request: FastifyRequest) => {

@@ -17,7 +17,7 @@ describe('Auth Routes', () => {
 
   beforeEach(async () => {
     await clearTestDatabase();
-    server = createServer();
+    server = await createServer();
     server.setErrorHandler(errorHandler);
     server.decorate('db', getTestDatabase());
 
@@ -34,7 +34,7 @@ describe('Auth Routes', () => {
             merchant_id: payload.merchant_id,
             role: payload.role,
           };
-        } catch (e) {
+        } catch {
           // Invalid token, ignore for now
         }
       }
@@ -73,7 +73,14 @@ describe('Auth Routes', () => {
       expect(body.role).toBe('owner');
 
       // Verify user was created in DB
-      const usersDb = getTestDatabase().collection('users');
+      const usersDb = getTestDatabase().collection<{
+        _id: string;
+        email: string;
+        password_hash: string;
+        name: string;
+        created_at: string;
+        updated_at: string;
+      }>('users');
       const user = await usersDb.findOne({ email: 'test@example.com' });
       expect(user).toBeDefined();
       expect(user?.password_hash).toBeDefined();
@@ -226,13 +233,20 @@ describe('Auth Routes', () => {
     it('returns 403 NO_MERCHANT if user has no active merchant', async () => {
       // Create a user without a merchant link
       const { hashPassword } = await import('../../../lib/password');
-      const usersDb = getTestDatabase().collection('users');
+      const usersDb = getTestDatabase().collection<{
+        _id: string;
+        email: string;
+        password_hash: string;
+        name: string;
+        created_at: string;
+        updated_at: string;
+      }>('users');
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 8);
       const user_id = `user_test_orphan_${timestamp}_${random}`;
       const hashed = await hashPassword('password123');
       await usersDb.insertOne({
-        _id: user_id as any,
+        _id: user_id,
         email: 'orphan@example.com',
         password_hash: hashed,
         name: 'Orphan User',

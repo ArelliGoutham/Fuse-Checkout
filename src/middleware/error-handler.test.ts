@@ -7,7 +7,7 @@ describe('errorHandler', () => {
   let server: FastifyInstance;
 
   beforeEach(async () => {
-    server = createServer();
+    server = await createServer();
     server.register(async (fastify) => {
       fastify.setErrorHandler(errorHandler);
 
@@ -21,6 +21,13 @@ describe('errorHandler', () => {
 
       fastify.get('/unknown-error', async () => {
         throw new Error('Something went wrong');
+      });
+
+      fastify.get('/rate-limited', async () => {
+        throw Object.assign(new Error('Rate limit exceeded'), {
+          code: 'RATE_LIMITED',
+          statusCode: 429,
+        });
       });
     });
   });
@@ -54,5 +61,13 @@ describe('errorHandler', () => {
     expect(body.error).toBeDefined();
     expect(body.error.code).toBe('INTERNAL_ERROR');
     expect(body.error.message).toBe('An unexpected error occurred');
+  });
+
+  it('preserves Fastify HTTP error status codes', async () => {
+    const response = await server.inject({ method: 'GET', url: '/rate-limited' });
+    expect(response.statusCode).toBe(429);
+    const body = JSON.parse(response.body);
+    expect(body.error.code).toBe('RATE_LIMITED');
+    expect(body.error.message).toBe('Rate limit exceeded');
   });
 });

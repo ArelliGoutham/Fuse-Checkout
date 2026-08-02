@@ -26,7 +26,7 @@ describe('Checkout Routes', () => {
   beforeEach(async () => {
     await clearTestDatabase();
 
-    server = createServer();
+    server = await createServer();
     server.setErrorHandler(errorHandler);
 
     const { service, repository } = createOfferComponents(testDb);

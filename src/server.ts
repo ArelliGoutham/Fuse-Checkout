@@ -45,7 +45,7 @@ async function start() {
     console.log('✓ Connected to MongoDB');
 
     // Create and configure server
-    const server = createServer();
+    const server = await createServer();
 
     // Get database connection and create offer components
     const db = getDatabase();

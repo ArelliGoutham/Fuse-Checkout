@@ -25,7 +25,7 @@ describe('Offer Routes', () => {
   beforeEach(async () => {
     await clearTestDatabase();
 
-    server = createServer();
+    server = await createServer();
     server.setErrorHandler(errorHandler);
 
     const { repository } = createOfferComponents(testDb);

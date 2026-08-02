@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import { config } from './config';
@@ -10,14 +11,14 @@ import { config } from './config';
  *
  * @returns Configured Fastify instance (not yet listening)
  */
-export function createServer() {
+export async function createServer(): Promise<FastifyInstance> {
   const server = Fastify({ logger: true });
 
   // CORS
-  server.register(cors, { origin: true });
+  await server.register(cors, { origin: true });
 
-  // Rate limiting with global: false so individual routes opt in
-  server.register(rateLimit, { global: false });
+  // Register before callers declare routes so per-route limits attach correctly.
+  await server.register(rateLimit, { global: false });
 
   // Health check
   server.get('/health', async () => ({

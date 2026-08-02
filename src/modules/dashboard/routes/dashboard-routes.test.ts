@@ -26,7 +26,7 @@ describe('Dashboard overview routes', () => {
     await clearTestDatabase();
     now = new Date();
 
-    server = createServer();
+    server = await createServer();
     server.setErrorHandler(errorHandler);
     server.decorate('db', testDb);
     server.addHook('preHandler', createAuthMiddleware(testDb));

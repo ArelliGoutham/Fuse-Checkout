@@ -20,6 +20,18 @@ export function errorHandler(
     return;
   }
 
+  const fastifyError = error as FastifyError;
+  const statusCode = fastifyError.statusCode;
+  if (typeof statusCode === 'number' && statusCode >= 400 && statusCode <= 599) {
+    reply.code(statusCode).send({
+      error: {
+        code: fastifyError.code || 'HTTP_ERROR',
+        message: error.message,
+      },
+    });
+    return;
+  }
+
   reply
     .code(500)
     .send({ error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } });

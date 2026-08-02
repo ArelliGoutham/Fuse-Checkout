@@ -23,7 +23,7 @@ describe('Analytics Routes', () => {
   beforeEach(async () => {
     await clearTestDatabase();
 
-    server = createServer();
+    server = await createServer();
     server.setErrorHandler(errorHandler);
     server.decorate('db', testDb);
 

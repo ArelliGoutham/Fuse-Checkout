@@ -1,11 +1,11 @@
-import { Db } from 'mongodb';
+import type { Db } from 'mongodb';
 import {
   startTestDatabase,
   stopTestDatabase,
   clearTestDatabase,
 } from '../../../test/setup-db';
 import { MongoOrderRepository } from './mongo-order-repository';
-import { Order } from '../schemas/order';
+import type { Order } from '../schemas/order';
 
 describe('MongoOrderRepository', () => {
   let db: Db;
@@ -87,6 +87,10 @@ describe('MongoOrderRepository', () => {
       applied_offers: [],
       payment_method: 'card',
       pg_transaction_id: null,
+      merchant_order_id: null,
+      pg_order_id: null,
+      pg_payment_id: null,
+      pg_raw_response: null,
       pg_name: 'Razorpay',
       order_status: 'created',
       emi_details: null,
@@ -121,6 +125,10 @@ describe('MongoOrderRepository', () => {
       applied_offers: [],
       payment_method: 'card',
       pg_transaction_id: null,
+      merchant_order_id: null,
+      pg_order_id: null,
+      pg_payment_id: null,
+      pg_raw_response: null,
       pg_name: 'Razorpay',
       order_status: 'created',
       emi_details: null,
@@ -156,6 +164,10 @@ describe('MongoOrderRepository', () => {
         applied_offers: [],
         payment_method: 'card',
         pg_transaction_id: null,
+        merchant_order_id: null,
+        pg_order_id: null,
+        pg_payment_id: null,
+        pg_raw_response: null,
         pg_name: 'Razorpay',
         order_status: 'created',
         emi_details: null,

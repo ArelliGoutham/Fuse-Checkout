@@ -9,7 +9,7 @@ describe('createServer', () => {
   });
 
   it('creates a Fastify instance with /health endpoint returning 200', async () => {
-    server = createServer();
+    server = await createServer();
     const response = await server.inject({ method: 'GET', url: '/health' });
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
@@ -17,14 +17,14 @@ describe('createServer', () => {
   });
 
   it('returns brand name in /health response', async () => {
-    server = createServer();
+    server = await createServer();
     const response = await server.inject({ method: 'GET', url: '/health' });
     const body = JSON.parse(response.body);
     expect(body.service).toBeDefined();
   });
 
   it('registers CORS plugin', async () => {
-    server = createServer();
+    server = await createServer();
     const response = await server.inject({
       method: 'GET',
       url: '/health',

@@ -51,7 +51,7 @@ describe('Golden Path Integration Test', () => {
     }
     await db.collection('merchants').insertOne(MERCHANT as unknown as Document);
 
-    server = createServer();
+    server = await createServer();
     const { service, repository } = createOfferComponents(db);
     server.decorate('db', db);
     server.decorate('offerService', service);
