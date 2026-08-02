@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <path d="M6 14h23v20H6z" stroke="#263754" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M29 20h7l6 7v7H29V20Z" fill="#F7F9FC" stroke="#263754" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M6 21h23" stroke="#263754" stroke-width="2.5"/>
+  <circle cx="15" cy="37" r="3" fill="#F7F9FC" stroke="#263754" stroke-width="2.5"/>
+  <circle cx="35" cy="37" r="3" fill="#F7F9FC" stroke="#263754" stroke-width="2.5"/>
+  <circle cx="17.5" cy="24" r="6" fill="#C58A22"/>
+  <text x="17.5" y="27.7" text-anchor="middle" fill="#263754" font-family="Arial, sans-serif" font-size="10" font-weight="700">₹</text>
+</svg>

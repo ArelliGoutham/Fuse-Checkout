@@ -22,6 +22,14 @@ interface OrderResult {
   orderId: string; method: string; amount: number; redirectUrl: string;
 }
 
+const PAYMENT_METHODS = [
+  { id: 'upi', iconSrc: '/payment-icons/upi.svg', name: 'UPI', sub: 'Google Pay, PhonePe, Paytm & more', badge: 'Recommended' },
+  { id: 'card', iconSrc: '/payment-icons/card.svg', name: 'Credit / Debit Card', sub: 'Visa, Mastercard, RuPay, Amex', badge: '' },
+  { id: 'bank_transfer', iconSrc: '/payment-icons/net-banking.svg', name: 'Net Banking', sub: 'All major Indian banks', badge: '' },
+  { id: 'wallet', iconSrc: '/payment-icons/wallet.svg', name: 'Wallets', sub: 'Paytm, PhonePe, Mobikwik & more', badge: '' },
+  { id: 'cod', iconSrc: '/payment-icons/cash-on-delivery.svg', name: 'Cash on Delivery', sub: 'Pay when you receive', badge: '' },
+] as const;
+
 export default function CheckoutPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const [sessionId, setSessionId] = useState('');
   const [loading, setLoading] = useState(true);
@@ -405,13 +413,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
           <div className="p-4.5 pb-3">
             <h3 className="font-semibold text-[15px] tracking-tight mb-3" style={{ color: '#12151C' }}>Payment Method</h3>
 
-            {[
-              { id: 'upi', icon: '◎', name: 'UPI', sub: 'Google Pay, PhonePe, Paytm & more', badge: 'Recommended' },
-              { id: 'card', icon: '▭', name: 'Credit / Debit Card', sub: 'Visa, Mastercard, RuPay, Amex', badge: '' },
-              { id: 'bank_transfer', icon: '🏦', name: 'Net Banking', sub: 'All major Indian banks', badge: '' },
-              { id: 'wallet', icon: '👛', name: 'Wallets', sub: 'Paytm, PhonePe, Mobikwik & more', badge: '' },
-              { id: 'cod', icon: '💵', name: 'Cash on Delivery', sub: 'Pay when you receive', badge: '' },
-            ].map(m => (
+            {PAYMENT_METHODS.map(m => (
               <div key={m.id}
                 onClick={() => { setPaymentMethod(m.id); if (m.id !== 'card') { setCardBin(''); setEmiOptions([]); } }}
                 className={`flex items-center gap-3 py-3 cursor-pointer transition ${m.id !== 'cod' ? 'border-b' : ''}`}
@@ -420,8 +422,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                      style={{ borderColor: paymentMethod === m.id ? '#B5842A' : '#C4C8CE' }}>
                   {paymentMethod === m.id && <div className="w-[10px] h-[10px] rounded-full" style={{ background: '#B5842A' }} />}
                 </div>
-                <div className="w-[36px] h-[36px] rounded-lg flex items-center justify-center shrink-0 text-[15px] border"
-                     style={{ background: '#F7F9FC', borderColor: '#E1E4E8' }}>{m.icon}</div>
+                <div className="w-[36px] h-[36px] rounded-lg flex items-center justify-center shrink-0 border"
+                     style={{ background: '#F7F9FC', borderColor: '#E1E4E8' }}>
+                  <img src={m.iconSrc} alt="" aria-hidden="true" className="w-7 h-7" />
+                </div>
                 <div className="flex-1">
                   <div className="font-medium text-[13.5px]" style={{ color: '#12151C' }}>{m.name}</div>
                   <div className="text-[11.5px] mt-0.5" style={{ color: '#5C6470' }}>{m.sub}</div>
@@ -445,7 +449,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ sessionId: 
                 />
                 {emiOptions.length > 0 && (
                   <div className="rounded-lg border p-3" style={{ background: '#F7F9FC', borderColor: '#E1E4E8' }}>
-                    <div className="text-[11px] font-semibold tracking-wide uppercase mb-2.5" style={{ color: '#5C6470' }}>
+                    <div className="text-[11px] font-semibold tracking-wide uppercase mb-2.5 flex items-center gap-1.5" style={{ color: '#5C6470' }}>
+                      <img src="/payment-icons/emi.svg" alt="" aria-hidden="true" className="w-4 h-4" />
                       EMI OPTIONS · {emiOptions[0]?.bank || 'Your bank'}
                     </div>
                     {emiOptions.slice(0, 3).map((emi, idx) => (
