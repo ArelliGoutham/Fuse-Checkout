@@ -34,6 +34,7 @@ export const OrderSchema = z.object({
   pg_refund_id: z.string().nullable().optional(),
   pg_transaction_id: z.string().nullable(),
   order_status: z.enum(['created', 'paid', 'failed', 'refunded']),
+  paid_at: z.string().datetime().nullable().optional(),
   emi_details: z
     .object({
       bank: z.string(),

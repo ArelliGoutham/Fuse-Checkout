@@ -760,6 +760,7 @@ export function registerCheckoutRoutes(server: FastifyInstance): void {
           pg_raw_response: paymentResult as unknown as Record<string, unknown>,
           pg_transaction_id: paymentResult.transaction_id,
           order_status: 'paid' as const,
+          paid_at: completedAt.toISOString(),
           emi_details: null,
           created_at: now,
           updated_at: now,

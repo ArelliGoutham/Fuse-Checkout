@@ -104,13 +104,17 @@ export function registerPGWebhook(
       }
 
       // Update order based on payment status
-      if (paymentStatus === 'captured' && order.order_status !== 'paid') {
+      if (
+        paymentStatus === 'captured' &&
+        (order.order_status === 'created' || order.order_status === 'failed')
+      ) {
         await db.collection('orders').updateOne(
           { _id: order._id },
           {
             $set: {
               order_status: 'paid',
               pg_payment_id: pgPaymentId,
+              paid_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             },
           }
