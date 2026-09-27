@@ -1,0 +1,38 @@
+# Version control + env
+.git
+.gitignore
+.github
+.env
+.env.*
+!.env.example
+
+# Vercel frontends (deployed separately, not needed in API image)
+dashboard/
+checkout/
+website/
+**/.vercel/
+**/vercel.json
+
+# Build artifacts & deps we don't ship
+node_modules/
+dist/
+coverage/
+
+# Docs, playground, images (not needed at runtime)
+docs/
+playground/
+reference.html
+image.png
+image copy.png
+
+# Dev tooling
+.superpowers/
+.eslintrc.json
+eslint.config.mjs
+.prettierrc
+jest.config.ts
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

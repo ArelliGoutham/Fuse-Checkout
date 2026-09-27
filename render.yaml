@@ -1,0 +1,57 @@
+# Render Blueprint — Fuse API (Fastify + MongoDB)
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Usage:
+#   1. Push this file to the repo root (already there).
+#   2. In Render dashboard: New → Blueprint → select this repo.
+#   3. Render reads render.yaml and creates the service for you.
+#   4. Set the secret env vars (MONGO_URI, ENCRYPTION_KEY, etc.) in the
+#      Render UI after the blueprint is applied. render.yaml only carries
+#      non-secret defaults; secrets must be entered manually.
+
+services:
+  - type: web
+    name: fuse-api
+    runtime: docker
+    region: oregon  # Render free tier is only available in oregon
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # Secrets — set these in the Render UI after blueprint apply:
+      #   MONGO_URI         your Atlas connection string (mongodb+srv://...)
+      #   ENCRYPTION_KEY    32-byte AES key for PG credential encryption
+      - key: MONGO_URI
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      # Non-secret defaults
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_DB_NAME
+        value: fuse
+      - key: PORT
+        value: 3000
+      - key: BRAND_NAME
+        value: Fuse
+      - key: BRAND_DOMAIN
+        value: fuse.io
+      - key: ORDER_ID_PREFIX
+        value: OF
+      # PG Health Monitor thresholds (defaults from .env.example)
+      - key: ALERT_CHECK_INTERVAL_MS
+        value: '300000'
+      - key: ALERT_SUCCESS_RATE_THRESHOLD
+        value: '90'
+      - key: ALERT_LATENCY_THRESHOLD_MS
+        value: '5000'
+      - key: ALERT_FAILURE_RATE_THRESHOLD
+        value: '20'
+      - key: ALERT_DOWNTIME_MINUTES
+        value: '30'
+      - key: ALERT_RETENTION_DAYS
+        value: '30'
+      - key: ALERT_CLEANUP_CRON_MS
+        value: '86400000'

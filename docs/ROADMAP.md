@@ -1,7 +1,7 @@
 # Fuse — Product Roadmap & Progress Tracker
 
 > **Last updated:** 2026-09-27
-> **Status:** Phase 1 complete, Phase 2 in progress. Vercel deployment configs ready for dashboard, checkout, and website.
+> **Status:** Phase 1 complete, Phase 2 in progress. Frontends deployed on Vercel (git auto-deploy live). Backend deploy artifacts (Dockerfile, render.yaml) ready — manual Atlas + Render provisioning remaining.
 
 This document is the single source of truth for what's built, what's in progress, and what's planned. **Update this file whenever a feature is completed, started, or scoped.**
 
@@ -169,18 +169,30 @@ This document is the single source of truth for what's built, what's in progress
 
 ## Deployment & Infrastructure (🚧 In Progress)
 
-### Frontend — Vercel (✅ Config Ready)
+### Frontend — Vercel (✅ Deployed)
 - [x] `vercel.json` for dashboard (Next.js, Vercel verified adapter)
 - [x] `vercel.json` for checkout (Next.js, Vercel verified adapter)
 - [x] `vercel.json` for website (static HTML/CSS/JS)
 - [x] `.env.example` committed for dashboard + checkout (documents `NEXT_PUBLIC_API_BASE` + `NEXT_PUBLIC_API_KEY`)
 - [x] Frontends already read API base via `NEXT_PUBLIC_API_BASE` / hostname fallback
-- [ ] Link GitHub repo to Vercel, set env vars, deploy (manual step)
+- [x] Link GitHub repo to Vercel, set env vars, deploy
+- [x] Vercel git auto-deploy verified (push to main → all 3 frontends rebuild)
+
+### Backend — Fastify API + MongoDB (🚧 Artifacts Ready)
+- [x] `Dockerfile` (multi-stage: `tsc` → `node dist/server.js`, non-root, healthcheck)
+- [x] `.dockerignore` (excludes Vercel frontends, node_modules, dist, docs)
+- [x] `render.yaml` (Render Blueprint for one-click provisioning)
+- [x] `tsconfig` `module: CommonJS` fix (was ESM output + `type: commonjs` mismatch — `node dist/server.js` would have crashed)
+- [x] `mongodb` moved from devDependencies → dependencies (production runtime dep, was only in devDeps)
+- [x] `start:prod` script (`node dist/server.js`)
+- [x] `docs/DEPLOYMENT.md` backend section (Render free tier + Atlas M0 walkthrough)
+- [ ] MongoDB Atlas (production database) — manual: create M0 in Mumbai
+- [ ] API deployment on Render — manual: New → Blueprint → select repo, set MONGO_URI + ENCRYPTION_KEY
+- [ ] Update Vercel `NEXT_PUBLIC_API_BASE` → real Render URL, redeploy frontends
 
 ### Remaining Infrastructure (📋 Planned)
-- [ ] MongoDB Atlas (production database)
-- [ ] API deployment (Railway or Render) — needs Dockerfile
-- [ ] Mintlify hosted docs (docs.fuse.io)
+- [ ] Mintlify hosted docs (docs.fuse.io) — custom domain
+- [ ] CI/CD pipeline (GitHub Actions: test → build → deploy)
 - [ ] CI/CD pipeline (GitHub Actions: test → build → deploy)
 - [ ] Pre-commit hooks (Husky + lint-staged)
 - [ ] Production monitoring (Last9 or similar)
