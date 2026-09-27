@@ -1,7 +1,7 @@
 # Fuse — Product Roadmap & Progress Tracker
 
-> **Last updated:** 2026-07-30
-> **Status:** Phase 1 complete, Phase 2 in progress (EMI campaigns done, transaction management next)
+> **Last updated:** 2026-09-27
+> **Status:** Phase 1 complete, Phase 2 in progress. Vercel deployment configs ready for dashboard, checkout, and website.
 
 This document is the single source of truth for what's built, what's in progress, and what's planned. **Update this file whenever a feature is completed, started, or scoped.**
 
@@ -167,17 +167,25 @@ This document is the single source of truth for what's built, what's in progress
 
 ---
 
-## Deployment & Infrastructure (📋 Planned)
+## Deployment & Infrastructure (🚧 In Progress)
 
+### Frontend — Vercel (✅ Config Ready)
+- [x] `vercel.json` for dashboard (Next.js, Vercel verified adapter)
+- [x] `vercel.json` for checkout (Next.js, Vercel verified adapter)
+- [x] `vercel.json` for website (static HTML/CSS/JS)
+- [x] `.env.example` committed for dashboard + checkout (documents `NEXT_PUBLIC_API_BASE` + `NEXT_PUBLIC_API_KEY`)
+- [x] Frontends already read API base via `NEXT_PUBLIC_API_BASE` / hostname fallback
+- [ ] Link GitHub repo to Vercel, set env vars, deploy (manual step)
+
+### Remaining Infrastructure (📋 Planned)
 - [ ] MongoDB Atlas (production database)
-- [ ] API deployment (Railway or Render)
-- [ ] Dashboard + Checkout deployment (Vercel)
+- [ ] API deployment (Railway or Render) — needs Dockerfile
 - [ ] Mintlify hosted docs (docs.fuse.io)
 - [ ] CI/CD pipeline (GitHub Actions: test → build → deploy)
 - [ ] Pre-commit hooks (Husky + lint-staged)
 - [ ] Production monitoring (Last9 or similar)
 - [ ] Error tracking (Sentry)
-- [ ] CDN for static assets
+- [ ] CDN for static assets (covered by Vercel for frontends)
 - [ ] Custom domain (fuse.io)
 
 ---

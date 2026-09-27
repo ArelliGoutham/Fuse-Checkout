@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { acceptInvite } from '@/lib/api';
 
-export default function InvitePage() {
+function InviteForm() {
   const searchParams = useSearchParams();
   const initialCode = searchParams.get('code') || '';
   const [inviteCode, setInviteCode] = useState(initialCode);
@@ -85,5 +85,13 @@ export default function InvitePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function InvitePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-bg" />}>
+      <InviteForm />
+    </Suspense>
   );
 }
